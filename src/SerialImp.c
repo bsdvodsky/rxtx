@@ -3098,7 +3098,7 @@ int is_device_locked( const char *port_filename )
 		"/var/spool/lock", "/var/spool/locks", "/var/spool/uucp",
 		LOCKDIR, NULL
 	};
-	const char *lockprefixes[] = { "LK.", "lk..", "LK..", NULL }; 
+	const char *lockprefixes[] = { "LCK.", "lk..", "LK.", NULL }; 
 	char *p, file[80], pid_buffer[20], message[80];
 	int i = 0, j, k, fd , pid;
 	struct stat buf;
