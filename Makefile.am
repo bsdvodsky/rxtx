@@ -29,7 +29,6 @@ CLASSDEST=gnu/io
 ####################### tools
 LIBTOOLC=$(TOP)/libtool --mode=compile $(CC) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(VERBOSE_IOEXCEPTIONS) -c
 LIBTOOL_INST=$(TOP)/libtool --mode=install $(INSTALL_PROGRAM)
-LINK =$(TOP)/libtool --mode=link $(CC) $(CFLAGS) $(LDFLAGS) -release $(VERSION)
 ####################### dirs
 SPATH = $(srcdir)/src
 DEST=$(target_alias)
@@ -48,8 +47,9 @@ $(target_alias)/lib%.la: $(SPATH)/%Imp.@EXTENSION@ $(CLASSES) $(SPATH)/%Imp.h
 	@(							\
 	$(LIBTOOL_FIX)						\
 	cd $(DEST); 						\
-	$(LIBTOOLC) ../$(SPATH)/$*Imp.@EXTENSION@ -o $(TOP)/$(DEST)/$*Imp.lo; \
-	$(LINK) -o lib$*.la -rpath $(RXTX_PATH) $(TOP)/$(DEST)/$*Imp.lo)
+	$(LIBTOOLC) ../$(SPATH)/$*Imp.@EXTENSION@ -o $(TOP)/$(DEST)/$*Imp.@OBJECT_EXTENSION@; \
+	@LINK@ $(TOP)/$(DEST)/$*Imp.@OBJECT_EXTENSION@		\
+	)
 
 #  compile src/RXTXPort.java and similar files into classes
 #  then create the .jar file
