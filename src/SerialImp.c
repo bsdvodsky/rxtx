@@ -20,8 +20,12 @@
 #define DEBUG
 #define DEBUG_MW
 #endif /* TRENT_IS_HERE */
+#if defined(__MWERKS__)//dima
+#include "RXTXPort.h"//dima
+#else //dima
 #include "config.h"
 #include "gnu_io_RXTXPort.h"
+#endif//dima
 #ifndef __LCC__
 #   include <unistd.h>
 #else /* windows lcc compiler for fd_set. probably wrong */
@@ -223,7 +227,7 @@ JNIEXPORT jint JNICALL RXTXPort(open)(
 	ENTER( "RXTXPort:open");
 	if ( LOCK( filename) )
 	{
-		(*env)->ReleaseStringUTFChars( env, jstr, filename );
+//		(*env)->ReleaseStringUTFChars( env, jstr, filename );//dima
 		sprintf( message, "locking has failed for %s\n", filename );
 		report( message );
 		goto fail;
@@ -237,8 +241,9 @@ JNIEXPORT jint JNICALL RXTXPort(open)(
 	do {
 		fd=OPEN (filename, O_RDWR | O_NOCTTY | O_NONBLOCK );
 	}  while (fd < 0 && errno==EINTR);
-	(*env)->ReleaseStringUTFChars( env, jstr, filename );
+//	(*env)->ReleaseStringUTFChars( env, jstr, filename );//dima
 	if( fd < 0 ) goto fail;
+	(*env)->ReleaseStringUTFChars( env, jstr, filename );//dima
 
 	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
 	ttyset.c_iflag = INPCK;
@@ -493,8 +498,12 @@ int translate_speed( JNIEnv *env, jint speed )
 #endif /* B460800 */
 		case 14400:	return B14400;
 		case 28800:	return B28800;
+#ifdef B128000 //dima
 		case 128000:	return B128000;
+#endif //dima
+#ifdef B256000 //dima
 		case 256000:	return B256000;
+#endif //dima
 	}
 
 	LEAVE( "RXTXPort:translate_speed");
@@ -1689,32 +1698,41 @@ getRegistryString(io_object_t sObj, char *propName)
    comments:
 ----------------------------------------------------------*/
 int
-registerKnownSerialPorts(JNIEnv *env, jobject jobj)
+registerKnownSerialPorts(JNIEnv *env, jobject jobj, jint portType)//dima
 {
     io_iterator_t    theSerialIterator;
     io_object_t      theObject;
-    int              numPorts;
+    int              numPorts = 0;//dima it should initiated
     if (createSerialIterator(&theSerialIterator) != KERN_SUCCESS)
     {
         printf("createSerialIterator failed\n");
     } else {
-        jclass cls = (*env)->GetObjectClass(env,jobj);
-        jmethodID mid = (*env)->GetMethodID(
-            env, cls, "addPortName", "(Ljava/lang/String;I;Ljavax/comm/CommDriver)Z");
+		jclass cls;//dima
+		jmethodID mid;//dima
+        cls = (*env)->FindClass(env,"javax/comm/CommPortIdentifier");//dima
+        if (cls == 0) {//dima
+            report("can't find class of javax/comm/CommPortIdentifier\n");//dima
+            return numPorts;//dima
+        }//dima
+        mid = (*env)->GetStaticMethodID(env, cls, "addPortName", "(Ljava/lang/String;ILjavax/comm/CommDriver;)V");//dima
+
         if (mid == 0) {
             printf("getMethodID of CommDriver.addPortName failed\n");
         } else {
             while (theObject = IOIteratorNext(theSerialIterator))
             {
-                (*env)->CallVoidMethod(env, jobj, mid,
-                    NewStringUTF(getRegistryString(theObject, kIOTTYDeviceKey)));
+//begin dima
+            	jstring	tempJstring;
+				tempJstring = (*env)->NewStringUTF(env,getRegistryString(theObject, kIODialinDeviceKey));
+                (*env)->CallStaticVoidMethod(env, cls, mid,tempJstring,portType,jobj);//dima
+ 				(*env)->DeleteLocalRef(env,tempJstring);
                 numPorts++;
-                (*env)->CallVoidMethod(env, jobj, mid,
-                    NewStringUTF(getRegistryString(theObject, kIODialinDeviceKey)));
+                
+ 				tempJstring = (*env)->NewStringUTF(env,getRegistryString(theObject, kIOCalloutDeviceKey));
+               (*env)->CallStaticVoidMethod(env, cls, mid,tempJstring,portType,jobj);//dima
+ 				(*env)->DeleteLocalRef(env,tempJstring);
                 numPorts++;
-                (*env)->CallVoidMethod(env, jobj, mid,
-                    NewStringUTF(getRegistryString(theObject, kIOCalloutDeviceKey)));
-                numPorts++;
+//end dima
             }
         }
     }
@@ -1742,7 +1760,7 @@ JNIEXPORT jboolean JNICALL RXTXCommDriver(registerKnownPorts)(JNIEnv *env,
 	switch(portType) {
 		case PORT_TYPE_SERIAL:
 #if defined(__APPLE__)
-			if (registerKnownSerialPorts(env, jobj) > 0) {
+			if (registerKnownSerialPorts(env, jobj, PORT_TYPE_SERIAL) > 0) {//dima
 				result = JNI_TRUE;
 			}
 #endif
