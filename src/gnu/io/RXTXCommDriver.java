@@ -16,10 +16,8 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
-package gnu.io;
-
+package javax.comm;
 import java.io.*;
-import javax.comm.*;
 
 /**
    This is the JavaComm for Linux driver.  
@@ -28,8 +26,11 @@ public class RXTXCommDriver implements CommDriver {
 
 
 	static String OS;
+	private static boolean debug = true;
+
         static 
 	{ 
+		if(debug ) System.out.println("RXTXCommDriver {}");
 		OS = System.getProperty("os.name");
 		if(OS.equals("Win95"))
 		{
@@ -46,6 +47,8 @@ public class RXTXCommDriver implements CommDriver {
 	private final String[] getPortPrefixes(String AllKnownPorts[]) {
 		int i=0;
 		String PortString[]=new String [256];
+
+		if (debug) System.out.println("RXTXCommDriver:getPortPrefixes()");
 		for(int j=0;j<AllKnownPorts.length;j++){
 			if(IsDeviceGood(AllKnownPorts[j])) {
 				PortString[i++]=AllKnownPorts[j];
@@ -63,13 +66,14 @@ public class RXTXCommDriver implements CommDriver {
 		String Prefix[],
 		int PortType
 	) {
+		if (debug) System.out.println("RXTXCommDriver:RegisterValidPorts()");
 		for( int i = 0; i < devs.length; i++ ) {
 			for( int p = 0; p < Prefix.length; p++ ) {
 				if( devs[ i ].startsWith( Prefix[ p ] ) ) {
 					String portName = "/dev/" + devs[ i ];
 					File port = new File( portName );
 					if( port.canRead() && port.canWrite() ) 
-						CommPortIdentifier.addPortName( 
+					 CommPortIdentifier.addPortName( 
 							portName,
 							PortType,
 							this 
@@ -103,6 +107,7 @@ public class RXTXCommDriver implements CommDriver {
 	public void initialize() {
 		File dev = new File( "/dev" );
 		String[] devs = dev.list();
+		if (debug) System.out.println("RXTXCommDriver:initialize()");
 		String[] AllKnownSerialPorts={
 			"modem",// linux symbolic link to modem.
 			"cuaa", // FreeBSD Serial Ports
@@ -126,6 +131,8 @@ public class RXTXCommDriver implements CommDriver {
 		String[] AllKnownParallelPorts={
 			"lp"    // linux printer port
 		};
+		String[] AllKnownRS485Ports={};
+		String[] AllKnownI2CPorts={};
 		RegisterValidPorts(
 			devs,
 			getPortPrefixes(AllKnownSerialPorts),
@@ -135,6 +142,16 @@ public class RXTXCommDriver implements CommDriver {
 			devs,
 			getPortPrefixes(AllKnownParallelPorts),
 			CommPortIdentifier.PORT_PARALLEL
+		);
+		RegisterValidPorts(
+			devs,
+			getPortPrefixes(AllKnownRS485Ports),
+			CommPortIdentifier.PORT_RS485
+		);
+		RegisterValidPorts(
+			devs,
+			getPortPrefixes(AllKnownI2CPorts),
+			CommPortIdentifier.PORT_I2C
 		);
 	}
 
@@ -148,6 +165,7 @@ public class RXTXCommDriver implements CommDriver {
 	 * <p>From the NullDriver.java CommAPI sample.
 	 */
 	public CommPort getCommPort( String portName, int portType ) {
+		if (debug) System.out.println("RXTXCommDriver:getCommPort()");
 		try {
 			if (portType==CommPortIdentifier.PORT_SERIAL)
 			{
@@ -156,6 +174,14 @@ public class RXTXCommDriver implements CommDriver {
 			else if (portType==CommPortIdentifier.PORT_PARALLEL)
 			{
 				return new LPRPort( portName ); 
+			}
+			else if (portType==CommPortIdentifier.PORT_I2C)
+			{
+				return new I2C( portName ); 
+			}
+			else if (portType==CommPortIdentifier.PORT_RS485)
+			{
+				return new RS485( portName ); 
 			}
 		} catch( IOException e ) {
 			e.printStackTrace();

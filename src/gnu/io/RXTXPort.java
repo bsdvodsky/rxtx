@@ -16,11 +16,9 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
-package gnu.io;
-
+package javax.comm;
 import java.io.*;
 import java.util.*;
-import javax.comm.*;
 import java.lang.Math;
 
 
@@ -38,6 +36,7 @@ final class RXTXPort extends SerialPort {
 
 	/** Initialize the native library */
 	private native static void Initialize();
+	private static boolean debug=true;
 
 
 	/** Actual SerialPort wrapper class */
@@ -45,6 +44,7 @@ final class RXTXPort extends SerialPort {
 
 	/** Open the named port */
 	public RXTXPort( String name ) throws IOException {
+		if (debug) System.out.println("RXTXPort:RXTXPort("+name+")");
 		fd = open( name );
 	}
 	private native int open( String name ) throws IOException;
