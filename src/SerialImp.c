@@ -112,8 +112,10 @@ int cfmakeraw ( struct termios *term )
 #endif /* HAVE_GRP_H */
 
 extern int errno;
+#ifdef TRENT_IS_HERE
 #define DEBUG
 #define DEBUG_MW  /* use Mathwork's mexPrintf for debugging */
+#endif /* TRENT_IS_HERE */
 #include "SerialImp.h"
 
 /* this is so diff will not generate noise when merging 1.4 and 1.5 changes

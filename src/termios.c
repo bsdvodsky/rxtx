@@ -1,7 +1,9 @@
+#ifdef TRENT_IS_HERE
 #define TRACE
 #define DEBUG
 #define DEBUG_MW  /* use Mathwork's mexPrintf for debugging */
 #ifdef DEBUG_MW
+#endif /* TRENT_IS_HERE */
 extern void mexWarnMsgTxt( const char * );
 extern int mexPrintf( const char *, ... );
 #	define printf mexPrintf
