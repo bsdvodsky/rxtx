@@ -227,7 +227,6 @@ JNIEXPORT jint JNICALL RXTXPort(open)(
 	ENTER( "RXTXPort:open");
 	if ( LOCK( filename) )
 	{
-//		(*env)->ReleaseStringUTFChars( env, jstr, filename );//dima
 		sprintf( message, "locking has failed for %s\n", filename );
 		report( message );
 		goto fail;
@@ -241,9 +240,8 @@ JNIEXPORT jint JNICALL RXTXPort(open)(
 	do {
 		fd=OPEN (filename, O_RDWR | O_NOCTTY | O_NONBLOCK );
 	}  while (fd < 0 && errno==EINTR);
-//	(*env)->ReleaseStringUTFChars( env, jstr, filename );//dima
 	if( fd < 0 ) goto fail;
-	(*env)->ReleaseStringUTFChars( env, jstr, filename );//dima
+	(*env)->ReleaseStringUTFChars( env, jstr, filename );
 
 	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
 	ttyset.c_iflag = INPCK;
@@ -647,9 +645,12 @@ JNIEXPORT void JNICALL RXTXPort(writeByte)( JNIEnv *env,
 		result=WRITE (fd, &byte, sizeof(unsigned char));
 	}  while (result < 0 && errno==EINTR);
 	LEAVE( "RXTXPort:writeByte" );
-	return;
 	if(result >= 0)
 	{
+#ifdef VERBOSE_DEBUG
+		report("sending OUTPUT_BUFFER_EMPTY\n");
+#endif /* VERBOSE_DEBUG */
+		send_event( env, jobj, SPE_OUTPUT_BUFFER_EMPTY, 1 );
 		return;
 	}
 	throw_java_exception( env, IO_EXCEPTION, "writeByte",
@@ -671,26 +672,31 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 	jobject jobj, jbyteArray jbarray, jint offset, jint count )
 {
 	int fd = get_java_var( env, jobj,"fd","I" );
-	int result=0,total=0,i;
-	unsigned char *bytes = (unsigned char *)malloc( count );
+	int result=0,total=0;
 	jbyte *body = (*env)->GetByteArrayElements( env, jbarray, 0 );
+#ifdef VERBOSE_DEBUG
+	char message[1000];
+#endif /* VERBOSE_DEBUG */
 #if defined ( __sun__ )
 	struct timespec retspec, tspec;
 
 	retspec.tv_sec = 0;
 	retspec.tv_nsec = 50000;
-#endif /* __sun */
+#endif /* __sun__ */
 
 	ENTER( "writeArray" );
-	for( i = 0; i < count; i++ ) bytes[ i ] = body[ i + offset ];
-	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
+#ifdef VERBOSE_DEBUG
+	/* warning Will Rogers */
+	sprintf( message, "::::RXTXPort:writeArray(%s);\n", (char *) body );
+	report( message );
+#endif /* VERBOSE_DEBUG */
 	do {
-		result=WRITE (fd, bytes + total, count - total);
+		result=WRITE (fd, body + total, count - total);
 		if(result >0){
 			total += result;
 		}
-	}  while ((total<count)||(result < 0 && errno==EINTR));
-	free( bytes );
+	}  while ( ( total < count ) || (result < 0 && errno==EINTR ) );
+	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
 	/*
 		50 ms sleep to make sure read can get in
 
@@ -710,11 +716,15 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 	//} while( tspec.tv_nsec != 0 );
 #else
 	//usleep(50000);
-	usleep(5000);
 #endif /* __sun__ */
 	LEAVE( "RXTXPort:writeArray" );
 	if( result < 0 ) throw_java_exception( env, IO_EXCEPTION,
 		"writeArray", strerror( errno ) );
+#ifdef VERBOSE_DEBUG
+	report("sending OUTPUT_BUFFER_EMPTY\n");
+#endif /* VERBOSE_DEBUG */
+	send_event( env, jobj, SPE_OUTPUT_BUFFER_EMPTY, 1 );
+	//usleep(50);
 }
 
 /*----------------------------------------------------------
@@ -735,17 +745,24 @@ JNIEXPORT void JNICALL RXTXPort(nativeDrain)( JNIEnv *env,
 {
 	int fd = get_java_var( env, jobj,"fd","I" );
 	int result, count=0;
+
+#ifdef VERBOSE_DEBUG
 	char message[80];
+#endif /* VERBOSE_DEBUG */
 
 	ENTER( "SerialImp.c:drain()" );
 	do {
+#ifdef VERBOSE_DEBUG
 		report( "trying tcdrain\n" );
+#endif /* VERBOSE_DEBUG */
 		result=tcdrain(fd);
 		count++;
 	}  while (result && errno==EINTR && count <5);
 
+#ifdef VERBOSE_DEBUG
 	sprintf( message, "RXTXPort:drain() returns: %i\n", result ); 
 	report( message );
+#endif /* VERBOSE_DEBUG */
 	LEAVE( "RXTXPort:drain()" );
 	if( result ) throw_java_exception( env, IO_EXCEPTION, "nativeDrain",
 		strerror( errno ) );
@@ -1085,11 +1102,31 @@ int read_byte_array( int fd, unsigned char *buffer, int length, int timeout )
 			if( timeout == 0 ) psleep = NULL;
 			ret=select( fd + 1, &rfds, NULL, NULL, psleep );
 		}  while (ret < 0 && errno==EINTR);
-		if( ret == 0 ) break;
-		if( ret < 0 ) return -1;
+		if( ret == 0 )
+		{
+			report("read_byte_array: select returned 0");
+			LEAVE( "read_byte_array" );
+			break;
+		}
+		if( ret < 0 )
+		{
+			report("read_byte_array: select returned -1");
+			LEAVE( "read_byte_array" );
+			return -1;
+		}
 		ret = READ( fd, buffer + bytes, left );
-		if( ret == 0 ) break;
-		if( ret < 0 ) return -1;
+		if( ret == 0 )
+		{
+			report("read_byte_array: read returned 0 bytes");
+			LEAVE( "read_byte_array" );
+			break;
+		}
+		else if( ret < 0 )
+		{
+			report("read_byte_array: read returned -1");
+			LEAVE( "read_byte_array" );
+			return -1;
+		}
 		bytes += ret;
 		left -= ret;
 	}
@@ -1173,38 +1210,27 @@ JNIEXPORT jint JNICALL RXTXPort(readArray)( JNIEnv *env,
 {
 	int bytes;
 	jbyte *body;
-	unsigned char *buffer;
 	int fd = get_java_var( env, jobj, "fd", "I" );
 	int timeout = get_java_var( env, jobj, "timeout", "I" );
 
 	ENTER( "readArray" );
 	if( length > SSIZE_MAX || length < 0 ) {
+		report("RXTXPort:readArray length > SSIZE_MAX");
 		LEAVE( "RXTXPort:readArray" );
 		throw_java_exception( env, ARRAY_INDEX_OUT_OF_BOUNDS,
 			"readArray", "Invalid length" );
 		return -1;
 	}
-
-	buffer = (unsigned char *)malloc( sizeof( unsigned char ) * length );
-	if( buffer == 0 ) {
-		LEAVE( "RXTXPort:readArray" );
-		throw_java_exception( env, OUT_OF_MEMORY, "readArray",
-			"Unable to allocate buffer" );
-		return -1;
-	}
-
-	bytes = read_byte_array( fd, buffer, length, timeout );
+	body = (*env)->GetByteArrayElements( env, jbarray, 0 );
+	bytes = read_byte_array( fd, body, length, timeout );
+	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
 	if( bytes < 0 ) {
-		free( buffer );
+		report("RXTXPort:readArray bytes < 0");
 		LEAVE( "RXTXPort:readArray" );
 		throw_java_exception( env, IO_EXCEPTION, "readArray",
 			strerror( errno ) );
 		return -1;
 	}
-	body = (*env)->GetByteArrayElements( env, jbarray, 0 );
-	memcpy(body + offset, buffer, bytes);
-	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
-	free( buffer );
 	LEAVE( "RXTXPort:readArray" );
 	return (bytes ? bytes : -1);
 }
@@ -1297,7 +1323,9 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 {
 	int fd, ret, change;
 	fd_set rfds;
+#ifdef VERBOSE_DEBUG
 	char message[80];
+#endif /* VERBOSE_DEBUG */
 	unsigned int mflags, omflags;
 	jboolean interrupted = 0;
 #if defined TIOCSERGETLSR
@@ -1327,7 +1355,9 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 	/* Some multiport serial cards do not implement TIOCGICOUNT ... */
 	/* So use the 'dumb' mode to enable using them after all! JK00 */
 	if( ioctl( fd, TIOCGICOUNT, &osis ) < 0 ) {
+#ifdef VERBOSE_DEBUG
 		report("Port does not support TIOCGICOUNT events\n" );
+#endif /* VERBOSE_DEBUG */
 		has_tiocgicount = 0;
 	}
 #endif /*  TIOCGICOUNT */
@@ -1364,13 +1394,15 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 		interrupted = is_interrupted(env, jobj);
 		if(interrupted)
 		{
-			report("eventLoop detected interrupt\n" );
+			report("eventLoop detected interrupt. returning\n" );
 			LEAVE( "RXTXPort:eventLoop" );
 			return;
 		}
 		else
 		{
+#ifdef VERBOSE_DEBUG
 			report("eventLoop did not detect MonThread closing\n" );
+#endif /* VERBOSE_DEBUG */
 		}
 
 
@@ -1389,7 +1421,9 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 			}
 			else if( change )
 			{
+#ifdef VERBOSE_DEBUG
 				report("sending OUTPUT_BUFFER_EMPTY\n");
+#endif /* VERBOSE_DEBUG */
 				send_event( env, jobj, SPE_OUTPUT_BUFFER_EMPTY,
 					1 );
 			}
@@ -1464,8 +1498,10 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 
 		Things just start spinning out of control after that.
 	*/
+#ifdef DEBUG_VERBOSE
 		sprintf( message, "change is %i\n", change );
 		report( message );
+#endif /* DEBUG_VERBOSE */
 		if( change )
 		{
 			if(!send_event( env, jobj, SPE_DATA_AVAILABLE, 1 ))
@@ -1478,7 +1514,7 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 			//	} while( tspec.tv_nsec != 0 );
 #else
 				//usleep(10000);
-				usleep(100000);
+				//usleep(50000);
 #endif /* __sun__ */
 			}
 		}
@@ -1507,7 +1543,7 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 )
 {
 	struct termios ttyset;
-	char c;
+	char c, message[80];
 	int fd;
 	const char *name = (*env)->GetStringUTFChars(env, tty_name, 0);
 	int ret = JNI_TRUE;
@@ -1516,9 +1552,13 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 #ifdef TRENT_IS_HERE_DEBUGGING_ENUMERATION
 	/* vmware lies about which ports are there causing irq conflicts */
 	/* this is for testing only */
-	report( name );
-	if( !strcmp( name, "COM1" )  || !strcmp( name, "COM2" ) )
+	if( !strcmp( name, "COM1" ) )
+	{
+		sprintf( message, " %s is good!\n", name );
+		report( message );
 		return( JNI_TRUE );
+	}
+	return( JNI_FALSE );
 #endif /* TRENT_IS_HERE_DEBUGGING_ENUMERATION */
 
 	/* 
@@ -1707,8 +1747,8 @@ registerKnownSerialPorts(JNIEnv *env, jobject jobj, jint portType)//dima
     {
         printf("createSerialIterator failed\n");
     } else {
-		jclass cls;//dima
-		jmethodID mid;//dima
+	jclass cls;//dima
+	jmethodID mid;//dima
         cls = (*env)->FindClass(env,"javax/comm/CommPortIdentifier");//dima
         if (cls == 0) {//dima
             report("can't find class of javax/comm/CommPortIdentifier\n");//dima
@@ -1727,7 +1767,7 @@ registerKnownSerialPorts(JNIEnv *env, jobject jobj, jint portType)//dima
                 (*env)->CallStaticVoidMethod(env, cls, mid,tempJstring,portType,jobj);//dima
  				(*env)->DeleteLocalRef(env,tempJstring);
                 numPorts++;
-                
+
  				tempJstring = (*env)->NewStringUTF(env,getRegistryString(theObject, kIOCalloutDeviceKey));
                (*env)->CallStaticVoidMethod(env, cls, mid,tempJstring,portType,jobj);//dima
  				(*env)->DeleteLocalRef(env,tempJstring);
@@ -1760,7 +1800,8 @@ JNIEXPORT jboolean JNICALL RXTXCommDriver(registerKnownPorts)(JNIEnv *env,
 	switch(portType) {
 		case PORT_TYPE_SERIAL:
 #if defined(__APPLE__)
-			if (registerKnownSerialPorts(env, jobj, PORT_TYPE_SERIAL) > 0) {//dima
+			if (registerKnownSerialPorts(env, jobj,
+				PORT_TYPE_SERIAL) > 0) {//dima
 				result = JNI_TRUE;
 			}
 #endif
