@@ -96,6 +96,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_open(JNIEnv *env, jobject jobj, jstr
                              0,            // Port attributes
                              NULL);        // Handle to port with attribute to copy
   // If it fails to open the port, return FALSE.
+
   if ( hPort == INVALID_HANDLE_VALUE ) 
   { // Could not open the port.
     CreateErrorMsg(GetLastError(), lpMsgBuf);
@@ -801,7 +802,7 @@ writeByte
    exceptions:  IOException
  * Class:     gnu_io_RXTXPort
  * Method:    writeByte
- * Signature: (IZ)V
+ * Signature: (I)V
  */
 JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeByte(JNIEnv *env, jobject jobj, jint b, jboolean i)
 { 
@@ -888,17 +889,16 @@ nativeDrain
  * Method:    nativeDrain
  * Signature: ()V
  */
-JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_nativeDrain(JNIEnv *env, jobject jobj)
+JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_nativeDrain(JNIEnv *env, jobject jobj, jboolean i)
 { 
-  //COMSTAT Stat;
-  //DWORD dwErrors;
+  COMSTAT Stat;
+  DWORD dwErrors;
   HANDLE hPort = get_fd(env, jobj);
-
   IF_DEBUG
   (
     printj(env, L"--- RXTXPort.nativeDrain() called\n");
   )
-  
+  /*
   if(!FlushFileBuffers(hPort))
   {
     IF_DEBUG
@@ -907,18 +907,20 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_nativeDrain(JNIEnv *env, jobject
     )
     return JNI_FALSE;
   }
-   
-  /* Alternative implementation:
+   */
+  // Alternative implementation:
+/*  printj(env, L"enter RXTXPort.nativeDrain()\n");
   do
   {
     if(!ClearCommError(hPort, &dwErrors, &Stat))
-    {
-      GetLastError();
-      return;
+    {      
+      printj(env, L"failed RXTXPort.nativeDrain() %ld\n", GetLastError());
+      return JNI_FALSE;
     }
     Sleep(10);
-  } while(Stat.cbOutQue > 0);*/
+  } while(Stat.cbOutQue > 0);
 
+  printj(env, L"success RXTXPort.nativeDrain()\n");*/
   return JNI_FALSE;
 }
 
@@ -1103,6 +1105,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop(JNIEnv *env, jobject jobj)
   {
     if(env->GetBooleanField(jobj, jfMonThreadisInterrupted) == JNI_TRUE)
     {
+      //printj(env,L"1\n");
       IF_DEBUG
       (
         printj(env, L"--- RXTXPort.eventLoop() interrupted - exiting\n");
@@ -1116,6 +1119,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop(JNIEnv *env, jobject jobj)
 
     if(EventInfo->eventThreadReady)
     { // Thread is ready to work - pass signal to Java
+      //printj(env,L"2\n");
       IF_DEBUG
       (
         printj(env, L"--- RXTXPort.eventLoop() - EventThread is ready\n");
@@ -1126,6 +1130,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop(JNIEnv *env, jobject jobj)
 
     if((dwWaitResult = WaitForSingleObject(EventInfo->eventHandle, 250)) == WAIT_FAILED)
     {
+      //printj(env,L"3\n");
       IF_DEBUG
       (
         LPCWSTR lpMsgBuf;
@@ -1134,6 +1139,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop(JNIEnv *env, jobject jobj)
         ReleaseErrorMsg(lpMsgBuf);
       )
       CloseHandle(EventInfo->eventHandle);
+	    env->SetBooleanField(jobj, jfMonitorThreadCloseLock, JNI_FALSE);
       return;
     }
 
@@ -1149,7 +1155,9 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop(JNIEnv *env, jobject jobj)
         (
           printj(env, L"!!! eventLoop - SendEvents() result: %d\n", RetVal);
         )
+        //printj(env,L"4");
         CloseHandle(EventInfo->eventHandle);
+  	    env->SetBooleanField(jobj, jfMonitorThreadCloseLock, JNI_FALSE);
         return;
       }
     }
@@ -1290,6 +1298,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_nativeClose(JNIEnv *env, jobject job
     printj(env, L"--- RXTXPort.nativeClose(%s) called\n", wszName);
     env->ReleaseStringChars(name, wszName);
   )
+  printj(env, L"enter RXTXPort.nativeClose()\n");
 
   if (!CloseHandle(hPort))
   {
