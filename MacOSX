@@ -1,4 +1,11 @@
-This is MacOSX.  Last modified: Thu Sep 20 09:22:17 MDT 2001
+This is MacOSX.  Last modified: Thu Oct  4 19:34:31 MDT 2001
+
+--------------------- Code Warrior Builds -------------------
+
+If a Headers directory turns up missing in CVS A tarball was included in
+PB/LibSerial just in case.
+
+--------------------- Gnu Tool Builds -----------------------
 
 If you are going to try building rxtx on Mac OS X, we recommend you use
 rxtx 1.5.   1.4 would require substantial modification to the Makefile to
