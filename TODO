@@ -1,3 +1,10 @@
+There appears to be an off by one read()/dataavailable error when switching 
+timeouts/thresholds.  a read() fires up and waits without timeout/x bytes.  After the first read everything is ok.
+
+Buffer Size is just a var.  No memory is allocated.  This was done to duplicate the
+behavior in the behaviour table in javax.comm.CommPort.html.  Its not clear to me 
+if the buffers are just mallocs or modem buffers.  Any experts there?
+
 While looking through the blackdown mail list, it was obvious that some people
 really want printer support.  Here is a chance to put it in themselves.
 

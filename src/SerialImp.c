@@ -473,7 +473,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_NativeenableReceiveTimeout(
 	struct termios ttyset;
 
 	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
-	ttyset.c_cc[ VTIME ] = vtime;
+	ttyset.c_cc[ VTIME ] = vtime/100;
 	if( tcsetattr( fd, TCSAFLUSH, &ttyset ) < 0 ) goto fail;
 	return;
 fail:
@@ -497,7 +497,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_NativegetReceiveTimeout(
 	struct termios ttyset;
 
 	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
-	return(ttyset.c_cc[ VTIME ]);
+	return(ttyset.c_cc[ VTIME ] * 100);
 fail:
 	throw_java_exception( env, IO_EXCEPTION, "getReceiveTimeout", strerror( errno ) );
 	return -1;
@@ -755,7 +755,7 @@ int read_byte_array( int fd, unsigned char *buffer, int length, int timeout )
 
 	while( bytes < length ) {
 #ifdef DEBUG_TIMEOUT
-		printf(">bytes= %i,lengths=%i,timeout=%i()\n",bytes,length,timeout);
+		printf(">bytes= %i,length=%i,timeout=%i\n",bytes,length,timeout);
 #endif /* DEBUG_TIMEOUT */
 		if( timeout > 0 ) {
          /* FIXME: In Linux, select updates the timeout automatically, so
@@ -786,6 +786,54 @@ int read_byte_array( int fd, unsigned char *buffer, int length, int timeout )
 		left -= ret;
 	}
 	return bytes;
+}		
+/*----------------------------------------------------------
+NativeEnableRecieveThreshold
+   accept:      int  threshold 
+   perform:     Set c_cc->VMIN to threshold
+   return:      void
+   exceptions:  IOException
+   comments:    Probably dont need to mess with VTIME
+
+* Both MIN and TIME are zero.
+
+In this case, `read' always returns immediately with as many
+characters as are available in the queue, up to the number
+requested.  If no input is immediately available, `read' returns a
+value of zero.
+
+* MIN is zero but TIME has a nonzero value.
+
+In this case, `read' waits for time TIME for input to become
+available; the availability of a single byte is enough to satisfy
+the read request and cause `read' to return.  When it returns, it
+returns as many characters as are available, up to the number
+requested.  If no input is available before the timer expires,
+`read' returns a value of zero.
+
+* TIME is zero but MIN has a nonzero value.
+
+In this case, `read' waits until at least MIN bytes are available
+in the queue.  At that time, `read' returns as many characters as
+are available, up to the number requested.  `read' can return more
+than MIN characters if more than MIN happen to be in the queue.
+----------------------------------------------------------*/ 
+ 
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_NativeEnableRecieveThreshold(JNIEnv *env, jobject jobj, jint threshold, jint vtime)
+{
+	jclass jclazz = (*env)->GetObjectClass( env, jobj );
+	jfieldID jfield = (*env)->GetFieldID( env, jclazz, "fd", "I" );
+	int fd = (int)( (*env)->GetIntField( env, jobj, jfield ) );
+	struct termios ttyset;
+
+	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
+	ttyset.c_cc[ VMIN ] = threshold;
+	ttyset.c_cc[ VTIME ] = vtime;
+	if( tcsetattr( fd, TCSAFLUSH, &ttyset ) < 0 ) goto fail;
+
+	return;
+fail:
+	throw_java_exception( env, IO_EXCEPTION, "Threshold", strerror( errno ) );
 }
 
 /*----------------------------------------------------------

@@ -21,6 +21,7 @@ package gnu.io;
 import java.io.*;
 import java.util.*;
 import javax.comm.*;
+import java.lang.Math;
 
 
 /**
@@ -141,7 +142,6 @@ final class RXTXPort extends SerialPort {
 			NativeenableReceiveTimeout( t );
 		}
 		else {
-			timeout = 0;
 			NativeenableReceiveTimeout( 0 );
 		}
 	}
@@ -154,10 +154,11 @@ final class RXTXPort extends SerialPort {
 
 	/** Receive threshold control */
 	
-	private int threshold = 1;
+	private int threshold = 0;
 	
 	public void enableReceiveThreshold( int t ){
 		threshold=t;
+		NativeEnableRecieveThreshold(threshold,timeout);
 	}
 	public void disableReceiveThreshold() { 
 		enableReceiveThreshold(0);
@@ -168,6 +169,7 @@ final class RXTXPort extends SerialPort {
 	public boolean isReceiveThresholdEnabled(){
 		return(threshold>0);
 	}
+	private native void NativeEnableRecieveThreshold(int threshold,int timeout);
 
 	/** Input/output buffers */
 	/** FIXME I think this refers to 
@@ -176,11 +178,24 @@ final class RXTXPort extends SerialPort {
 
 		These are native stubs...
 	*/
-	public native void setInputBufferSize( int size );
-	public native int getInputBufferSize(); 
-	public native void setOutputBufferSize( int size );
-	public native int getOutputBufferSize();
-
+	private int InputBuffer=0;
+	private int OutputBuffer=0;
+	public void setInputBufferSize( int size )
+	{
+		InputBuffer=size;
+	}
+	public int getInputBufferSize()
+	{
+		return(InputBuffer);
+	}
+	public void setOutputBufferSize( int size )
+	{
+		OutputBuffer=size;
+	}
+	public int getOutputBufferSize()
+	{
+		return(OutputBuffer);
+	}
 
 	/** Line status methods */
 	public native boolean isDTR();
@@ -328,22 +343,33 @@ final class RXTXPort extends SerialPort {
 			return readByte();
 		}
 		public int read( byte b[] ) throws IOException {
-			if(threshold>0){
-				return readArray( b, 0, (threshold<b.length?threshold:b.length));
+			System.out.println("threshold "+threshold+" InputBuffer " + InputBuffer);
+			if(InputBuffer>0 && threshold > 0)
+			{
+				return readArray( b, 0, (Math.min(threshold,InputBuffer)));
 			}
-			else {
-				return readArray( b, 0, b.length );
+			else if(threshold>0)
+			{
+				return readArray( b, 0, threshold);
+			}
+			else 
+			{
+				return readArray( b, 0, 1);
 			}
 		}
 		public int read( byte b[], int off, int len ) throws IOException {
 			/* its not clear that this is right */
-			if(threshold>0){
-				return readArray( b, off, (threshold<len?
-							(threshold<b.length?threshold:b.length):
-							(len<b.length?len:b.length)));
+			if(InputBuffer>0 && threshold >0)
+			{
+				return readArray( b, off, (Math.min(Math.min(threshold,len),InputBuffer)));
 			}
-			else {
-				return readArray( b, 0, b.length<len?b.length:len );
+			else if(threshold>0)
+			{
+				return readArray( b, off, threshold);
+			}
+			else 
+			{
+				return readArray( b, off, 1);
 			}
 		}
 		public int available() throws IOException {
