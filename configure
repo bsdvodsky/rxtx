@@ -18,13 +18,13 @@ ac_help="$ac_help
 ac_help="$ac_help
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]"
 ac_help="$ac_help
-  --enable-RXTXIDENT      RXTXIDENT support (experimental) [default=no]"
+  --enable-RXTXIDENT      RXTX CommPortIdentifier support (not implemented) [default=no]"
 ac_help="$ac_help
-  --enable-PRINTER        PRINTER support (experimental) [default=no]"
+  --enable-PRINTER        PRINTER support (experimental) [default=yes]"
 ac_help="$ac_help
-  --enable-NATIVETHREADS  Use jdk native-threads [default=no]"
+  --enable-NATIVETHREADS  Use jdk native-threads. Overrides environment "
 ac_help="$ac_help
-  --enable-FULL_EVENT     Experimental event notification (linux 2.2)"
+  --enable-FULL_EVENT     Full event notification (linux 2.2)"
 ac_help="$ac_help
   --enable-JDK_HOME       get JDK location from \$JDK_HOME"
 ac_help="$ac_help

@@ -66,12 +66,12 @@ fi
 	*);;
 esac]
 AC_ARG_ENABLE(RXTXIDENT,
-   [  --enable-RXTXIDENT      RXTXIDENT support (experimental) [default=no]], echo $enable_RXTXIDENT, enable_RXTXIDENT="no")
+   [  --enable-RXTXIDENT      RXTX CommPortIdentifier support (not implemented) [default=no]], echo $enable_RXTXIDENT, enable_RXTXIDENT="no")
    if test x$enable_RXTXIDENT = xyes; then  
 	IDENTIFIERS="\$(TOP)/gnu/io/CommPortIdentifier.class \$(TOP)/gnu/io/CommPortEnumerator.class \$(TOP)/gnu/io/CpoList.class \$(TOP)/gnu/io/CpoListEntry.class \$(TOP)/gnu/io/OwnershipEventThread.class"
    fi
 AC_ARG_ENABLE(PRINTER,
-   [  --enable-PRINTER        PRINTER support (experimental) [default=no]], echo $enable_PRINTER, enable_PRINTER="no")
+   [  --enable-PRINTER        PRINTER support (experimental) [default=yes]], echo $enable_PRINTER, enable_PRINTER="no")
    if test x$enable_PRINTER = xyes; then  
 	TARGETLIB="\$(TOP)/\$(target_alias)/libSerial.la \$(TOP)/\$(target_alias)/libParallel.la"
    else
@@ -87,14 +87,14 @@ AC_ARG_ENABLE(PRINTER,
    fi
 
 AC_ARG_ENABLE(NATIVETHREADS,
-   [  --enable-NATIVETHREADS  Use jdk native-threads [default=no]], echo $enable_NATIVETHREADS, enable_NATIVETHREADS="no")
+   [  --enable-NATIVETHREADS  Use jdk native-threads. Overrides environment ], echo $enable_NATIVETHREADS, enable_NATIVETHREADS="no")
    if test x$enable_NATIVETHREADS = xyes; then 
       THREAD_FLAG="native"
    else
       THREAD_FLAG=""
    fi
 AC_ARG_ENABLE(FULL_EVENT,
-   [  --enable-FULL_EVENT     Experimental event notification (linux 2.2)],
+   [  --enable-FULL_EVENT     Full event notification (linux 2.2)],
    if test x$enable_FULL_EVENT = xyes; then 
 	CFLAGS="$CFLAGS -DFULL_EVENT"
 	THREADS_FLAG="native"
