@@ -1,9 +1,6 @@
 /*-------------------------------------------------------------------------
-|   Win32 support By Wayne Roberts wroberts1@home.com
-|   Copyright 1999 by the Free Software Foundation. 
-|
 |   rxtx is a native interface to serial ports in java.
-|   Copyright 1997-1999 by Trent Jarvi trentjarvi@yahoo.com.
+|   Copyright 1997, 1998 by Trent Jarvi jarvi@ezlink.com.
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Library General Public
@@ -24,11 +21,9 @@
 --------------------------------------------------------------------------*/
 #include <windows.h>
 #include <stdio.h>
+#include <errno.h>
 #include "win32termios.h"
 #include "malloc.h"
-
-#define READ_SIZE 2048
-char *bb = NULL;
 
 #define SIZE 64	/* number of serial ports */
 int my_errno;
@@ -68,26 +63,31 @@ int CBR_to_B(int Baud) {
 }
 
 int B_to_CBR(int Baud) {
+	int ret;
+	int br;
 	switch (Baud) {
-		case B75:		return(75);
-		case B110:		return(CBR_110);
-		case B134:		return(134);
-		case B150:		return(150);
-		case B300:		return(CBR_300);
-		case B600:		return(CBR_600);
-		case B1200:		return(CBR_1200);
-		case B1800:		return(1800);
-		case B2400:		return(CBR_2400);
-		case B4800:		return(CBR_4800);
-		case B9600:		return(CBR_9600);
-		case B19200:	return(CBR_19200);
-		case B38400:	return(CBR_38400);
-		case B115200:	return(CBR_115200);
-		case B57600:	return(CBR_57600);
+		case B75:		br = 75;	ret = 75;			break;
+		case B110:		br = 110;	ret = CBR_110;		break;
+		case B134:		br = 134;	ret = 134;			break;
+		case B150:		br = 150;	ret = 150;			break;
+		case B300:		br = 300;	ret = CBR_300;		break;
+		case B600:		br = 600;	ret = CBR_600;		break;
+		case B1200:		br = 1200;	ret = CBR_1200;		break;
+		case B1800:		br = 1800;	ret = 1800;			break;
+		case B2400:		br = 2400;	ret = CBR_2400;		break;
+		case B4800:		br = 4800;	ret = CBR_4800;		break;
+		case B9600:		br = 9600;	ret = CBR_9600;		break;
+		case B19200:	br = 19200;	ret = CBR_19200;	break;
+		case B38400:	br = 38400;	ret = CBR_38400;	break;
+		case B115200:	br = 115200;	ret = CBR_115200;	break;
+		case B57600:	br = 57600;	ret = CBR_57600;	break;
 		default:
+			fprintf(stderr, "B_to_CBR: invalid baudrate: %#o\n", Baud);
 			set_errno(EINVAL);
 			return -1;
 	}
+//	printf("[B_to_CBR: %d]\n", br);
+	return ret;
 }
 
 int bytesize_to_termios(int ByteSize){
@@ -162,7 +162,7 @@ BOOL FillDCB(DCB *dcb) {
     return ( TRUE ) ;
 } */
 
-int win32close(int fd){
+int close(int fd) {
 	return CloseHandle(tl[fd]->hComm);
 }
 
@@ -179,6 +179,7 @@ BOOL init_termios(struct termios *ttyset) {
 	if (!ttyset)
 		return FALSE;
 	memset(ttyset, 0, sizeof(struct termios));
+	cfsetospeed(ttyset, B9600);
 	cfmakeraw(ttyset);
 	ttyset->c_cc[VINTR] = 0x03;		/* 0: C-c */
 	ttyset->c_cc[VQUIT] = 0x1c;		/* 1: C-\ */
@@ -198,14 +199,14 @@ BOOL init_termios(struct termios *ttyset) {
 	/* default VTIME = 0, VMIN = 1: read blocks forever until one byte */
 }
 
-int win32open(char *filename, int flags) {
+int serial_open(const char *filename, int flags) {
 	int fd;
 	COMMPROP cp;
 	DCB	dcb;
 	for (fd = 0; fd<SIZE; fd++) {
 		if (!tl[fd]) continue;
 		if (!strcmp(filename, tl[fd]->filename)) {
-			printf("win32open: %s already open\n", filename);
+			printf("open: %s already open\n", filename);
 			return -1;
 		}
 	}
@@ -215,18 +216,23 @@ int win32open(char *filename, int flags) {
 
 //	printf("fd: %d\n", fd);
 	if (fd == SIZE) {
-		printf("win32open: no more free ports");
+		printf("open: no more free ports");
 		return -1;
 	}
 	tl[fd] = malloc(sizeof(struct termios_list));
-	init_termios(&tl[fd]->ttyset);
+
 	if (!tl[fd]) {
-		printf("win32open: out of memory\n");
+		printf("open: out of memory\n");
 		return -1;
 	}
 	tl[fd]->filename = strdup(filename);
-	tl[fd]->hComm = CreateFile(filename, GENERIC_READ | GENERIC_WRITE,
-		0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+	tl[fd]->hComm = CreateFile(filename,
+		GENERIC_READ | GENERIC_WRITE,
+		0,
+		0,
+		OPEN_EXISTING,
+		0,	//		FILE_FLAG_OVERLAPPED,
+		0);
 	if (tl[fd]->hComm == INVALID_HANDLE_VALUE) {
 		printf("cannot open %s\n", filename);
 		free(tl[fd]);
@@ -247,51 +253,42 @@ int win32open(char *filename, int flags) {
        printf("GetCommState\n");
        return -1;
 	}
-	dcb.fDtrControl = DTR_CONTROL_ENABLE;
-	dcb.fRtsControl = RTS_CONTROL_ENABLE;
-    if (!SetCommState(tl[fd]->hComm, &dcb)) {
-       printf("SetCommState\n");
-       return(-1);
-    }
+	init_termios(&tl[fd]->ttyset);
+	tcsetattr(fd, 0, &tl[fd]->ttyset);	/* set default condition */
+	printf("open: ospeed: %#o\n", cfgetospeed(&tl[fd]->ttyset));
 	
-	if (!bb)
-		bb = malloc(READ_SIZE);	/* initialize read buffer */
 	return fd;
 }
 
-int win32write(int fd, char *Str, int length) {
+int serial_write(int fd, char *Str, int length) {
+	DWORD nBytes;
     /***** output mode flags (c_oflag) *****/
 	/* FIXME: OPOST: enable ONLCR, OXTABS & ONOEOT */
 	/* FIXME: ONLCR: convert newline char to CR & LF */
 	/* FIXME: OXTABS: convert tabs to spaces */
 	/* FIXME: ONOEOT: discard ^D (004) */
-   DWORD nBytes;
-   if (!WriteFile(tl[fd]->hComm, Str, length, &nBytes, NULL)) {
-      ClearError(tl[fd]->hComm);
-      nBytes=-1;
-   }
-   FlushFileBuffers(tl[fd]->hComm);
-   return nBytes;
+	if (!WriteFile(tl[fd]->hComm, Str, length, &nBytes, NULL)) {
+		ClearError(tl[fd]->hComm);
+		nBytes=-1;
+	}
+	FlushFileBuffers(tl[fd]->hComm);
+	return nBytes;
 }
 
-int win32read(int fd, char *b, int size) {
+int serial_read(int fd, void *vb, int size) {
 	/* FIXME: CREAD: without this, data cannot be read */
 
 	/* FIXME: PARMRK: mark framing & parity errors */
 	/* FIXME: IGNCR: ignore \r */
 	/* FIXME: ICRNL: convert \r to \n */
 	/* FIXME: INLCR: convert \n to \r */
-	DWORD nBytes = 0;
-	int err, i;
+	DWORD nBytes = 0, total = 0;
+	int err;
 	int vmin = tl[fd]->ttyset.c_cc[VMIN];
-	if (size > READ_SIZE) {
-		printf("win32read: read size too large: %d", size);
-		return -1;
-	}
-	while (nBytes <= vmin) {
-//		printf("win32read: size: %d\n", size);
-		if (!ReadFile(tl[fd]->hComm, bb, size, &nBytes, NULL)) {
-			err = GetLastError ();
+	char *b = (char *)vb;
+	while (nBytes <= vmin && size > 0) {
+		if (!ReadFile(tl[fd]->hComm, b, size, &nBytes, NULL)) {
+			err = GetLastError();
 			switch (err) {
 				case ERROR_BROKEN_PIPE:
 					nBytes = 0;
@@ -304,51 +301,61 @@ int win32read(int fd, char *b, int size) {
 		}
 		if (vmin == 0) break;
 		size -= nBytes;
-		bb += nBytes;
+		b += nBytes;
+		total += nBytes;
 	}
-	for(i=0;i<nBytes;i++)
-		b[i]=bb[i];
-	return nBytes;
+	return total;
 }  
 
-int win32cfsetospeed(struct termios *s_termios, speed_t speed) {
-    s_termios->c_ispeed=s_termios->c_ospeed=speed;
+int cfsetospeed(struct termios *s_termios, speed_t speed) {
+	if (speed & ~CBAUD) {
+		fprintf(stderr, "cfsetospeed: not speed: %#o\n", speed);
+		return 0;
+	}
+    s_termios->c_ispeed = s_termios->c_ospeed = speed;
+	s_termios->c_cflag &= ~CBAUD;	/* clear baudrate */
+	s_termios->c_cflag |= speed;
 	return 1;
 }
 
-int win32cfsetispeed(struct termios *s_termios, speed_t speed) {
-    s_termios->c_ispeed=s_termios->c_ospeed=speed;
-	return 1;
+int cfsetispeed(struct termios *s_termios, speed_t speed) {
+	return cfsetospeed(s_termios, speed);
 }
 
-speed_t win32cfgetospeed(struct termios *s_termios) {
+int cfsetspeed(struct termios *s_termios, speed_t speed) {
+	return cfsetospeed(s_termios, speed);
+}
+
+speed_t cfgetospeed(struct termios *s_termios) {
     return s_termios->c_ospeed;
 }
 
-speed_t win32cfgetispeed(struct termios *s_termios) {
+speed_t cfgetispeed(struct termios *s_termios) {
     return s_termios->c_ispeed;
 }
 
 int TermiosToDCB(struct termios *s_termios, DCB *dcb) {
-	if (s_termios->c_ispeed != s_termios->c_ospeed)
-		return -1;
+	s_termios->c_ispeed = s_termios->c_cflag & CBAUD;
+	s_termios->c_ospeed = s_termios->c_ispeed;
     dcb->BaudRate        = B_to_CBR(s_termios->c_ispeed);
 	return 0;
 }
+
 void DCBToTermios(DCB *dcb, struct termios *s_termios) {
-    s_termios->c_ispeed        = CBR_to_B(dcb->BaudRate);
-    s_termios->c_ospeed        = CBR_to_B(dcb->BaudRate);
+    s_termios->c_ispeed = CBR_to_B(dcb->BaudRate);
+    s_termios->c_ospeed = s_termios->c_ispeed;
+	s_termios->c_cflag = s_termios->c_ispeed & CBAUD;
 }
 
-int win32tcgetattr(int fd, struct termios *s_termios) {
+int tcgetattr(int fd, struct termios *s_termios) {
 	DCB myDCB;
 	COMMTIMEOUTS timeouts;
-//	printf("win32tcgetattr:\n");
+//	printf("tcgetattr:\n");
 	if (!GetCommState(tl[fd]->hComm, &myDCB)) {
 		printf("GetCommState failed\n");
 		return -1;
 	}
-	memset(s_termios, 0, sizeof(struct termios));
+	memcpy(s_termios, &tl[fd]->ttyset, sizeof(struct termios));
 #if 0
 	printf("DCBlength: %ld\n", myDCB.DCBlength);
 	printf("BaudRate: %ld\n", myDCB.BaudRate);
@@ -489,11 +496,13 @@ int win32tcgetattr(int fd, struct termios *s_termios) {
        printf("GetCommTimeouts\n");
        return -1;
 	}
-	s_termios->c_cc[VTIME] = timeouts.ReadTotalTimeoutConstant/100;
+/*	s_termios->c_cc[VTIME] = timeouts.ReadTotalTimeoutConstant/100;
 	s_termios->c_cc[VMIN] = (timeouts.ReadTotalTimeoutConstant == 0) ? 0 :
-		timeouts.ReadIntervalTimeout/timeouts.ReadTotalTimeoutConstant;
+		timeouts.ReadIntervalTimeout/timeouts.ReadTotalTimeoutConstant;	*/
 	s_termios->c_cc[VSTART] = myDCB.XonChar;
 	s_termios->c_cc[VSTOP] = myDCB.XoffChar;
+
+//	printf("tcgetattr: VTIME:%d, VMIN:%d\n", s_termios->c_cc[VTIME], s_termios->c_cc[VMIN]);
 
     /***** line discipline (c_line) (== c_cc[33]) *****/
 
@@ -523,12 +532,14 @@ int win32tcgetattr(int fd, struct termios *s_termios) {
           bit in the `c_cflag' member of the structure TERMIOS-P points
           to.  *Note Control Modes::, for a description of `CIGNORE'.
 */
-int win32tcsetattr(int fd, int when, struct termios *s_termios) {
+int tcsetattr(int fd, int when, struct termios *s_termios) {
 	int vtime;
 	DCB dcb;
 	COMMTIMEOUTS timeouts;
+//	printf("tcsetattr: ");
+	fflush(stdout);
 	if (s_termios->c_lflag & ICANON) {
-		printf("win32tcsetattr: no canonical mode support\n");
+		printf("tcsetattr: no canonical mode support\n");
 		return -1;	/* and all other c_lflags too */
 	}
     if (!GetCommState(tl[fd]->hComm, &dcb)) {
@@ -552,9 +563,12 @@ int win32tcsetattr(int fd, int when, struct termios *s_termios) {
 			return -1;
     	dcb.ByteSize = termios_to_bytesize(s_termios->c_cflag);
 		if (s_termios->c_cflag & PARENB) {
-			if (s_termios->c_cflag & PARODD) dcb.Parity = ODDPARITY;
-			else dcb.Parity = EVENPARITY;
-		} else dcb.Parity = NOPARITY;
+			if (s_termios->c_cflag & PARODD)
+				dcb.Parity = ODDPARITY;
+			else
+				dcb.Parity = EVENPARITY;
+		} else
+			dcb.Parity = NOPARITY;
 		if (s_termios->c_cflag & CSTOPB) dcb.StopBits = TWOSTOPBITS;
 	    else dcb.StopBits = ONESTOPBIT;
 		if (s_termios->c_cflag & CRTS_IFLOW)
@@ -594,6 +608,7 @@ int win32tcsetattr(int fd, int when, struct termios *s_termios) {
        return(-1);
     }
 
+//	printf("VTIME:%d, VMIN:%d\n", s_termios->c_cc[VTIME], s_termios->c_cc[VMIN]);
 	vtime = s_termios->c_cc[VTIME] * 100;
 	timeouts.ReadTotalTimeoutConstant = vtime;
 	timeouts.ReadIntervalTimeout = vtime;	/* max between bytes */
@@ -620,22 +635,22 @@ int win32tcsetattr(int fd, int when, struct termios *s_termios) {
     return ( TRUE ) ;
 }
 
-int win32tcsendbreak(int fd, int duration) {
+int tcsendbreak(int fd, int duration) {
 	/* send a stream of zero bits for duration */
 	return 1;
 }
 
-int win32tcdrain (int fd) {
+int tcdrain (int fd) {
 	/* block until all queued output has been transmitted */
 	return 1;
 }
 
-int win32tcflush(int fd, int queue_selector) {
+int tcflush(int fd, int queue_selector) {
 	/* clear input & output queues */
 	return 1;
 }
 
-int win32tcflow(int fd, int action) {
+int tcflow(int fd, int action) {
 	switch (action) {
 	    case TCOOFF: break;		/* Suspend transmission of output */
     	case TCOON: break;		/* Restart transmission of output */
@@ -646,7 +661,7 @@ int win32tcflow(int fd, int action) {
 	return 1;
 }
 
-int win32ioctl(int fd, int request, unsigned int *arg) {
+int ioctl(int fd, int request, unsigned int *arg) {
 	DWORD dwStatus = 0;
 	switch(request) {
 		case TIOCMGET:
@@ -678,8 +693,13 @@ int win32ioctl(int fd, int request, unsigned int *arg) {
 			TIOCM_SR	*/
 			break;
 		default:
-			printf("win32ioctl: unknown request: %#x\n", request);
+			printf("ioctl: unknown request: %#x\n", request);
 			return -1;
 	}
+	return 0;
+}
+
+int fcntl(int fd, int command, int arg) {
+	fprintf(stderr, "FIXME: fcntl(%d, %#o, %#o)\n", fd, command, arg);
 	return 0;
 }
