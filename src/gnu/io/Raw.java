@@ -24,7 +24,7 @@ import java.lang.Math;
 
 /**
 * @author Trent Jarvi
-* @version $Id: Raw.java,v 1.1.2.6 2000-10-06 20:45:28 jarvi Exp $
+* @version $Id: Raw.java,v 1.1.2.7 2001-01-22 22:31:43 jarvi Exp $
 * @since JDK1.0
 */
 
@@ -45,11 +45,11 @@ final class Raw  extends  RawPort {
 
 
 	/** Open the named port */
-	public Raw( String name ) throws IOException {
+	public Raw( String name ) throws PortInUseException {
 		ciAddress=Integer.parseInt(name);
 		open( ciAddress );
 	}
-	private native int open( int ciAddress ) throws IOException;
+	private native int open( int ciAddress ) throws PortInUseException;
 
 
 	/** File descriptor */
@@ -434,7 +434,7 @@ final class Raw  extends  RawPort {
 	}
 	public String getVersion()
 	{
-		String Version="$Id: Raw.java,v 1.1.2.6 2000-10-06 20:45:28 jarvi Exp $";
+		String Version="$Id: Raw.java,v 1.1.2.7 2001-01-22 22:31:43 jarvi Exp $";
 		return(Version);
 	}
 }
