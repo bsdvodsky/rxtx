@@ -17,12 +17,12 @@
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
 package gnu.io;
+import javax.comm.*;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.util.TooManyListenersException;
 import java.lang.Math;
-import javax.comm.*;
 
 /**
 * An extension of javax.comm.SerialPort
@@ -33,7 +33,7 @@ final class RXTXPort extends SerialPort
 {
 
 	private static boolean debug = false;
-	private static boolean debug_verbose = true;
+	private static boolean debug_verbose = false;
 	static
 	{
 		if(debug ) 
@@ -117,7 +117,8 @@ final class RXTXPort extends SerialPort
 		throws UnsupportedCommOperationException
 	{
 		if (debug)
-			System.out.println("RXTXPort:setSerialPortParams()");
+			System.out.println("RXTXPort:setSerialPortParams(" +
+					b + " " + d + " " + s + " " + p + ")");
 		nativeSetSerialPortParams( b, d, s, p );
 		speed = b;
 		if( s== STOPBITS_1_5 ) dataBits = DATABITS_5;
@@ -640,9 +641,14 @@ final class RXTXPort extends SerialPort
 		SPEventListener = lsnr;
 		if (debug)
 			System.out.println("RXTXPort:Interrupt=false");
-		monThreadisInterrupted=false;
 		monThread = new MonitorThread();
 		monThread.start();
+		while( MonitorThreadLock ) 
+		{
+			try {
+				Thread.sleep( 2 );
+			} catch( Exception e ){} 
+		}
 	}
 	/**
 	*  Remove the serial port event listener
@@ -651,6 +657,8 @@ final class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println("RXTXPort:removeEventListener()");
+		waitForTheNativeCodeSilly();
+		MonitorThreadLock = true;
 		//if( monThread != null && monThread.isAlive() )
 		if( monThreadisInterrupted == true )
 		{
@@ -658,6 +666,7 @@ final class RXTXPort extends SerialPort
 			monThread = null;
 			SPEventListener = null;
 			Runtime.getRuntime().gc();
+			MonitorThreadLock = false;
 			return;
 		}
 		else if( monThread != null && monThread.isAlive() )
@@ -679,16 +688,20 @@ final class RXTXPort extends SerialPort
 			}
 			while( monThread.isAlive() )
 			{
-				System.out.println("MonThread is still alive!");
+				if ( debug )
+					System.out.println("MonThread is still alive!");
 				try {
-					Thread.sleep( 2 );
+					monThread.join(1000);
+					Thread.sleep( 1000 );
 				} catch( Exception e ){} 
+				monThread.stop();
 			}
 			
 		}
 		monThread = null;
 		SPEventListener = null;
 		Runtime.getRuntime().gc();
+		MonitorThreadLock = false;
 	}
 	/**
 	 *	Give the native code a chance to start listening to the hardware
@@ -704,20 +717,27 @@ final class RXTXPort extends SerialPort
 		while( MonitorThreadLock )
 		{
 			try {
-				Thread.sleep(1);
+				Thread.sleep(2);
 			} catch( Exception e ) {}
 		}
 	}
 	/**
 	*  @param enable
 	*/
+	private native void nativeSetEventFlag( int fd, int event,
+						boolean flag );
 	public void notifyOnDataAvailable( boolean enable )
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnDataAvailable()");
 		
 		waitForTheNativeCodeSilly();
+
+		MonitorThreadLock = true;
+		nativeSetEventFlag( fd, SerialPortEvent.DATA_AVAILABLE,
+					enable );
 		monThread.Data = enable;
+		MonitorThreadLock = false;
 	}
 
 	/**
@@ -728,7 +748,11 @@ final class RXTXPort extends SerialPort
 		if (debug)
 			System.out.println("RXTXPort:notifyOnOutputEmpty()");
 		waitForTheNativeCodeSilly();
+		MonitorThreadLock = true;
+		nativeSetEventFlag( fd, SerialPortEvent.OUTPUT_BUFFER_EMPTY,
+					enable );
 		monThread.Output = enable;
+		MonitorThreadLock = false;
 	}
 
 	/**
@@ -739,7 +763,10 @@ final class RXTXPort extends SerialPort
 		if (debug)
 			System.out.println("RXTXPort:notifyOnCTS()");
 		waitForTheNativeCodeSilly();
+		MonitorThreadLock = true;
+		nativeSetEventFlag( fd, SerialPortEvent.CTS, enable );
 		monThread.CTS = enable;
+		MonitorThreadLock = false;
 	}
 	/**
 	*  @param enable
@@ -749,7 +776,10 @@ final class RXTXPort extends SerialPort
 		if (debug)
 			System.out.println("RXTXPort:notifyOnDSR()");
 		waitForTheNativeCodeSilly();
+		MonitorThreadLock = true;
+		nativeSetEventFlag( fd, SerialPortEvent.DSR, enable );
 		monThread.DSR = enable;
+		MonitorThreadLock = false;
 	}
 	/**
 	*  @param enable
@@ -759,7 +789,10 @@ final class RXTXPort extends SerialPort
 		if (debug)
 			System.out.println("RXTXPort:notifyOnRingIndicator()");
 		waitForTheNativeCodeSilly();
+		MonitorThreadLock = true;
+		nativeSetEventFlag( fd, SerialPortEvent.RI, enable );
 		monThread.RI = enable;
+		MonitorThreadLock = false;
 	}
 	/**
 	*  @param enable
@@ -769,7 +802,10 @@ final class RXTXPort extends SerialPort
 		if (debug)
 			System.out.println("RXTXPort:notifyOnCarrierDetect()");
 		waitForTheNativeCodeSilly();
+		MonitorThreadLock = true;
+		nativeSetEventFlag( fd, SerialPortEvent.CD, enable );
 		monThread.CD = enable;
+		MonitorThreadLock = false;
 	}
 	/**
 	*  @param enable
@@ -779,7 +815,10 @@ final class RXTXPort extends SerialPort
 		if (debug)
 			System.out.println("RXTXPort:notifyOnOverrunError()");
 		waitForTheNativeCodeSilly();
+		MonitorThreadLock = true;
+		nativeSetEventFlag( fd, SerialPortEvent.OE, enable );
 		monThread.OE = enable;
+		MonitorThreadLock = false;
 	}
 	/**
 	*  @param enable
@@ -789,7 +828,10 @@ final class RXTXPort extends SerialPort
 		if (debug)
 			System.out.println("RXTXPort:notifyOnParityError()");
 		waitForTheNativeCodeSilly();
+		MonitorThreadLock = true;
+		nativeSetEventFlag( fd, SerialPortEvent.PE, enable );
 		monThread.PE = enable;
+		MonitorThreadLock = false;
 	}
 	/**
 	*  @param enable
@@ -799,7 +841,10 @@ final class RXTXPort extends SerialPort
 		if (debug)
 			System.out.println("RXTXPort:notifyOnFramingError()");
 		waitForTheNativeCodeSilly();
+		MonitorThreadLock = true;
+		nativeSetEventFlag( fd, SerialPortEvent.FE, enable );
 		monThread.FE = enable;
+		MonitorThreadLock = false;
 	}
 	/**
 	*  @param enable
@@ -809,7 +854,10 @@ final class RXTXPort extends SerialPort
 		if (debug)
 			System.out.println("RXTXPort:notifyOnBreakInterrupt()");
 		waitForTheNativeCodeSilly();
+		MonitorThreadLock = true;
+		nativeSetEventFlag( fd, SerialPortEvent.BI, enable );
 		monThread.BI = enable;
+		MonitorThreadLock = false;
 	}
 
 
@@ -858,7 +906,7 @@ final class RXTXPort extends SerialPort
 	*/
 		public void write( int b ) throws IOException
 		{
-			if (debug)
+			if (debug_verbose)
 				System.out.println("RXTXPort:SerialOutputStream:write(int)");
 			if ( fd == 0 ) throw new IOException();
 				writeByte( b );
@@ -869,7 +917,7 @@ final class RXTXPort extends SerialPort
 	*/
 		public void write( byte b[] ) throws IOException
 		{
-			if (debug)
+			if (debug_verbose)
 			{
 				System.out.println("Entering RXTXPort:SerialOutputStream:write(" + b.length + ") "/* + new String(b)*/ );
 			}
@@ -896,7 +944,7 @@ final class RXTXPort extends SerialPort
  
 			byte send[] = new byte[len];
 			System.arraycopy( b, off, send, 0, len );
-			if (debug)
+			if (debug_verbose)
 			{
 				System.out.println("Entering RXTXPort:SerialOutputStream:write(" + send.length + " " + off + " " + len + " " +") " /*+  new String(send) */ );
 			}
@@ -907,7 +955,6 @@ final class RXTXPort extends SerialPort
 		}
 	/**
 	*/
-		//public synchronized void flush() throws IOException
 		public void flush() throws IOException
 		{
 			if (debug)
@@ -929,7 +976,7 @@ final class RXTXPort extends SerialPort
 	*/
 		public int read() throws IOException
 		{
-			if (debug)
+			if (debug_verbose)
 				System.out.println("RXTXPort:SerialInputStream:read()");
 			if ( fd == 0 ) throw new IOException();
 			int result = readByte();
@@ -945,7 +992,7 @@ final class RXTXPort extends SerialPort
 		public int read( byte b[] ) throws IOException
 		{
 			int result;
-			if (debug)
+			if (debug_verbose)
 				System.out.println("RXTXPort:SerialInputStream:read(" + b.length + ")");
 			result = read( b, 0, b.length);
 			if (debug)
@@ -966,7 +1013,7 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 		public int read( byte b[], int off, int len )
 			throws IOException
 		{
-			if (debug)
+			if (debug_verbose)
 				System.out.println("RXTXPort:SerialInputStream:read(" + b.length + " " + off + " " + len + ") " /*+ new String(b) */ );
 			int result;
 			/*
@@ -1061,10 +1108,7 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 		{
 			if (debug)
 				System.out.println("RXTXPort:MontitorThread:run()"); 
-			if( monThreadisInterrupted )
-			{
-				System.out.println("eventLoop is interrupted?");
-			}
+			monThreadisInterrupted=false;
 			eventLoop();
 
 			if (debug)
