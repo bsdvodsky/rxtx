@@ -28,6 +28,7 @@ import javax.comm.*;
   */
 final class RXTXPort extends SerialPort {
 
+
 	static {
 		System.loadLibrary( "Serial" );
 		Initialize();
@@ -78,19 +79,19 @@ final class RXTXPort extends SerialPort {
 		int stopBits, int parity ) throws UnsupportedCommOperationException;
 
 	/** Line speed in bits-per-second */
-	private int speed;
+	private int speed=9600;
 	public int getBaudRate() { return speed; }
 
 	/** Data bits port parameter */
-	private int dataBits;
+	private int dataBits=DATABITS_8;
 	public int getDataBits() { return dataBits; }
 
 	/** Stop bits port parameter */
-	private int stopBits;
+	private int stopBits=SerialPort.STOPBITS_1;
 	public int getStopBits() { return stopBits; }
 
 	/** Parity port parameter */
-	private int parity;
+	private int parity= SerialPort.PARITY_NONE;
 	public int getParity() { return parity; }
 
 
