@@ -65,7 +65,7 @@ nativeGetVersion
  */
 JNIEXPORT jstring JNICALL Java_gnu_io_RXTXCommDriver_nativeGetVersion(JNIEnv *env, jclass cls)
 {
-  return env->NewStringUTF("RXTX-2.0-1");
+  return env->NewStringUTF("RXTX-2.0-7pre1");
 }
 
 /*
