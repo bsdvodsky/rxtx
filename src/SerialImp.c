@@ -1065,8 +1065,10 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 			if (fstat(fd, &fstatbuf))  break;
 			if( ioctl( fd, TIOCSERGETLSR, &change ) ) break;
 			else if( change )
+			{
 				send_event( env, jobj, SPE_OUTPUT_BUFFER_EMPTY,
 					1 );
+			}
 		}
 #endif /* TIOCSERGETLSR */
 #if defined(TIOCGICOUNT)
@@ -1169,11 +1171,13 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(JNIEnv *env,
 			goto END;
 		}
 
+#ifndef WIN32
 		/* save, restore later */
 		if ((saved_flags = fcntl(fd, F_GETFL)) < 0) {
 			ret = JNI_FALSE;
 			goto END;
 		}
+#endif
 
 		memcpy(&saved_termios, &ttyset, sizeof(struct termios));
 
@@ -1204,7 +1208,9 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(JNIEnv *env,
 
 		/* dont walk over unlocked open devices */
 		tcsetattr(fd, TCSANOW, &saved_termios);
+#ifndef WIN32
 		fcntl(fd, F_SETFL, saved_flags);
+#endif
 	}
 END:
 	(*env)->ReleaseStringUTFChars(env, tty_name, name);
@@ -1714,7 +1720,6 @@ int fhs_lock(const char *filename)
 	 * for now we will just check for the lockfile on most
 	 * Problem lockfiles will be dealt with.  Some may not even be in use.
 	 *
-	 * TODO follow symbolic links (/dev/modem...)
 	 */
 
 	j=0;
@@ -1726,16 +1731,17 @@ int fhs_lock(const char *filename)
 		        if((buf2.st_dev != buf.st_dev)
                            || (buf2.st_ino != buf.st_ino))
 			{
-			i=strlen(filename);
-			p=(char *) filename+i;
-			while(*(p-1)!='/' && i-- !=1) p--;
-			sprintf(file,"%s/LCK..%s",lockdirs[j],p);
-			if(stat(file,&buf)==0)
-			{
-				printf("-----------------------------------\n");
-				printf("RXTX Error:  Unexpected lock file: %s\n Please report to the RXTX developers\n", file);
-				printf("-----------------------------------\n");
-				return 0;
+				i=strlen(filename);
+				p=(char *) filename+i;
+				while(*(p-1)!='/' && i-- !=1) p--;
+				sprintf(file,"%s/LCK..%s",lockdirs[j],p);
+				if(stat(file,&buf)==0)
+				{
+					printf("---------------------------\n");
+					printf(UNEXPECTED_LOCK_FILE, file);
+					printf("---------------------------\n");
+					return 0;
+				}
 			}
 		}
 		j++;
