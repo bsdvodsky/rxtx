@@ -1,6 +1,9 @@
 This package is not the result of one persons time.  Recognition is given
 to the following people for their assistance.
 
+Douglas Lau <douglau@earthlink.net>
+   Major Rewrite.  rxtx-1.3
+
 Wayne Roberts  <wroberts1@home.com>
    Read Timeouts.  Thresholds.  event notification.   Linux kernel hacking.  
 

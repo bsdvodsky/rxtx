@@ -36,7 +36,8 @@ public class RXTXCommDriver implements CommDriver {
 		"ttym",	// irix modems
 		"ttyq",	// irix pseudo ttys
 		"ttyW",	// specialix cards
-		"ttyC"	// cyclades cards
+		"ttyC",	// cyclades cards
+		"ttyI"  // ISDN4Linux
 	};
 
 
