@@ -1,4 +1,4 @@
-This is PORTING Wed Oct 17 17:24:30 MDT 2001 
+This is PORTING Tue Nov 13 14:45:26 MST 2001
 
 If you want to port rxtx to a new Unix platform do the following.
 
