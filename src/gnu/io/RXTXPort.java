@@ -73,7 +73,6 @@ final class RXTXPort extends SerialPort {
 		dataBits = d;
 		stopBits = s;
 		parity = p;
-		System.out.println("Parity= "+ parity);
 	}
 
 	/** Set the native serial port parameters */
