@@ -41,6 +41,9 @@ REMAINING TODOS
 The following TODO's are known to need work but will not be implmented in the
 near future.
 
+JDK 1.1.8 with green threads is getting sig11's on Linux.  Use native threads
+until we figure it out.  Probably a signal issue again.
+
 The system crashes with a NullPointException if you enable notifications
 before your register a listener.
  

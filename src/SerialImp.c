@@ -115,6 +115,11 @@ extern int errno;
 #ifdef TRENT_IS_HERE
 #define DEBUG
 #define DEBUG_MW  /* use Mathwork's mexPrintf for debugging */
+#ifdef DEBUG_MW
+extern void mexWarnMsgTxt( const char * );
+extern int mexPrintf( const char *, ... );
+#	define printf mexPrintf
+#endif /* DEBUG_MW */
 #endif /* TRENT_IS_HERE */
 #include "SerialImp.h"
 
@@ -1373,7 +1378,7 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 		return( JNI_TRUE );
 	else
 		return( JNI_FALSE );
-#endif TRENT_IS_HERE
+#endif /* TRENT_IS_HERE */
 	
 
 	/* 
@@ -1903,7 +1908,7 @@ void report_warning(char *msg)
 	fprintf(stderr, msg);
 #else
 	mexWarnMsgTxt( msg );
-#endif / *DEBUG_MW */
+#endif /* DEBUG_MW */
 }
 
 /*----------------------------------------------------------
@@ -1922,7 +1927,7 @@ void report_error(char *msg)
 #else
 	//mexErrMsgTxt( msg );
 	mexWarnMsgTxt( msg );
-#endif / *DEBUG_MW */
+#endif /* DEBUG_MW */
 }
 /*----------------------------------------------------------
  report
@@ -1940,7 +1945,7 @@ void report(char *msg)
 	fprintf(stderr, msg);
 #else
 	mexPrintf( msg );
-#endif / *DEBUG_MW */
+#endif /* DEBUG_MW */
 #endif /* DEBUG */
 }
 

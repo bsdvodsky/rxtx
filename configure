@@ -2112,9 +2112,9 @@ public class conftest
 EOF
 CLASSPATH=.:$CLASSPATH
 if test x$JAVA_HOME = x; then
-	javac conftest.java
+	javac -classpath .:$CLASSPATH:`which java`../lib/comm.jar conftest.java
 else
-	$JAVA_HOME/bin/javac conftest.java
+	$JAVA_HOME/bin/javac -classpath .:$CLASSPATH:`which java`../lib/comm.jar conftest.java
 fi
 }
 
@@ -2122,9 +2122,9 @@ run_conftest()
 {
 	echo $ac_n checking $1   " " 1>&6
 	if test x$JPATH = x; then
-		VAR=`java -classpath . conftest $1`
+		VAR=`java -classpath .:$CLASSPATH:\`which java\`../lib/comm.jar conftest $1`
 	else
-		VAR=`$JPATH/bin/java -classpath . conftest $1`
+		VAR=`$JPATH/bin/java -classpath .:$CLASSPATH:\`which java\`../lib/comm.jar conftest $1`
 	fi
 	echo $VAR  1>&6
 	echo $VAR
@@ -2375,7 +2375,7 @@ fix_comm_jar()
 		echo "correct location or let this script do it." 1>&2
 		echo  1>&2
 		echo "------------------------------------------------------" 1>&2
-		echo $ac_n "Do you wish to [Q]uit or use the [S]cript? [Q/S] "
+		echo $ac_n "Do you wish to [Q]uit or use the [S]cript? [Q/S]"
 		read REPLY
 		if  test "$REPLY" = "q" || test "$REPLY" = "Q" ;then
 			echo "When you are done rerun configure"
