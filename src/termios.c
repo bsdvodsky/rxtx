@@ -1130,12 +1130,14 @@ int serial_write( int fd, char *Str, int length )
 			goto end;
 		}
 	}
-	//pendingResult = WaitForSingleObject( index->wol.hEvent, INFINITE );
+	pendingResult = WaitForSingleObject( index->wol.hEvent, INFINITE );
 	switch( pendingResult )
 	{
 		case WAIT_TIMEOUT:
+			LEAVE( "serial_write 0" );
 			return( 0 );
 		case WAIT_FAILED:
+			LEAVE( "serial_write -1" );
 			return( -1 );
 		case WAIT_OBJECT_0:
 			break;
@@ -1907,7 +1909,6 @@ int tcdrain ( int fd )
 	ENTER( "tcdrain" );
 	index = find_port( fd );
 
-	return( -1 );
 	if ( !index )
 	{
 		sprintf( message, "No info known about the port. ioctl %i\n",
@@ -1941,12 +1942,10 @@ int tcdrain ( int fd )
 		LEAVE( "tcdrain" );
 		return -1;
 	}
-#ifdef asdf
-#endif
-	sprintf( message,  "FlushFileBuffers() %i\n",
-		(int) GetLastError() );
-	report( message );
-	LEAVE( "tcdrain" );
+	//sprintf( message,  "FlushFileBuffers() %i\n",
+	//	(int) GetLastError() );
+	//report( message );
+	LEAVE( "tcdrain success" );
 	return 0;
 }
 
@@ -2057,7 +2056,21 @@ int tcflow( int fd, int action )
 	LEAVE( "tcflow" );
 	return 1;
 }
+/*----------------------------------------------------------
+fstat()
 
+   accept:      
+   perform:     
+   return:      
+   exceptions:  
+   win32api:    
+   comments:  this is just to keep the eventLoop happy.
+----------------------------------------------------------*/
+
+int fstat( int fd, ... )
+{
+	return( 0 );
+}
 /*----------------------------------------------------------
 ioctl()
 
@@ -2181,22 +2194,33 @@ int ioctl( int fd, int request, ... )
 		case TIOCSERCONFIG:
 		case TIOCSERGETLSR:
 			arg = va_arg( ap, int * );
-			ret = !ClearCommError( index->hComm, &ErrCode, &Stat );
+			/*
+			do {
+				wait = WaitForSingleObject( index->sol.hEvent, 5000 );
+			} while ( wait == WAIT_TIMEOUT );
+			*/
+			ret = ClearCommError( index->hComm, &ErrCode, &Stat );
 			if ( ret == 0 )
 			{
 				/* FIXME ? */
 				set_errno( EBADFD );
+				YACK();
+				report( "TIOCSERGETLSR EBADFD" );
 				return -1;
 			}
 			if ( (int ) Stat.cbOutQue != 0 )
 			{
+				/* still data out there */
 				*arg = 0;
+				report( "ioctl: ouput empty\n" );
 				ret = 0;
 			}
 			else
 			{
-				*arg = TIOCSER_TEMP;
-				ret = 1;
+				/* output is empty */
+				*arg = 1;
+				ret = 0;
+				//*arg = TIOCSER_TEMP;
 			}
 			break;
 		case TIOCSERGSTRUCT:
@@ -2232,10 +2256,14 @@ int ioctl( int fd, int request, ... )
 			if ( ret == 0 )
 			{
 				/* FIXME ? */
+				report("FIONREAD failed\n");
 				set_errno( EBADFD );
 				return -1;
 			}
 			*arg = ( int ) Stat.cbInQue;
+			sprintf( message, "FIONREAD:  %i bytes available\n",
+				(int) Stat.cbInQue );
+			//report( message );
 			if( *arg )
 			{
 				sprintf( message, "FIONREAD: %i\n", *arg );
@@ -2246,6 +2274,7 @@ int ioctl( int fd, int request, ... )
 				sprintf( message, "FIONREAD: %i\n", *arg );
 				report( message );
 #endif /* VERBOSE_DEBUG */
+			ret = 0;
 			break;
 
 		/* pending bytes to be sent */
@@ -2728,9 +2757,8 @@ int main( int argc, char *argv[] )
 			if( ioctl( Fd, TIOCSERGETLSR, &change ) ) break;
 			else if( change )
 			{
-			/*	send_event( env, jobj, SPE_OUTPUT_BUFFER_EMPTY,
+				send_event( env, jobj, SPE_OUTPUT_BUFFER_EMPTY,
 					1 );
-			*/
 			}
 		}
 #endif /* TIOCSERGETLSR */
@@ -2748,22 +2776,22 @@ int main( int argc, char *argv[] )
 			if( ioctl( Fd, TIOCGICOUNT, &sis ) ) break;
 			while( sis.frame != osis.frame )
 			{
-				//send_event( env, jobj, SPE_FE, 1);
+				send_event( env, jobj, SPE_FE, 1);
 				osis.frame++;
 			}
 			while( sis.overrun != osis.overrun )
 			{
-				//send_event( env, jobj, SPE_OE, 1);
+				send_event( env, jobj, SPE_OE, 1);
 				osis.overrun++;
 			}
 			while( sis.parity != osis.parity )
 			{
-				//send_event( env, jobj, SPE_PE, 1);
+				send_event( env, jobj, SPE_PE, 1);
 				osis.parity++;
 			}
 			while( sis.brk != osis.brk )
 			{
-				//send_event( env, jobj, SPE_BI, 1);
+				send_event( env, jobj, SPE_BI, 1);
 				osis.brk++;
 			}
 			osis = sis;
@@ -2774,23 +2802,23 @@ int main( int argc, char *argv[] )
 		if( ioctl( Fd, TIOCMGET, &mflags ) ) break;
 
 		change = (mflags&TIOCM_CTS) - (omflags&TIOCM_CTS);
-		//if( change ) send_event( env, jobj, SPE_CTS, change );
+		if( change ) send_event( env, jobj, SPE_CTS, change );
 
 		change = (mflags&TIOCM_DSR) - (omflags&TIOCM_DSR);
-		//if( change ) send_event( env, jobj, SPE_DSR, change );
+		if( change ) send_event( env, jobj, SPE_DSR, change );
 
-		//change = (mflags&TIOCM_RNG) - (omflags&TIOCM_RNG);
-		//if( change ) send_event( env, jobj, SPE_RI, change );
+		change = (mflags&TIOCM_RNG) - (omflags&TIOCM_RNG);
+		if( change ) send_event( env, jobj, SPE_RI, change );
 
 		change = (mflags&TIOCM_CD) - (omflags&TIOCM_CD);
-		//if( change ) send_event( env, jobj, SPE_CD, change );
+		if( change ) send_event( env, jobj, SPE_CD, change );
 
 		omflags = mflags;
 
 		ioctl( Fd, FIONREAD, &change );
 		if( change )
 		{
-			//if(!send_event( env, jobj, SPE_DATA_AVAILABLE, 1 ))
+			if(!send_event( env, jobj, SPE_DATA_AVAILABLE, 1 ))
 			{
 				usleep(100000); /* select wont block */
 			}

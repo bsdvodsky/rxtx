@@ -55,13 +55,15 @@ typedef unsigned char   cc_t;
 typedef unsigned int    speed_t;
 typedef unsigned int    tcflag_t;
 
+/* structs are from linux includes or linux man pages to match
+   interfaces.
+*/
+
 struct timespec
 {
 	time_t	tv_sec;
 	long	tv_nsec;
 };
-
-
 
 #define NCCS 32
 struct termios
@@ -150,6 +152,7 @@ int tcdrain ( int );
 int tcflow ( int , int );
 int tcsendbreak ( int , int );
 int ioctl(int fd, int request, ... );
+//int fstat(int fd, ... );
 void cfmakeraw(struct termios *s_termios);
 
 #define O_NOCTTY	0400	/* not for fcntl */
@@ -373,9 +376,13 @@ void cfmakeraw(struct termios *s_termios);
 #define	TCSANOW		0
 #define	TCSADRAIN	1
 #define	TCSAFLUSH	2
-#endif /*_WIN32S_H_*/
 
 /* ioctls */
+#define TIOCSERGETLSR	0x5459
+
+#endif /*_WIN32S_H_*/
+
+/* unused ioctls */
 #define TCSBRK		0x5409
 #define TIOCOUTQ	0x5411
 #define TIOCMGET	0x5415
@@ -393,12 +400,11 @@ void cfmakeraw(struct termios *s_termios);
 #define TIOCSERGWILD	0x5454
 #define TIOCSERSWILD	0x5455
 #define TIOCSERGSTRUCT	0x5458
-#define TIOCSERGETLSR	0x5459
 #define TIOCSERGETMULTI	0x545a
 #define TIOCSERSETMULTI	0x545b
 #define TIOCMIWAIT	0x545c
 /* this would require being able to get the number of overruns ... */
-/* #define TIOCGICOUNT	0x545d */
+#define TIOCGICOUNT	0x545d
 
 /* ioctl errors */
 #define ENOIOCTLCMD	515

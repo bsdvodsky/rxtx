@@ -16,6 +16,10 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
+#ifdef TRENT_IS_HERE
+#define DEBUG
+#define DEBUG_MW
+#endif /* TRENT_IS_HERE */
 #include "config.h"
 #include "gnu_io_RXTXPort.h"
 #ifndef __LCC__
@@ -114,10 +118,6 @@ int cfmakeraw ( struct termios *term )
 #endif /* HAVE_GRP_H */
 
 extern int errno;
-#ifdef TRENT_IS_HERE
-#define DEBUG
-#define DEBUG_MW
-#endif /* TRENT_IS_HERE */
 #include "SerialImp.h"
 
 /* this is so diff will not generate noise when merging 1.4 and 1.5 changes
@@ -727,7 +727,7 @@ JNIEXPORT void JNICALL RXTXPort(nativeDrain)( JNIEnv *env,
 	int result, count=0;
 	char message[80];
 
-	ENTER( "RXTXPort:drain()" );
+	ENTER( "SerialImp.c:drain()" );
 	do {
 		report( "trying tcdrain\n" );
 		result=tcdrain(fd);
@@ -739,6 +739,7 @@ JNIEXPORT void JNICALL RXTXPort(nativeDrain)( JNIEnv *env,
 	LEAVE( "RXTXPort:drain()" );
 	if( result ) throw_java_exception( env, IO_EXCEPTION, "nativeDrain",
 		strerror( errno ) );
+	return;
 }
 
 /*----------------------------------------------------------
@@ -1286,6 +1287,7 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 {
 	int fd, ret, change;
 	fd_set rfds;
+	char message[80];
 	unsigned int mflags, omflags;
 	jboolean interrupted = 0;
 #if defined TIOCSERGETLSR
@@ -1343,18 +1345,41 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 		do {
 			ret=select( fd + 1, &rfds, NULL, NULL, &tv_sleep );
 		}  while (ret < 0 && errno==EINTR);
-		if( ret < 0 ) break;
+		if( ret < 0 )
+		{
+			report("eventLoop select returned < 0\n" );
+			break;
+		}
 
 		interrupted = is_interrupted(env, jobj);
-		if(interrupted) return;
+		if(interrupted)
+		{
+			report("eventLoop detected interrupt\n" );
+			LEAVE( "RXTXPort:eventLoop" );
+			return;
+		}
+		else
+		{
+			report("eventLoop did not detect MonThread closing\n" );
+		}
+
 
 #if defined TIOCSERGETLSR
 		/* JK00: work around for Multi IO cards without TIOCSERGETLSR */
 		if( has_tiocsergetlsr ) {
-			if (fstat(fd, &fstatbuf))  break;
-			if( ioctl( fd, TIOCSERGETLSR, &change ) ) break;
+			if (fstat(fd, &fstatbuf))
+			{
+				report("eventLoop: fstat\n" );
+				break;
+			}
+			if( ioctl( fd, TIOCSERGETLSR, &change ) )
+			{
+				report( "TIOCSERGETLSR\n is nonnull\n" );
+				break;
+			}
 			else if( change )
 			{
+				report("sending OUTPUT_BUFFER_EMPTY\n");
 				send_event( env, jobj, SPE_OUTPUT_BUFFER_EMPTY,
 					1 );
 			}
@@ -1370,7 +1395,11 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 	 */
 		/* JK00: only use it if supported by this port */
 		if (has_tiocgicount) {
-			if( ioctl( fd, TIOCGICOUNT, &sis ) ) break;
+			if( ioctl( fd, TIOCGICOUNT, &sis ) )
+			{
+				report( "TIOCGICOUNT\n is not 0\n" );
+				break;
+			}
 			while( sis.frame != osis.frame ) {
 				send_event( env, jobj, SPE_FE, 1);
 				osis.frame++;
@@ -1392,7 +1421,11 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 #endif /*  TIOCGICOUNT */
 		/* A Portable implementation */
 
-		if( ioctl( fd, TIOCMGET, &mflags ) ) break;
+		if( ioctl( fd, TIOCMGET, &mflags ) )
+		{
+			report("ioctl(TIOCMGET)\n");
+			break;
+		}
 
 		change = (mflags&TIOCM_CTS) - (omflags&TIOCM_CTS);
 		if( change ) send_event( env, jobj, SPE_CTS, change );
@@ -1421,6 +1454,8 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 
 		Things just start spinning out of control after that.
 	*/
+		sprintf( message, "change is %i\n", change );
+		report( message );
 		if( change )
 		{
 			if(!send_event( env, jobj, SPE_DATA_AVAILABLE, 1 ))
@@ -1904,9 +1939,10 @@ int send_event(JNIEnv *env, jobject jobj, jint type, int flag)
 {
 	int result;
 	jmethodID foo;
-	jclass jclazz = (*env)->GetObjectClass( env, jobj );
+	jclass jclazz;
 
 	ENTER( "send_event" );
+	jclazz = (*env)->GetObjectClass( env, jobj );
 	if(jclazz == NULL) return JNI_TRUE;
 	foo = (*env)->GetMethodID( env, jclazz, "sendEvent", "(IZ)Z" );
 
