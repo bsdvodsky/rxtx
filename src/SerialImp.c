@@ -700,7 +700,8 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 		nanosleep( &tspec, &retspec );
 	//} while( tspec.tv_nsec != 0 );
 #else
-	usleep(50000);
+	//usleep(50000);
+	usleep(5000);
 #endif /* __sun__ */
 	LEAVE( "RXTXPort:writeArray" );
 	if( result < 0 ) throw_java_exception( env, IO_EXCEPTION,
@@ -1467,6 +1468,7 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 					nanosleep( &tspec, &retspec );
 			//	} while( tspec.tv_nsec != 0 );
 #else
+				//usleep(10000);
 				usleep(100000);
 #endif /* __sun__ */
 			}
@@ -1502,13 +1504,13 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 	int ret = JNI_TRUE;
 
 	ENTER( "RXTXPort:testRead" );
-#ifdef TRENT_IS_HERE
+#ifdef TRENT_IS_HERE_DEBUGGING_ENUMERATION
 	/* vmware lies about which ports are there causing irq conflicts */
 	/* this is for testing only */
 	report( name );
 	if( !strcmp( name, "COM1" )  || !strcmp( name, "COM2" ) )
 		return( JNI_TRUE );
-#endif /* TRENT_IS_HERE */
+#endif /* TRENT_IS_HERE_DEBUGGING_ENUMERATION */
 
 	/* 
 		LOCK is one of three functions defined in SerialImp.h
@@ -2051,7 +2053,7 @@ void report_warning(char *msg)
 #ifndef DEBUG_MW
 	fprintf(stderr, msg);
 #else
-	mexWarnMsgTxt( msg );
+	mexWarnMsgTxt( (const char *) msg );
 #endif /* DEBUG_MW */
 }
 
@@ -2082,8 +2084,6 @@ void report_error(char *msg)
    exceptions:  none
    comments:
 ----------------------------------------------------------*/
-#define DEBUG
-#define DEBUG_MW
 void report(char *msg)
 {
 #ifdef DEBUG

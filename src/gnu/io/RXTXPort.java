@@ -32,7 +32,7 @@ import javax.comm.*;
 final class RXTXPort extends SerialPort
 {
 
-	private static boolean debug = false;
+	private static boolean debug = true;
 	static
 	{
 		if(debug ) 
@@ -357,7 +357,8 @@ final class RXTXPort extends SerialPort
 	public void setInputBufferSize( int size )
 	{
 		if (debug)
-			System.out.println("RXTXPort:setInputBufferSize()");
+			System.out.println("RXTXPort:setInputBufferSize( " +
+					size + ")");
 		if( size < 0 )
 			throw new IllegalArgumentException
 			(
@@ -379,7 +380,8 @@ final class RXTXPort extends SerialPort
 	public void setOutputBufferSize( int size )
 	{
 		if (debug)
-			System.out.println("RXTXPort:setOutputBufferSize()");
+			System.out.println("RXTXPort:setOutputBufferSize( " +
+					size + ")");
 		if( size < 0 )
 			throw new IllegalArgumentException
 			(
@@ -504,12 +506,25 @@ final class RXTXPort extends SerialPort
 				if( debug )
 					System.out.println( "DATA_AVAILABLE " +
 						monThread.Data + ")" );
-				if( monThread.Data ) break;
-				return(false);
+				break;
 			case SerialPortEvent.OUTPUT_BUFFER_EMPTY:
 				if( debug )
 					System.out.println( "OUTPUT_BUF_EMPTY " +
 						monThread.Output + ")" );
+				break;
+			default:
+				if( debug )
+					System.out.println( "XXXXXXXXXXXXXXXX " +
+						event + ")" );
+				break;
+		}
+
+		switch( event )
+		{
+			case SerialPortEvent.DATA_AVAILABLE:
+				if( monThread.Data ) break;
+				return(false);
+			case SerialPortEvent.OUTPUT_BUFFER_EMPTY:
 				if( monThread.Output ) break;
 				return(false);
 /*
@@ -755,7 +770,7 @@ final class RXTXPort extends SerialPort
                 public synchronized void write( byte b[] ) throws IOException
 		{
 			if (debug)
-				System.out.println("RXTXPort:SerialOutputStream:write(byte[])");
+				System.out.println("RXTXPort:SerialOutputStream:write(" +b.length +")");
 			if ( fd == 0 ) throw new IOException();
                         writeArray( b, 0, b.length );
                 }
@@ -769,7 +784,7 @@ final class RXTXPort extends SerialPort
 			throws IOException
 		{
 			if (debug)
-				System.out.println("RXTXPort:SerialOutputStream:write(byte[], int off, int len)");
+				System.out.println("RXTXPort:SerialOutputStream:write(" + b.length + " " + off + " " + len + " " +")");
 			if ( fd == 0 ) throw new IOException();
                         writeArray( b, off, len );
                 }
@@ -807,7 +822,7 @@ final class RXTXPort extends SerialPort
 		public synchronized int read( byte b[] ) throws IOException
 		{
 			if (debug)
-				System.out.println("RXTXPort:SerialInputStream:read(byte[])");
+				System.out.println("RXTXPort:SerialInputStream:read(" + b.length + ")");
 			return read ( b, 0, b.length);
 		}
 /*
@@ -825,7 +840,7 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 			throws IOException
 		{
 			if (debug)
-				System.out.println("RXTXPort:SerialInputStream:read(byte[], off, len)");
+				System.out.println("RXTXPort:SerialInputStream:read(" + b.length + " " + off + " " + len + ")");
 			/*
 			 * Some sanity checks
 			 */
@@ -878,9 +893,11 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 	*/
 		public int available() throws IOException
 		{
-			//if (debug)
-			//	System.out.print("X");
-			return nativeavailable();
+			int r = nativeavailable();
+			if ( debug && r > 0 )
+				System.out.println("available() returning " +
+					r );
+			return r;
 		}
 	}
 	/**

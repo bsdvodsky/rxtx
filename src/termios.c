@@ -1103,7 +1103,9 @@ int serial_write( int fd, char *Str, int length )
 	struct termios_list *index;
 	char message[80];
 
+#ifdef DEBUG_VERBOSE
 	ENTER( "serial_write" );
+#endif /* DEBUG_VERBOSE */
 	if ( fd <= 0 )
 		return 0;
 	index = find_port( fd );
@@ -1153,11 +1155,13 @@ int serial_write( int fd, char *Str, int length )
 		I think what we really want to wait for is the other process's
 		read thread.
 	*/
-	Sleep( 50 );
+	// TEST Sleep( 50 );
 end:
-	sprintf( message, "serial_write returns: %i\n", (int) nBytes );
+	sprintf( message, "serial_write: returning %i\n", (int) nBytes );
 	report( message );
+#ifdef DEBUG_VERBOSE
 	LEAVE( "serial_write" );
+#endif /* DEBUG_VERBOSE */
 	return nBytes;
 }
 
@@ -1181,7 +1185,9 @@ int serial_read( int fd, void *vb, int size )
 	struct termios_list *index;
 	char message[80];
 
+#ifdef DEBUG_VERBOSE
 	ENTER( "serial_read" );
+#endif /* DEBUG_VERBOSE */
 	if ( fd <= 0 )
 		return 0;
 	index = find_port( fd );
@@ -1261,7 +1267,9 @@ int serial_read( int fd, void *vb, int size )
 	}
 	sprintf( message, "serial_read: returning %i\n", (int) total );
 	report( message );
+#ifdef DEBUG_VERBOSE
 	LEAVE( "serial_read" );
+#endif /* DEBUG_VERBOSE */
 	return total;
 }
 
@@ -2261,15 +2269,15 @@ int ioctl( int fd, int request, ... )
 				return -1;
 			}
 			*arg = ( int ) Stat.cbInQue;
+#ifdef VERBOSE_DEBUG
 			sprintf( message, "FIONREAD:  %i bytes available\n",
 				(int) Stat.cbInQue );
-			//report( message );
+			report( message );
 			if( *arg )
 			{
 				sprintf( message, "FIONREAD: %i\n", *arg );
 				report( message );
 			}
-#ifdef VERBOSE_DEBUG
 			else
 				sprintf( message, "FIONREAD: %i\n", *arg );
 				report( message );
@@ -2373,7 +2381,9 @@ int  serial_select( int  n,  fd_set  *readfds,  fd_set  *writefds,
 	struct termios_list *index;
 	char message[80];
 
+#ifdef DEBUG_VERBOSE
 	ENTER( "serial_select" );
+#endif /* DEBUG_VERBOSE */
 	if ( fd <= 0 )
 		return 0;
 	index = find_port( fd );
@@ -2401,7 +2411,7 @@ int  serial_select( int  n,  fd_set  *readfds,  fd_set  *writefds,
 	{
 		wait = WaitForSingleObject( index->sol.hEvent, 5000 );
 		//wait = WaitForSingleObject( index->rol.hEvent, 500 );
-#ifdef DEBUG
+#ifdef DEBUG_VERBOSE
 		switch ( wait )
 		{
 			case WAIT_OBJECT_0:
@@ -2414,9 +2424,11 @@ int  serial_select( int  n,  fd_set  *readfds,  fd_set  *writefds,
 				report( "Write Object\n" );
 				break;
 		}
-#endif /* DEBUG */
+#endif /* DEBUG_VERBOSE */
 	}
+#ifdef DEBUG_VERBOSE
 	LEAVE( "serial_select" );
+#endif /* DEBUG_VERBOSE */
 	return( 1 );
 fail:
 
@@ -2820,7 +2832,8 @@ int main( int argc, char *argv[] )
 		{
 			if(!send_event( env, jobj, SPE_DATA_AVAILABLE, 1 ))
 			{
-				usleep(100000); /* select wont block */
+				//usleep(100000); /* select wont block */
+				usleep(10000); /* select wont block */
 			}
 		}
 	}
@@ -2959,7 +2972,8 @@ int main( int argc, char *argv[] )
 			printf("\n%5i %5i %5i %5i",fd[0],fd[1],fd[2],fd[3] );
 			printflag = 0;
 		}
-		//usleep( 10000 );
+		/* blah */
+		usleep( 10000 );
 	}
 #endif /* asdf */
 }
