@@ -306,7 +306,7 @@ final public class RXTXPort extends SerialPort
 	public void enableReceiveTimeout( int time )
 	{
 		if (debug)
-			System.out.println(System.currentTimeMillis() + ": " + "RXTXPort:enableReceiveTimeout()");
+			System.out.println(System.currentTimeMillis() + ": " + "RXTXPort:enableReceiveTimeout( " + time + ")");
 		if( time >= 0 )
 		{
 			timeout = time;
