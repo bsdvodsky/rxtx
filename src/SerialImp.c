@@ -103,13 +103,13 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_Initialize(
 			name.release);
 		getchar();
 	}
-#endif /* __linux__ */
+#endif /* DEBUG */
 #endif /* WIN32 */
 }
 
 
 /*----------------------------------------------------------
-RXTXPort.Open
+RXTXPort.open
 
    accept:      The device to open.  ie "/dev/ttyS0"
    perform:     open the device, set the termios struct to sane settings and 

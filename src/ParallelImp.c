@@ -120,8 +120,7 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_setLPRMode(JNIEnv *env,
 				mode" 
 			);
 	}
-		return(JNI_TRUE);
-
+	return(JNI_TRUE);
 }
 /*----------------------------------------------------------
 LPRPort.isPaperOut
@@ -278,7 +277,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_LPRPort_open( JNIEnv *env, jobject jobj,
 
 fail:
 	throw_java_exception( env, PORT_IN_USE_EXCEPTION, "open", 
-			strerror( errno ) );
+		strerror( errno ) );
 	return -1;
 }
 
@@ -448,7 +447,6 @@ JNIEXPORT jint JNICALL Java_gnu_io_LPRPort_readArray( JNIEnv *env,
 	if( length < 1 || length > SSIZE_MAX ) {
 		throw_java_exception( env, IO_EXCEPTION, "readArray",
 			"Invalid length" );
-
 		return -1;
 	}
 

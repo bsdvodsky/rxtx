@@ -2502,11 +2502,17 @@ fix_comm_jar()
 JAVAINCLUDE="\$(JPATH)/include"
 if test "$CC" = "gcc" || test "$CC"="egcs"; then
 	case $JAVA_VENDOR in
+	Tran*) #FIXME
+		CFLAGS="$CFLAGS -D_BSD_SOURCE"
+		fix_javanatinc jni.h
+		JAVAINCLUDE=""
+		KAFFE_LIB_FIX="/kaffe"
+		;;
 	IBM*)
 		CFLAGS="$CFLAGS -D_BSD_SOURCE"
 		;;
 	*)
-		CFLAGS="$CFLAGS -D_BSD_SOURCE -ansi"
+		CFLAGS="$CFLAGS -D_BSD_SOURCE"
 		;;
 	esac
 fi
