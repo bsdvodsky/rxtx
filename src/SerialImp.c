@@ -1425,25 +1425,26 @@ registerKnownSerialPorts(JNIEnv *env, jobject jobj)
     } else {
         jclass cls = (*env)->GetObjectClass(env,jobj);
         jmethodID mid = (*env)->GetMethodID(
-            env, cls, "addPortName", "(Ljava/lang/String;I;Ljavax/comm/CommDriver)Z");
+            env, cls, "registerKnownPortsCallback", "(Ljava/lang/String;I)V");
         if (mid == 0) {
-            printf("getMethodID of CommDriver.addPortName failed\n");
+            printf("getMethodID of registerKnownPortsCallback failed\n");
         } else {
+            jint portType = 1;
             while (theObject = IOIteratorNext(theSerialIterator))
             {
                 (*env)->CallVoidMethod(env, jobj, mid,
-                    NewStringUTF(getRegistryString(theObject, kIOTTYDeviceKey)));
+                    (*env)->NewStringUTF(env, getRegistryString(theObject, kIOTTYDeviceKey)), portType);
                 numPorts++;
                 (*env)->CallVoidMethod(env, jobj, mid,
-                    NewStringUTF(getRegistryString(theObject, kIODialinDeviceKey)));
+                    (*env)->NewStringUTF(env, getRegistryString(theObject, kIODialinDeviceKey)), portType);
                 numPorts++;
                 (*env)->CallVoidMethod(env, jobj, mid,
-                    NewStringUTF(getRegistryString(theObject, kIOCalloutDeviceKey)));
+                    (*env)->NewStringUTF(env, getRegistryString(theObject, kIOCalloutDeviceKey)), portType);
                 numPorts++;
             }
         }
+    	(*env)->DeleteLocalRef( env, cls );
     }
-    (*env)->DeleteLocalRef( env, cls );
     return numPorts;
 }
 #endif /* __APPLE__ */
