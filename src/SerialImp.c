@@ -1485,17 +1485,21 @@ int fhs_lock(const char *filename)
 
 	/*  This checks if the effective user is in group uucp so we can
 	 *  create lock files.  If not we give them a warning and bail.
+	 *  If its root we just skip the test.
 	 */
-	while(*g->gr_mem)
+	if(strcmp(user->pw_name,"root"))
 	{
-		if(!strcmp(*g->gr_mem,user->pw_name))
-			break;
-		*g->gr_mem++;
-	}
-	if(!*g->gr_mem)
-	{
-		printf(UUCP_ERROR);
-		return 0;
+		while(*g->gr_mem)
+		{
+			if(!strcmp(*g->gr_mem,user->pw_name))
+				break;
+			*g->gr_mem++;
+		}
+		if(!*g->gr_mem)
+		{
+			printf(UUCP_ERROR);
+			return 0;
+		}
 	}
 
 	/* no lock dir? just return success */
