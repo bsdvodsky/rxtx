@@ -557,7 +557,6 @@ int translate_stop_bits( JNIEnv *env, tcflag_t *cflag, jint stopBits )
 ----------------------------------------------------------*/
 int translate_parity( JNIEnv *env, tcflag_t *cflag, jint parity )
 {
-	parity = JPARITY_NONE;
 	(*cflag) &= ~(PARENB | PARODD);
 	switch( parity ) {
 		case JPARITY_NONE:
