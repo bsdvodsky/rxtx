@@ -56,13 +56,16 @@ struct termios_list
 {
 	char *filename;
 	int my_errno;
+	int interrupt;
+	int event_flag;
+	int tx_happened;
 	unsigned long *hComm;
 	struct termios *ttyset;
 	struct serial_struct *sstruct;
 	/* for DTR DSR */
 	unsigned char MSR;
 	struct async_struct *astruct;
-	int flags;
+	int open_flags;
 	OVERLAPPED rol;
 	OVERLAPPED wol;
 	OVERLAPPED sol;
@@ -71,6 +74,37 @@ struct termios_list
 	struct termios_list *prev;
 };
 struct termios_list *first_tl = NULL;
+
+//#define DEBUG_SELECT
+#ifdef DEBUG_SELECT
+void MexPrintf( char *string )
+{
+	mexPrintf(string);
+}
+#else
+void MexPrintf( char *string )
+{
+}
+#endif DEBUG_SELECT
+
+void termios_setflags( int fd, int termios_flags[] )
+{
+	struct termios_list *index = find_port( fd );
+	int i;
+	int windows_flags[11] = { 0, EV_RXCHAR, EV_TXEMPTY, EV_CTS, EV_DSR,
+					EV_RING, EV_RLSD, EV_ERR,
+					//EV_RING|0x2000, EV_RLSD, EV_ERR,
+					EV_ERR, EV_ERR, EV_BREAK
+				};
+					//EV_RING|0x2000, EV_RLSD, EV_ERR,
+					// NT service pack 4+ breaks 0x2000
+	if( index == NULL ) report_error("index=null termois_setflags\n");
+	index->event_flag = 0;
+	for(i=0;i<11;i++)
+		if( termios_flags[i] )
+			index->event_flag |= windows_flags[i];
+	SetCommMask( index->hComm, index->event_flag );
+}
 
 /*----------------------------------------------------------
 get_fd()
@@ -489,13 +523,9 @@ serial_close()
 
 int serial_close( int fd )
 {
-	/*
-	errno = EBADF;
-	errno = EINTR;
-	errno = EIO;
-	*/
 	struct termios_list *index;
 	char message[80];
+	MexPrintf("C");
 
 	ENTER( "close" );
 	if( !first_tl || !first_tl->hComm )
@@ -517,6 +547,7 @@ int serial_close( int fd )
 	}
 
 	/* WaitForSingleObject( index->wol.hEvent, INFINITE ); */
+/*
 	if ( index->hComm != INVALID_HANDLE_VALUE )
 	{
 		if ( !SetCommMask( index->hComm, EV_RXCHAR ) )
@@ -532,6 +563,7 @@ int serial_close( int fd )
 			index->filename );
 		report( message );
 	}
+*/
 	if ( index->next  && index->prev )
 	{
 		index->next->prev = index->prev;
@@ -553,6 +585,7 @@ int serial_close( int fd )
 		if ( index->rol.hEvent ) CloseHandle( index->rol.hEvent );
 		if ( index->wol.hEvent ) CloseHandle( index->wol.hEvent );
 		if ( index->sol.hEvent ) CloseHandle( index->sol.hEvent );
+		if ( index->hComm ) CloseHandle( index->hComm );
 		if ( index->ttyset )   free( index->ttyset );
 		if ( index->astruct )  free( index->astruct );
 		if ( index->sstruct )  free( index->sstruct );
@@ -734,7 +767,7 @@ open_port()
 	are where it hangs.
 
 	FILE_FLAG_OVERLAPPED also means we need to create valid OVERLAPPED
-	structure in serial_select.
+	structure in Serial_select.
 ----------------------------------------------------------*/
 
 int open_port( struct termios_list *port )
@@ -1042,7 +1075,7 @@ serial_open()
 
 int serial_open( const char *filename, int flags, ... )
 {
-	struct termios_list *port;
+	struct termios_list *index;
 	char message[80];
 
 	ENTER( "serial_open" );
@@ -1051,53 +1084,55 @@ int serial_open( const char *filename, int flags, ... )
 		report( "Port is already opened\n" );
 		return( -1 );
 	}
-	port = add_port( filename );
-	if( !port )
+	index = add_port( filename );
+	if( !index )
 	{
-		report( "open !port\n" );
+		report( "open !index\n" );
 		return( -1 );
 	}
 	
-	if ( open_port( port ) )
+	index->interrupt = 0;
+	index->tx_happened = 0;
+	if ( open_port( index ) )
 	{
 		sprintf( message, "open():  Invalid Port Reference for %s\n",
 			filename );
 		report( message );
-		close( port->fd );
+		close( index->fd );
 		return -1;
 	}
 
-	if( check_port_capabilities( port ) )
+	if( check_port_capabilities( index ) )
 	{
 		report( "check_port_capabilites!" );
-		close( port->fd );
+		close( index->fd );
 		return -1;
 	}
 
-	init_termios( port->ttyset );
-	init_serial_struct( port->sstruct );
+	init_termios( index->ttyset );
+	init_serial_struct( index->sstruct );
 
 	/* set default condition */
-	tcsetattr( port->fd, 0, port->ttyset );
+	tcsetattr( index->fd, 0, index->ttyset );
 
 	/* if opened with non-blocking, then operating non-blocking */
 	if ( flags & O_NONBLOCK )
-		port->flags = O_NONBLOCK;
+		index->open_flags = O_NONBLOCK;
 	else
-		port->flags = 0;
+		index->open_flags = 0;
 
 
 	dump_termios_list( "open filename" );
 	if( !first_tl->hComm )
 	{
 		sprintf( message, "open():  Invalid Port Reference for %s\n",
-			port->filename );
+			index->filename );
 		report( message );
 	}
 	if ( first_tl->hComm == INVALID_HANDLE_VALUE )
 		report( "serial_open: test\n" );
 	LEAVE( "serial_open" );
-	return( port->fd );
+	return( index->fd );
 }
 
 
@@ -1120,6 +1155,7 @@ int serial_write( int fd, char *Str, int length )
 	struct termios_list *index;
 	char message[80];
 	COMSTAT Stat;
+	int old_flag;
 
 #ifdef DEBUG_VERBOSE
 	ENTER( "serial_write" );
@@ -1134,6 +1170,12 @@ int serial_write( int fd, char *Str, int length )
 		report( message );
 		return -1;
 	}
+	old_flag = index->event_flag;
+/*
+	index->event_flag &= ~EV_TXEMPTY;
+	SetCommMask( index->hComm, index->event_flag );
+*/
+	//index->tx_happened = 1; 
 	/***** output mode flags (c_oflag) *****/
 	/* FIXME: OPOST: enable ONLCR, OXTABS & ONOEOT */
 	/* FIXME: ONLCR: convert newline char to CR & LF */
@@ -1145,8 +1187,12 @@ int serial_write( int fd, char *Str, int length )
 	sprintf( message, "===== trying to write %s\n", Str );
 	report( message );
 #endif /* DEBUG_VERBOSE */
+	index->tx_happened = 1; 
 	if ( !WriteFile( index->hComm, Str, length, &nBytes, &index->wol ) )
 	{
+		/* this causes problems just do it async
+		WaitForSingleObject( index->wol.hEvent,100 );
+		*/
 		if ( GetLastError() != ERROR_IO_PENDING )
 		{
 			ClearError( index->hComm );
@@ -1165,7 +1211,7 @@ int serial_write( int fd, char *Str, int length )
 					ClearCommError( index->hComm,
 							&comm_error,
 							&Stat );
-					goto end;
+					//usleep(1000);
 				}
 			}
 		}
@@ -1174,13 +1220,19 @@ int serial_write( int fd, char *Str, int length )
 	{
 		ClearCommError( index->hComm, &comm_error, &Stat );
 		set_errno(EIO);
+		//usleep(1000);
 		report( "serial_write bailing!\n" );
 		return(-1);
 		
 	}
 end:
+	/* yaya...  This really does help */
 	FlushFileBuffers( index->hComm );
-	//Sleep( 50 );
+	MexPrintf("W");
+	index->event_flag |= EV_TXEMPTY;
+	SetCommMask( index->hComm, index->event_flag );
+	index->event_flag = old_flag;
+	index->tx_happened = 1; 
 #ifdef DEBUG
 	//sprintf( message, "serial_write: returning %i\n", (int) nBytes );
 	LEAVE( "serial_write" );
@@ -1203,7 +1255,6 @@ serial_read()
 int serial_read( int fd, void *vb, int size )
 {
 	unsigned long nBytes = 0, total = 0, waiting = 0, error;
-	//char *b = ( char * )vb;
 	int err, vmin;
 	struct termios_list *index;
 	char message[80];
@@ -1233,7 +1284,7 @@ int serial_read( int fd, void *vb, int size )
 	   FIXME: INLCR: convert \n to \r
 	*/
 
-	if ( index->flags & O_NONBLOCK  )
+	if ( index->open_flags & O_NONBLOCK  )
 	{
 		vmin = 0;
 		do {
@@ -1241,6 +1292,7 @@ int serial_read( int fd, void *vb, int size )
 			report("vmin=0\n");
 #endif /* DEBUG_VERBOSE */
 			error = ClearCommError( index->hComm, &error, &stat);
+			//usleep(1000);
 			//usleep(50);
 		}
 		while( stat.cbInQue < size && size > 1 );
@@ -1257,17 +1309,20 @@ int serial_read( int fd, void *vb, int size )
 		c = clock() + index->ttyset->c_cc[VTIME] * CLOCKS_PER_SEC / 10;
 		do {
 			error = ClearCommError( index->hComm, &error, &stat);
-			usleep(50);
+			usleep(1000);
+			mexPrintf("%i/n", CLOCKS_PER_SEC/40);
 		} while ( c > clock() );
 
 	}
 	
 
 	total = 0;
-	while ( ( ( nBytes <= vmin ) || ( size > 0 ) ) && !waiting )
-	{
+	MexPrintf("R");
+	//while ( ( ( nBytes <= vmin ) || ( size > 0 ) ) && !waiting )
+	//{
 		nBytes = 0;
 		err = ReadFile( index->hComm, vb + total, size, &nBytes, &index->rol ); 
+		WaitForSingleObject( index->wol.hEvent, INFINITE );
 #ifdef DEBUG_VERBOSE
 	/* warning Will Rogers! */
 		sprintf(message, " ========== ReadFile = %i %s\n",
@@ -1286,6 +1341,7 @@ int serial_read( int fd, void *vb, int size )
 					nBytes = 0;
 					break;
 				case ERROR_MORE_DATA:
+					//usleep(1000);
 					report("ERROR_MORE_DATA\n");
 					break;
 				case ERROR_IO_PENDING:
@@ -1305,19 +1361,22 @@ int serial_read( int fd, void *vb, int size )
 							return( total );
 						}
 					}
+					//usleep(1000);
 					report("ERROR_IO_PENDING\n");
 					break;
 				default:
+					//usleep(1000);
 					YACK();
 					return -1;
 			}
 		}
 		else
 		{
+			//usleep(1000);
 			ClearCommError( index->hComm, &error, &stat);
 			return( total );
 		}
-	}
+	//}
 #ifdef DEBUG
 	LEAVE( "serial_read" );
 #endif /* DEBUG */
@@ -1716,11 +1775,11 @@ int tcgetattr( int fd, struct termios *s_termios )
 		return -1;
 	}
 
-	/*
 	s_termios->c_cc[VTIME] = timeouts.ReadTotalTimeoutConstant/100;
-	s_termios->c_cc[VMIN] = ( timeouts.ReadTotalTimeoutConstant == 0 ) ? 0 :
-		timeouts.ReadIntervalTimeout/timeouts.ReadTotalTimeoutConstant;
-	*/
+/*
+	handled in SerialImp.c?
+	s_termios->c_cc[VMIN] = ?
+*/
 
 	s_termios->c_cc[VSTART] = myDCB.XonChar;
 	s_termios->c_cc[VSTOP] = myDCB.XoffChar;
@@ -1907,8 +1966,11 @@ int tcsetattr( int fd, int when, struct termios *s_termios )
 #endif /* DEBUG_VERBOSE */
 	vtime = s_termios->c_cc[VTIME] * 100;
 	timeouts.ReadTotalTimeoutConstant = vtime;
-	/* max between bytes */
 	timeouts.ReadIntervalTimeout = vtime;
+	timeouts.ReadTotalTimeoutMultiplier = 0;
+	timeouts.WriteTotalTimeoutConstant = vtime;
+	timeouts.ReadTotalTimeoutMultiplier = 0;
+	/* max between bytes */
 	if ( s_termios->c_cc[VMIN] > 0 && vtime > 0 )
 	{
 		/* read blocks forever on VMIN chars */
@@ -1981,6 +2043,7 @@ int tcdrain ( int fd )
 {
 	struct termios_list *index;
 	char message[80];
+	int old_flag;
 
 	ENTER( "tcdrain" );
 	index = find_port( fd );
@@ -1995,6 +2058,12 @@ int tcdrain ( int fd )
 		LEAVE( "tcdrain" );
 		return -1;
 	}
+	old_flag = index->event_flag;
+/*
+	index->event_flag &= ~EV_TXEMPTY;
+	SetCommMask( index->hComm, index->event_flag );
+*/
+	//index->tx_happened = 1; 
 	if ( !FlushFileBuffers( index->hComm ) )
 	{
 		/* FIXME  Need to figure out what the various errors are in
@@ -2022,6 +2091,10 @@ int tcdrain ( int fd )
 	//	(int) GetLastError() );
 	//report( message );
 	LEAVE( "tcdrain success" );
+	index->event_flag |= EV_TXEMPTY;
+	SetCommMask( index->hComm, index->event_flag );
+	index->event_flag = old_flag;
+	index->tx_happened = 1; 
 	return 0;
 }
 
@@ -2043,9 +2116,16 @@ int tcflush( int fd, int queue_selector )
 {
 	struct termios_list *index;
 	char message[80];
+	int old_flag;
 
 	index = find_port( fd );
 
+	old_flag = index->event_flag;
+/*
+	index->event_flag &= ~EV_TXEMPTY;
+	SetCommMask( index->hComm, index->event_flag );
+*/
+	//index->tx_happened = 1; 
 	ENTER("tcflush");
 	if ( !index )
 	{
@@ -2057,6 +2137,7 @@ int tcflush( int fd, int queue_selector )
 		return -1;
 	}
 
+	index->tx_happened = 1; 
 	switch( queue_selector )
 	{
 		case TCIFLUSH:
@@ -2087,6 +2168,10 @@ int tcflush( int fd, int queue_selector )
 			LEAVE("tcflush");
 			return -1;
 	}
+	index->event_flag |= EV_TXEMPTY;
+	SetCommMask( index->hComm, index->event_flag );
+	index->event_flag = old_flag;
+	index->tx_happened = 1; 
 	LEAVE("tcflush");
 	return( 0 );
 
@@ -2187,6 +2272,7 @@ int ioctl( int fd, int request, ... )
 #endif  /* TIOCGICOUNT */
 	struct termios_list *index;
 	char message[80];
+	int old_flag;
 
 #ifdef DEBUG_VERBOSE
 	ENTER( "ioctl" );
@@ -2394,6 +2480,7 @@ int ioctl( int fd, int request, ... )
 			return 0;
 		case TIOCSERCONFIG:
 		case TIOCSERGETLSR:
+			MexPrintf("t");
 			arg = va_arg( ap, int * );
 			/*
 			do {
@@ -2404,25 +2491,49 @@ int ioctl( int fd, int request, ... )
 			if ( ret == 0 )
 			{
 				/* FIXME ? */
+				MexPrintf("X");
 				set_errno( EBADFD );
 				YACK();
 				report( "TIOCSERGETLSR EBADFD" );
 				return -1;
 			}
-			if ( (int ) Stat.cbOutQue != 0 )
+			if ( (int ) Stat.cbOutQue == 0 )
 			{
-				/* still data out there */
-				*arg = 0;
-				report( "ioctl: ouput empty\n" );
+				/* output is empty */
+					//&& !index->interrupt ) 
+				if( index->tx_happened == 1 )
+				{
+					old_flag = index->event_flag;
+					index->event_flag &= ~EV_TXEMPTY;
+					SetCommMask( index->hComm,
+						index->event_flag );
+					index->event_flag = old_flag;
+					MexPrintf("+");
+					*arg = 1;
+					index->tx_happened = 0;
+					report( "ioctl: ouput empty\n" );
+				}
+				else
+				{
+					if( index->interrupt )
+						MexPrintf("}");
+					if( index->tx_happened )
+						MexPrintf("]");
+					MexPrintf("-");
+					*arg = 0;
+				}
 				ret = 0;
 			}
 			else
 			{
-				/* output is empty */
-				*arg = 1;
+				/* still data out there */
+				MexPrintf("U");
+				*arg = 0;
 				ret = 0;
 				//*arg = TIOCSER_TEMP;
 			}
+			MexPrintf("T");
+			return(0);
 			break;
 		case TIOCSERGSTRUCT:
 			astruct = va_arg( ap, struct async_struct * );
@@ -2534,10 +2645,10 @@ int fcntl( int fd, int command, ... )
 			sprintf( message, "F_SETFL fd=%d flags=%d\n", fd, arg );
 			report( message );
 #endif
-			index->flags = arg;
+			index->open_flags = arg;
 			break;
 		case F_GETFL:	/* get operating flags */
-			ret = index->flags;
+			ret = index->open_flags;
 			break;
 		default:
 			sprintf( message, "unknown fcntl command %#x\n", command );
@@ -2551,7 +2662,32 @@ int fcntl( int fd, int command, ... )
 }
 
 /*----------------------------------------------------------
-serial_select()
+termios_interrupt_event_loop()
+
+   accept:      
+   perform:     
+   return:	let Serial_select break out so the thread can die
+   exceptions:  
+   win32api:    
+   comments:    
+----------------------------------------------------------*/
+void termios_interrupt_event_loop( int fd, int flag )
+{
+	struct termios_list * index = find_port( fd );
+	//mexPrintf(":>");
+	if ( !index ) return;
+	//index->event_flag = 0;
+	// TRENT SetCommMask( index->hComm, index->event_flag );
+	//usleep(2000);
+	//tcdrain( index->fd );
+	//SetEvent( index->sol.hEvent ); 
+	index->interrupt = flag;
+	//mexPrintf(":<");
+	return;
+}
+
+/*----------------------------------------------------------
+Serial_select()
 
    accept:      
    perform:     
@@ -2566,68 +2702,123 @@ int  serial_select( int  n,  fd_set  *readfds,  fd_set  *writefds,
 			fd_set *exceptfds, struct timeval *timeout )
 {
 
-	unsigned long dwCommEvent, wait = WAIT_TIMEOUT;
+	unsigned long nBytes, dwCommEvent, ErrCode, wait = WAIT_TIMEOUT;
 	int fd = n-1;
 	struct termios_list *index;
 	char message[80];
+	COMSTAT Stat;
+	int loopcount = 0;
 
 #ifdef DEBUG_VERBOSE
 	ENTER( "serial_select" );
 #endif /* DEBUG_VERBOSE */
+	MexPrintf(">");
 	if ( fd <= 0 )
-		return 0;
+	{
+		MexPrintf("<!fd\n");
+		usleep(1000);
+		return 1;
+	}
 	index = find_port( fd );
 	if ( !index )
 	{
 		sprintf( message, "No info known about the port. select %i\n",
 			fd );
 		report( message );
+		MexPrintf("<!I\n");
 		return -1;
 	}
-	/* 0x2000 should pick up rings  */
-	if ( !SetCommMask( index->hComm,
-		EV_RXCHAR|EV_TXEMPTY|EV_BREAK|EV_CTS|EV_DSR|
-		EV_ERR|EV_RING|EV_RLSD|EV_RXFLAG|0x2000 ) )
+	if( index->interrupt == 1 )
 	{
-		sprintf( message, "SetCommMask filename = %s\n", index->filename);
-		report( message );
-		goto fail;
+		MexPrintf("I");
+		goto end;
+	}
+	while(!index->event_flag )
+	{
+		usleep(1000);
+		MexPrintf("!F<\n");
+		return -1;
 	}
 	
-	if ( !WaitCommEvent( index->hComm, &dwCommEvent, &index->sol ) )
+	while ( wait == WAIT_TIMEOUT && index->sol.hEvent )
 	{
-		if ( GetLastError() != ERROR_IO_PENDING )
+		sprintf(message, "%i", loopcount++ );
+		MexPrintf( message );
+		if( index->interrupt == 1 )
 		{
-			sprintf( message, "WaitCommEvent filename = %s\n", index->filename);
-			report( message );
-			goto fail;
+			MexPrintf("i");
+			goto end;
 		}
-	}
-	//while ( wait == WAIT_TIMEOUT )
-	//{
-		wait = WaitForSingleObject( index->sol.hEvent, 50 );
-		//wait = WaitForSingleObject( index->rol.hEvent, 500 );
-		printf(" TICK \n");
-#ifdef DEBUG_VERBOSE
+		if( !index->sol.hEvent ) return 1;
+		if ( !WaitCommEvent( index->hComm, &dwCommEvent,
+			&index->sol ) )
+		{
+			if( index->interrupt == 1 )
+			{
+				MexPrintf("i");
+				goto end;
+			}
+			if ( GetLastError() != ERROR_IO_PENDING )
+			{
+				sprintf( message, "WaitCommEvent filename = %s\n", index->filename);
+				report( message );
+				MexPrintf("-");
+				return(1);
+				//goto fail;
+			}
+		}
+		if( index->interrupt == 1 )
+		{
+			MexPrintf("i");
+			goto end;
+		}
+		wait = WaitForSingleObject( index->sol.hEvent, 1000 );
 		switch ( wait )
 		{
 			case WAIT_OBJECT_0:
-				report( "Status Object\n" );
+				MexPrintf("o");
+				if( index->interrupt == 1 )
+				{
+					MexPrintf("i");
+					goto end;
+				}
+				if( !index->sol.hEvent ) return(1);
+				if (!GetOverlappedResult( index->hComm,
+					&index->sol, &nBytes, TRUE ))
+				{
+					MexPrintf("G");
+					goto end;
+				}
+				else if( index->tx_happened == 1 )
+				{
+					ClearCommError( index->hComm,
+						&ErrCode, &Stat );
+					if ( (int ) Stat.cbOutQue == 0 )
+					{
+						MexPrintf(".");
+					}
+					goto end;
+				}
+				else
+					goto end;
 				break;
-			case WAIT_OBJECT_0 + 1:
-				report( "Read Object\n" );
-				break;
-			case WAIT_OBJECT_0 + 2:
-				report( "Write Object\n" );
-				break;
+			case WAIT_TIMEOUT:
+				MexPrintf("T");
+			default:
+				MexPrintf("W");
+				return(1); /* WaitFor error */
+			
 		}
-#endif /* DEBUG_VERBOSE */
-	//}
+	}
+end:
+	//usleep(1000);
+	MexPrintf("<");
 #ifdef DEBUG_VERBOSE
 	LEAVE( "serial_select" );
 #endif /* DEBUG_VERBOSE */
 	return( 1 );
 fail:
+	MexPrintf("f<\n");
 	sprintf( message, "< select called error %i\n", n );
 	YACK();
 	report( message );
@@ -2687,21 +2878,21 @@ void termiosSetParityError( int fd, char value )
 }
 /*----------------------- END OF LIBRARY -----------------*/
 
-static inline int inportb( int port )
+static inline int inportb( int index )
 {
    unsigned char value;
   __asm__ volatile ("inb %1,%0"
                     : "=a" (value)
-                    : "d" ((unsigned short)port));
+                    : "d" ((unsigned short)index));
    return value;
 }
 
-static inline void outportb(unsigned char val, unsigned short int port)
+static inline void outportb(unsigned char val, unsigned short int index)
 {
   __asm__ volatile (
                     "outb %0,%1\n"
                     :
-                    : "a" (val), "d" (port)
+                    : "a" (val), "d" (index)
                     );
 }
 
