@@ -199,11 +199,13 @@ Trent
 #	define CLOSE serial_close
 #	define WRITE serial_write
 #	define READ serial_read
+#	define SELECT serial_select
 #else /* use the system calls for Unix */
 #	define OPEN open
 #	define CLOSE close
 #	define WRITE write
 #	define READ read
+#	define SELECT select
 #ifdef TRACE
 #define ENTER(x) report("entering "x" \n");
 #define LEAVE(x) report("leaving "x" \n");

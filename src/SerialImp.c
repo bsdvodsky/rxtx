@@ -1279,7 +1279,7 @@ int read_byte_array( int fd, unsigned char *buffer, int length, int timeout )
             data AT ALL is received for the timeout duration.  No big deal. */
 		do {
 			if( timeout == 0 ) psleep = NULL;
-			ret=select( fd + 1, &rfds, NULL, NULL, psleep );
+			ret=SELECT( fd + 1, &rfds, NULL, NULL, psleep );
 		}  while (ret < 0 && errno==EINTR);
 		if( ret == 0 )
 		{
@@ -1723,7 +1723,7 @@ void system_wait()
 	} while( tspec.tv_nsec != 0 );
 */
 #else
-	usleep(50000);
+//	usleep(50000);
 #endif /* __sun__ */
 }
 
@@ -1872,7 +1872,7 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 	unlock_monitor_thread( &eis );
 	do{
 		do {
-			eis.ret = select( eis.fd + 1, &eis.rfds, NULL, NULL,
+			eis.ret = SELECT( eis.fd + 1, &eis.rfds, NULL, NULL,
 					&eis.tv_sleep );
 		}  while ( eis.ret < 0 && errno == EINTR );
 		if( eis.ret >= 0 )
