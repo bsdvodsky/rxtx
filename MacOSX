@@ -115,23 +115,18 @@ dimitry.markman@verizon.net
 
 Dmitry Markman, PhD
 
---------------------- Gnu Tool Builds -----------------------
+--------------------- GNU Tool Builds -----------------------
 
-If you are going to try building rxtx on Mac OS X, we recommend you use
-rxtx 1.5.   1.4 would require substantial modification to the Makefile to
-get the build to work.
+install libtoolize utility (glibtoolize utility that Apple provides 
+doesn't work)
 
-Mac OS X has some issues with libtool at this time.  This makes building
-rxtx much more difficult.
+after that
+./autogen.sh
+./configure
+sudo make install
 
-The current solution is to take an automatically generated Makefile and then
-manually edit it.
+works just fine
 
-One such Makefile is provided to help build rxtx.  The file will probably
-need to be edited to match your system configuration.  If you would like to
-add more information for other Mac OS X users please email
+Dmitry Markman, PhD
 
-	trentjarvi@yahoo.com
 
-We are sorry the build process is not easier.  A great deal of effort was
-put into trying to automate the builds without luck.

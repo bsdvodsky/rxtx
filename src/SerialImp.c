@@ -1212,7 +1212,7 @@ RXTXPort.nativeSetParityErrorChar
 		solution.
 ----------------------------------------------------------*/
 JNIEXPORT jboolean JNICALL RXTXPort(nativeSetParityErrorChar)( JNIEnv *env,
-	jobject jobj, jint value )
+	jobject jobj, jbyte value )
 	{
 		int fd = get_java_var( env, jobj,"fd","I" );
 
@@ -1238,7 +1238,7 @@ JNIEXPORT jboolean JNICALL RXTXPort(nativeSetParityErrorChar)( JNIEnv *env,
 /*----------------------------------------------------------
 RXTXPort.nativeSetEndOfInputChar
 
-   accept:      They EndOfInputChar as an int
+   accept:      The EndOfInputChar as an int
    perform:     set the EndOfInputChar
    return:      JNI_TRUE on success
    exceptions:  UnsupportedCommOperationException if not implemented
@@ -1251,7 +1251,7 @@ RXTXPort.nativeSetEndOfInputChar
 		fBinary = false;  //winapi docs say always use true. ?
 ----------------------------------------------------------*/
 JNIEXPORT jboolean JNICALL RXTXPort(nativeSetEndOfInputChar)( JNIEnv *env,
-	jobject jobj, jint value )
+	jobject jobj, jbyte value )
 {
 	int fd = get_java_var( env, jobj,"fd","I" );
 	struct termios ttyset;
