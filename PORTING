@@ -20,9 +20,8 @@ trentjarvi@yahoo.com.  New OS's usually require tweaks.
 
 If its not compiling try backing out functionality until it compiles.
 
-win32 support has been removed.  contact trentjarvi@yahoo.com if your interested
-in developing win32 support.  We will gladly put win32 code back in if there is
-developer interest.
+win32 support has not been tested.  Contact trentjarvi@yahoo.com if your 
+interested in developing win32 support.   
 
 For all unix flavors... If the package did not work out of the box please
 see BUGS and send a comment.

@@ -1,5 +1,4 @@
-1.3-9	Dec  1, 1999  
-                      Japanese install instructions  Thanks to Masayuki "Tencho"
+1.3-9	Dec  1, 1999  Japanese install instructions  Thanks to Masayuki "Tencho"
                       Yamashita <tencho@venus.kanazawa-it.ac.jp>
                       IBM JDK support.  Thanks for bug reports from Herber Carl
                       Meyer <hcMeyer@mediaone.net> and Scott Simms 
@@ -9,6 +8,9 @@
                       Documentation of libc5 bugs. Peter Bennett 
                       <bencom@bencom.co.nz>
                       Warning when there are multiple jni include file paths.
+                      Win32 code now builds.  Thanks to Wayne Roberts  for the
+                      changes to termios.c.
+                      Freebsd serial comm is working.
 1.3-8   Oct 25, 1999  Introduced Wayne Roberts Win32 code. 
                       CLOCAL added to c_cflags.  (How did it get out?)
                       -thanks to Bertrand Renuart <bertrand.renuart@itma.lu>

@@ -7,11 +7,14 @@ not written in stone.  If you want to do it differently feel free.
 The good side is the stuff compiles as is.  
 
 *BSD SerialPort support
+	freebsd serial works.
 	kernel specific implementations
 	buggy event loop.
 
 Win95/98 with mingw32
-	select()
+	The maintainer has integrated Wayne Roberts improvements.  The code
+	95% there but needs work.
+	for starters look at select()
 	http://msdn.microsoft.com/library/techart/msdn_serial.htm
 	for documentation.
 

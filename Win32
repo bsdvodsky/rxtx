@@ -2,10 +2,14 @@ Instructions unique to win32 builds.
 
 Grab ming32:
 
-I build the dll with jdk-1.2.2 for linux using jdk-1.2.2 include files from 
+	Wayne Roberts has the version used by the maintainer.
+	(Wayne is largly responsible for bringing rxtx back to win32.)
+	ftp://24.1.180.14/pub
+
+I built the dll with jdk-1.2.2 for linux using jdk-1.2.2 include files from 
 win32.
 
-Make sure that ming32 bin dir is the first in your path
+Make sure that ming32 bin dir is the first in your path (at least before /usr/bin/gcc)
 
 export PATH="/usr/local/cross-tools/i386-mingw32/bin/:$PATH:/usr/X11R6/bin:/usr/local/java/bin:/usr/local/java/jre/bin/:"
 
@@ -27,3 +31,10 @@ build the class files and dll.
 	rxtx-*/build/...
 
 Hope that helps.  Send in additional comments if its not clear.
+
+If your looking at rxtx as an example of crosscompiling you may be interested
+in looking at the examples provided at:
+
+ftp.xraylith.wisc.edu/pub/khan/gnu-win32/mingw32/misc/java-jni-examples.zip
+
+(thanks to Wayne Roberts for pointing this out)

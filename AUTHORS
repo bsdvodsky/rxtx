@@ -23,6 +23,7 @@ Wayne Roberts  <wroberts1@home.com>
    Win32 Enhancements (extensive)
    Read Timeouts.  Thresholds.  event notification.   Linux kernel hacking.  
    verification of rxtx with analysis equipment. 
+   Wayne has been invaluable to rxtx.  The project would be a 404 without him.
 
 Yuen-Ping Leung <yuenping@semiotek.com>
    Fixes for FreeBSD support.

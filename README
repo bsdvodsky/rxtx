@@ -57,8 +57,9 @@ A note on JDK RPMS for linux users:
 
 A note on Win32:  
 
-   (win32 support has been dropped.  Get the Sun CommAPI if you want a 
-    plug-in solution)
+   Get the Sun CommAPI if you want a plug-in solution.  The code is provided 
+   for people that may have demanding needs and coding ability.  If you make
+   improvements, please send the changes back so we can share them.
 
 We are interested in sharing this code in hopes that a more versatile lib may
 be developed and released with minimal restrictions.  Please send any patches 

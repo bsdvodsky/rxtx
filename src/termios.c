@@ -1,3 +1,4 @@
+/* read TODO! */
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
 |   Copyright 1997-1999 by Trent Jarvi trentjarvi@yahoo.com.
@@ -41,14 +42,14 @@ void set_errno(int error) {
 
 int CBR_to_B(int Baud) {
 	switch (Baud) {
-		case 75:			return(B75);
+		case 75:		return(B75);
 		case CBR_110:		return(B110);
-		case 134:			return(B134);
-		case 150:			return(B150);
+		case 134:		return(B134);
+		case 150:		return(B150);
 		case CBR_300:		return(B300);
 		case CBR_600:		return(B600);
 		case CBR_1200:		return(B1200);
-		case 1800:			return(B1800);
+		case 1800:		return(B1800);
 		case CBR_2400:		return(B2400);
 		case CBR_4800:		return(B4800);
 		case CBR_9600:		return(B9600);
@@ -66,17 +67,17 @@ int B_to_CBR(int Baud) {
 	int ret;
 	int br;
 	switch (Baud) {
-		case B75:		br = 75;	ret = 75;			break;
-		case B110:		br = 110;	ret = CBR_110;		break;
-		case B134:		br = 134;	ret = 134;			break;
-		case B150:		br = 150;	ret = 150;			break;
-		case B300:		br = 300;	ret = CBR_300;		break;
-		case B600:		br = 600;	ret = CBR_600;		break;
-		case B1200:		br = 1200;	ret = CBR_1200;		break;
-		case B1800:		br = 1800;	ret = 1800;			break;
-		case B2400:		br = 2400;	ret = CBR_2400;		break;
-		case B4800:		br = 4800;	ret = CBR_4800;		break;
-		case B9600:		br = 9600;	ret = CBR_9600;		break;
+		case B75:	br = 75;	ret = 75;		break;
+		case B110:	br = 110;	ret = CBR_110;		break;
+		case B134:	br = 134;	ret = 134;		break;
+		case B150:	br = 150;	ret = 150;		break;
+		case B300:	br = 300;	ret = CBR_300;		break;
+		case B600:	br = 600;	ret = CBR_600;		break;
+		case B1200:	br = 1200;	ret = CBR_1200;		break;
+		case B1800:	br = 1800;	ret = 1800;		break;
+		case B2400:	br = 2400;	ret = CBR_2400;		break;
+		case B4800:	br = 4800;	ret = CBR_4800;		break;
+		case B9600:	br = 9600;	ret = CBR_9600;		break;
 		case B19200:	br = 19200;	ret = CBR_19200;	break;
 		case B38400:	br = 38400;	ret = CBR_38400;	break;
 		case B115200:	br = 115200;	ret = CBR_115200;	break;
@@ -181,20 +182,20 @@ BOOL init_termios(struct termios *ttyset) {
 	memset(ttyset, 0, sizeof(struct termios));
 	cfsetospeed(ttyset, B9600);
 	cfmakeraw(ttyset);
-	ttyset->c_cc[VINTR] = 0x03;		/* 0: C-c */
-	ttyset->c_cc[VQUIT] = 0x1c;		/* 1: C-\ */
+	ttyset->c_cc[VINTR] = 0x03;	/* 0: C-c */
+	ttyset->c_cc[VQUIT] = 0x1c;	/* 1: C-\ */
 	ttyset->c_cc[VERASE] = 0x7f;	/* 2: <del> */
-	ttyset->c_cc[VKILL] = 0x15;		/* 3: C-u */
-	ttyset->c_cc[VEOF] = 0x04;		/* 4: C-d */
-	ttyset->c_cc[VTIME] = 0;		/* 5: read timeout */
-	ttyset->c_cc[VMIN] = 1;			/* 6: read returns after this many bytes */
-	ttyset->c_cc[VSUSP] = 0x1a;		/* 10: C-z */
-	ttyset->c_cc[VEOL] = '\r';		/* 11: */
+	ttyset->c_cc[VKILL] = 0x15;	/* 3: C-u */
+	ttyset->c_cc[VEOF] = 0x04;	/* 4: C-d */
+	ttyset->c_cc[VTIME] = 0;	/* 5: read timeout */
+	ttyset->c_cc[VMIN] = 1;		/* 6: read returns after this many bytes */
+	ttyset->c_cc[VSUSP] = 0x1a;	/* 10: C-z */
+	ttyset->c_cc[VEOL] = '\r';	/* 11: */
 	ttyset->c_cc[VREPRINT] = 0x12;	/* 12: C-r */
 //	ttyset->c_cc[VDISCARD] = 0x;	/* 13: IEXTEN only */
 	ttyset->c_cc[VWERASE] = 0x17;	/* 14: C-w */
 	ttyset->c_cc[VLNEXT] = 0x16;	/* 15: C-w */
-	ttyset->c_cc[VEOL2] = '\n';		/* 16: */
+	ttyset->c_cc[VEOL2] = '\n';	/* 16: */
 	return TRUE;
 	/* default VTIME = 0, VMIN = 1: read blocks forever until one byte */
 }
