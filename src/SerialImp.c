@@ -115,6 +115,12 @@ int cfmakeraw ( struct termios *term )
 extern int errno;
 #include "SerialImp.h"
 #define DEBUG
+#define DEBUG_MW  /* use Mathwork's mexPrintf for debugging */
+#ifdef DEBUG_MW
+extern void mexWarnMsgTxt( const char * );
+extern int mexPrintf( const char *, ... );
+#	define printf mexPrintf
+#endif DEBUG_MW
 
 /* this is so diff will not generate noise when merging 1.4 and 1.5 changes
  * It will eventually be removed.
@@ -169,7 +175,7 @@ JNIEXPORT void JNICALL RXTXPort(Initialize)(
 	}
 	if(strcmp(name.release,UTS_RELEASE)!=0)
 	{
-		fprintf(stderr, LINUX_KERNEL_VERSION_ERROR, UTS_RELEASE,
+		report( LINUX_KERNEL_VERSION_ERROR, UTS_RELEASE,
 			name.release);
 		getchar();
 	}
@@ -211,7 +217,8 @@ JNIEXPORT jint JNICALL RXTXPort(open)(
 	if ( LOCK( filename) )
 	{
 		(*env)->ReleaseStringUTFChars( env, jstr, filename );
-		fprintf( stderr, "locking has failed for %s\n", filename );
+		sprintf( message, "locking has failed for %s\n", filename );
+		report_error( message );
 		goto fail;
 	}
 	else
@@ -315,31 +322,31 @@ JNIEXPORT void JNICALL RXTXPort(nativeSetSerialPortParams)(
 
 	if( !cspeed )
 	{
-		fprintf(stderr, "Invalid Speed Selected\n");
+		report_error( "Invalid Speed Selected\n" );
 		return;
 	}
 
 	if( tcgetattr( fd, &ttyset ) < 0 )
 	{
-		fprintf(stderr, "Cannot Get Serial Port Settings\n");
+		report_error( "Cannot Get Serial Port Settings\n" );
 		goto fail;
 	}
 
 	if( !translate_data_bits( env, &(ttyset.c_cflag), dataBits ) )
 	{
-		fprintf(stderr, "Invalid Data Bits Selected\n");
+		report_error( "Invalid Data Bits Selected\n" );
 		return;
 	}
 
 	if( !translate_stop_bits( env, &(ttyset.c_cflag), stopBits ) )
 	{
-		fprintf(stderr, "Invalid Stop Bits Selected\n");
+		report_error( "Invalid Stop Bits Selected\n" );
 		return;
 	}
 
 	if( !translate_parity( env, &(ttyset.c_cflag), parity ) )
 	{
-		fprintf(stderr, "Invalid Parity Selected\n");
+		report_error( "Invalid Parity Selected\n" );
 		return;
 	}
 
@@ -402,7 +409,7 @@ JNIEXPORT void JNICALL RXTXPort(nativeSetSerialPortParams)(
 #ifdef __FreeBSD__
 	if( cfsetspeed( &ttyset, cspeed ) < 0 )
 	{
-		fprintf(stderr, "Cannot Set Speed\n");
+		report_error( "Cannot Set Speed\n" );
 		goto fail;
 	}
 #else
@@ -410,7 +417,7 @@ JNIEXPORT void JNICALL RXTXPort(nativeSetSerialPortParams)(
 		cfsetispeed( &ttyset, cspeed ) < 0 ||
 		cfsetospeed( &ttyset, cspeed ) < 0 )
 	{
-		fprintf(stderr, "Cannot Set Speed\n");
+		report_error( "Cannot Set Speed\n" );
 		goto fail;
 	}
 #endif  /* __FreeBSD__ */
@@ -1405,7 +1412,7 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 	/* CLOCAL eliminates open blocking on modem status lines */
 /*
 	if ((fd = OPEN(name, O_RDONLY | CLOCAL)) <= 0) {
-		fprintf( stderr "testRead() open failed\n" );
+		report_error( "testRead() open failed\n" );
 		ret = JNI_FALSE;
 		goto END;
 	}
@@ -1431,7 +1438,7 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 
 		/* save, restore later */
 		if ( ( saved_flags = fcntl(fd, F_GETFL ) ) < 0) {
-			fprintf( stderr, "testRead() fcntl(F_GETFL) failed\n" );
+			report_error( "testRead() fcntl(F_GETFL) failed\n" );
 			ret = JNI_FALSE;
 			goto END;
 		}
@@ -1439,7 +1446,7 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 		memcpy( &saved_termios, &ttyset, sizeof( struct termios ) );
 
 		if ( fcntl( fd, F_SETFL, O_NONBLOCK ) < 0 ) {
-			fprintf( stderr, "testRead() fcntl(F_SETFL) failed\n" );
+			report_error( "testRead() fcntl(F_SETFL) failed\n" );
 			ret = JNI_FALSE;
 			goto END;
 		}
@@ -1448,7 +1455,7 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 		ttyset.c_cc[VMIN] = ttyset.c_cc[VTIME] = 0;
 
 		if ( tcsetattr( fd, TCSANOW, &ttyset) < 0 ) {
-			fprintf( stderr, "testRead() tcsetattr failed\n" );
+			report_error( "testRead() tcsetattr failed\n" );
 			ret = JNI_FALSE;
 			tcsetattr( fd, TCSANOW, &saved_termios );
 			goto END;
@@ -1458,7 +1465,7 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 #ifdef EWOULDBLOCK
 			if ( errno != EWOULDBLOCK )
 			{
-				fprintf( stderr, "testRead() read failed\n" );
+				report_error( "testRead() read failed\n" );
 				ret = JNI_FALSE;
 			}
 #else
@@ -1897,6 +1904,23 @@ void throw_java_exception( JNIEnv *env, char *exc, char *foo, char *msg )
 }
 
 /*----------------------------------------------------------
+ report_error
+
+   accept:      string to send to report as an error
+   perform:     send the string to stderr or however it needs to be reported.
+   return:      none
+   exceptions:  none
+   comments:
+----------------------------------------------------------*/
+void report_error(char *msg)
+{
+#ifndef DEBUG_MW
+	fprintf(stderr, msg);
+#else
+	mexWarnMsgTxt( msg );
+#endif / *DEBUG_MW */
+}
+/*----------------------------------------------------------
  report
 
    accept:      string to send to stderr
@@ -1908,7 +1932,11 @@ void throw_java_exception( JNIEnv *env, char *exc, char *foo, char *msg )
 void report(char *msg)
 {
 #ifdef DEBUG
+#ifndef DEBUG_MW
 	fprintf(stderr, msg);
+#else
+	mexPrintf( msg );
+#endif / *DEBUG_MW */
 #endif /* DEBUG */
 }
 
@@ -1972,15 +2000,16 @@ int fhs_lock( const char *filename )
 	sprintf( file, "%s/LCK..%s", LOCKDIR, p );
 	if ( check_lock_status( filename ) )
 	{
-		fprintf(stderr, "fhs_lock() lockstatus fail\n");
+		report_error( "fhs_lock() lockstatus fail\n" );
 		return 1;
 	}
 	fd = open( file, O_CREAT | O_WRONLY | O_EXCL, 0666 );
 	if( fd < 0 )
 	{
-		fprintf(stderr, 
+		sprintf( message,
 			"RXTX fhs_lock() Error: creating lock file: %s\n",
 			file );
+		report_error( message ); 
 		return 1;
 	}
 	sprintf( lockinfo, "%10d\n",(int) getpid() );
@@ -2065,16 +2094,19 @@ int uucp_lock( const char *filename )
 	sprintf( lockinfo, "%10d\n", (int) getpid() );
 	if ( stat( lockfilename, &buf ) == 0 )
 	{
-		fprintf( stderr, "RXTX uucp_lock() %s is there\n",
+		sprintf( message,
+			"RXTX uucp_lock() %s is there\n",
 			lockfilename );
+		report_error( message );
 		return 1;
 	}
 	fd = open( lockfilename, O_CREAT | O_WRONLY | O_EXCL, 0666 );
 	if( fd < 0 )
 	{
-		fprintf( stderr,
+		sprintf( message, 
 			"RXTX uucp_lock() Error: creating lock file: %s\n",
 			lockfilename );
+		report_error( message );
 		return 1;
 	}
 	write( fd, lockinfo,11 );
@@ -2334,7 +2366,7 @@ int is_device_locked( const char *filename )
 						lockprefixes[k++], p );
 					if( stat( file, &buf ) == 0 )
 					{
-						fprintf( stderr, UNEXPECTED_LOCK_FILE );
+						report_error( UNEXPECTED_LOCK_FILE );
 						return 1;
 					}
 
@@ -2348,7 +2380,7 @@ int is_device_locked( const char *filename )
 					);
 					if( stat( file, &buf ) == 0 )
 					{
-						fprintf( stderr, UNEXPECTED_LOCK_FILE );
+						report_error( UNEXPECTED_LOCK_FILE );
 						return 1;
 					}
 				}
@@ -2396,9 +2428,10 @@ int is_device_locked( const char *filename )
 
 		if( kill( (pid_t) pid, 0 ) && errno==ESRCH )
 		{
-			fprintf( stderr,
+			sprintf( message, 
 				"RXTX Warning:  Removing stale lock file. %s\n",
 				file );
+			report_error( message );
 			if( unlink( file ) != 0 )
 			{
 				snprintf( message, 80, "RXTX Error:  Unable to \

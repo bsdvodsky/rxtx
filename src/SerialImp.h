@@ -202,6 +202,7 @@ int get_java_var( JNIEnv *, jobject, char *, char * );
 jboolean is_interrupted(JNIEnv *, jobject );
 int send_event(JNIEnv *, jobject, jint, int );
 void dump_termios(char *,struct termios *);
+void report_error(char *);
 void report(char *);
 void throw_java_exception( JNIEnv *, char *, char *, char * );
 int lock_device( const char * );
