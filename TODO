@@ -67,3 +67,8 @@ allow the library to catch sigint so it can shut down the port properly when
 sent
 ------------------
 Add more documentation.
+------------------
+
+IDEAS:
+
+Make rxtx apps capable of being spawned from mgetty.  <gluck@tempo-services.com.au>

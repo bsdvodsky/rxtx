@@ -1,7 +1,11 @@
 This package is not the result of one persons time.  Recognition is given
 to the following people for their assistance.
 
+"Alejandro P. Revilla" <apr@cs.com.uy> Assistance tracking down event_loop
+races.
+
 Peter Bennett <bencom@bencom.co.nz> Moxa serial board support.  Bug hunting.
+Simple Read/Write example contributions.
 
 Masayuki "Tencho" Yamashita <tencho@venus.kanazawa-it.ac.jp> Japanese install instructions
 
