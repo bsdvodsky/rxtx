@@ -22,7 +22,7 @@ import java.util.*;
 public class PortInUseException extends Exception
 {
 	public String currentOwner;
-	public PortInUseException( String str )
+	PortInUseException( String str )
 	{
 		currentOwner=str;
 	}
