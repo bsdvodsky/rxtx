@@ -53,7 +53,8 @@ final class RXTXPort extends SerialPort
 	*/
 	public RXTXPort( String name ) throws PortInUseException
 	{
-		if (debug) System.out.println("RXTXPort:RXTXPort("+name+")");
+		if (debug)
+			System.out.println("RXTXPort:RXTXPort("+name+")");
 	/* 
 	   commapi/javadocs/API_users_guide.html specifies that whenever
 	   an application tries to open a port in use by another application
@@ -78,6 +79,8 @@ final class RXTXPort extends SerialPort
 
 	/** File descriptor */
 	private int fd = 0;
+	/** pid for lock files */
+	int pid = 0;
 
 	/** DSR flag **/
 	static boolean dsrFlag = false;
@@ -466,27 +469,18 @@ final class RXTXPort extends SerialPort
 	/** 
 	*  @return boolean  true if monitor thread is interrupted
 	*/
-	public synchronized boolean checkMonitorThread() 
+	boolean monThreadisInterrupted=true;
+	public boolean checkMonitorThread()
 	{
 		if (debug)
 			System.out.println("RXTXPort:checkMonitorThread()");
 		if(monThread != null)
 		{
-			/* FIXME FIXME FIXME This print solves a deadlock
-			   don't ask me how.  See also sendEvent
-		   	   A sleep(50) wont work.  More than one eventLoop?
-
-		   	   test: fgetl check 7  Probably related to fprintf
-			   spin1.5 , pair 4. 
-
-			   Trent
-			*/
-			System.out.print("");
-			if (debug)
+			if ( debug )
 				System.out.println(
-					"monThread.isInterrupted = " +
-					monThread.isInterrupted() );
-			return monThread.isInterrupted();
+					"monThreadisInterrupted = " +
+					monThreadisInterrupted );
+			return monThreadisInterrupted;
 		}
 		if ( debug )
 			System.out.println( "monThread is null " );
@@ -501,16 +495,6 @@ final class RXTXPort extends SerialPort
 	public synchronized boolean sendEvent( int event, boolean state )
 	{
 
-		/* FIXME FIXME FIXME This print solves a deadlock
-		   don't ask me how.  See also checkMonitorThread
-		   A sleep(50) will work two.  More than one eventLoop?
-
-		   test: fgetl check 7  Probably related to fprintf
-		   spin1.5 , pair 4. 
-
-		   Trent
-		*/
-		System.out.print("");
 		if (debug)
 			System.out.print("RXTXPort:sendEvent(");
 		/* Let the native side know its time to die */
@@ -643,9 +627,6 @@ final class RXTXPort extends SerialPort
 		}
 		else 
 		{
-			try{
-				Thread.sleep(50);
-			} catch(Exception exc){}
 			return(false);  
 		}
 	}
@@ -663,6 +644,9 @@ final class RXTXPort extends SerialPort
 		if( SPEventListener != null )
 			throw new TooManyListenersException();
 		SPEventListener = lsnr;
+		if (debug)
+			System.out.println("RXTXPort:Interrupt=false");
+		monThreadisInterrupted=false;
 		monThread = new MonitorThread();
 		monThread.setDaemon(true);
 		monThread.start();
@@ -670,22 +654,43 @@ final class RXTXPort extends SerialPort
 	/**
 	*  Remove the serial port event listener
 	*/
-	public void removeEventListener()
+
+	public synchronized void removeEventListener()
 	{
 		if (debug)
 			System.out.println("RXTXPort:removeEventListener()");
-		SPEventListener = null;
-		if( monThread != null && monThread.isAlive() )
+		//if( monThread != null && monThread.isAlive() )
+		if( monThreadisInterrupted == true )
 		{
-			monThread.interrupt();
+			System.out.println("RXTXPort:removeEventListener() already interrupted");
+			monThread = null;
+			SPEventListener = null;
+			Runtime.getRuntime().gc();
+			return;
+		}
+		else if( monThread != null && monThread.isAlive() )
+		{
+			if (debug)
+				System.out.println("RXTXPort:Interrupt=true");
+			monThreadisInterrupted=true;
 			try {
 				monThread.join(1000);
 			} catch (Exception ex) {
 				/* yikes */
 				ex.printStackTrace();
 			}
+			while( monThread.isAlive() )
+			{
+				System.out.println("MonThread is stillalive!");
+				try {
+					Thread.sleep( 2 );
+				} catch( Exception e ){} 
+			}
+			
 		}
 		monThread = null;
+		SPEventListener = null;
+		Runtime.getRuntime().gc();
 	}
 
 	/**
@@ -789,14 +794,21 @@ final class RXTXPort extends SerialPort
 	public synchronized void close()
 	{
 		if (debug)
-			System.out.println("close(" + this.name + " )"); 
-		if ( fd <= 0 ) return;
+			System.out.println("RXTXPort:close(" + this.name + " )"); 
+		if ( fd <= 0 )
+		{
+			System.out.println( "RXTXPort:close detected bad File Descriptor" );
+			return;
+		}
 		setDTR(false);
 		setDSR(false);
 		nativeClose( this.name );
 		super.close();
 
-		removeEventListener();
+		if ( ! monThreadisInterrupted )
+		{
+			removeEventListener();
+		}
 
 		fd = 0;
 		Runtime.getRuntime().gc();
@@ -818,18 +830,18 @@ final class RXTXPort extends SerialPort
 	*  @param b
 	*  @throws IOException
 	*/
-                public synchronized void write( int b ) throws IOException
+		public synchronized void write( int b ) throws IOException
 		{
 			if (debug)
 				System.out.println("RXTXPort:SerialOutputStream:write(int)");
 			if ( fd == 0 ) throw new IOException();
-                        writeByte( b );
-                }
+				writeByte( b );
+		}
 	/**
 	*  @param b[]
 	*  @throws IOException
 	*/
-                public synchronized void write( byte b[] ) throws IOException
+		public synchronized void write( byte b[] ) throws IOException
 		{
 			if (debug)
 			{
@@ -837,17 +849,17 @@ final class RXTXPort extends SerialPort
 				System.out.println("RXTXPort:SerialOutputStream:write() data = " + new String(b) );
 			}
 			if ( fd == 0 ) throw new IOException();
-                        writeArray( b, 0, b.length );
+				writeArray( b, 0, b.length );
 			if (debug)
 				System.out.println("::::: Leaving RXTXPort:SerialOutputStream:write(" +b.length +")");
-                }
+		}
 	/**
 	*  @param b[]
 	*  @param off
 	*  @param len
 	*  @throws IOException
 	*/
-                public synchronized void write( byte b[], int off, int len )
+		public synchronized void write( byte b[], int off, int len )
 			throws IOException
 		{
 			if( off + len  > b.length )
@@ -865,20 +877,19 @@ final class RXTXPort extends SerialPort
 				System.out.println("RXTXPort:SerialOutputStream:write() data = " +  new String(send) );
 			}
 			if ( fd == 0 ) throw new IOException();
-                        writeArray( send, 0, len );
+				writeArray( send, 0, len );
 			if( debug )
 				System.out.println("::::: Leaving RXTXPort:SerialOutputStream:write(" + send.length + " " + off + " " + len + " " +")" +  new String(send) );
-                }
+		}
 	/**
 	*/
-                //public synchronized void flush() throws IOException
-                public void flush() throws IOException
+		//public synchronized void flush() throws IOException
+		public void flush() throws IOException
 		{
 			if (debug)
 				System.out.println("RXTXPort:SerialOutputStream:flush() enter");
 			if ( fd == 0 ) throw new IOException();
-                        nativeDrain();
-			Thread.yield();
+				nativeDrain();
 			if (debug)
 				System.out.println("RXTXPort:SerialOutputStream:flush() leave");
 		}
@@ -895,10 +906,8 @@ final class RXTXPort extends SerialPort
 		public synchronized int read() throws IOException
 		{
 			if (debug)
-				System.out.println(">RXTXPort:SerialInputStream:read()");
+				System.out.println("RXTXPort:SerialInputStream:read()");
 			if ( fd == 0 ) throw new IOException();
-			if (debug)
-				System.out.println("<RXTXPort:SerialInputStream:read()");
 			return readByte();
 		}
 	/**
@@ -909,9 +918,7 @@ final class RXTXPort extends SerialPort
 		public synchronized int read( byte b[] ) throws IOException
 		{
 			if (debug)
-				System.out.println(">RXTXPort:SerialInputStream:read(" + b.length + ")");
-			if (debug)
-				System.out.println("<RXTXPort:SerialInputStream:read(" + b.length + ")");
+				System.out.println("RXTXPort:SerialInputStream:read(" + b.length + ")");
 			return read ( b, 0, b.length);
 		}
 /*
@@ -1023,24 +1030,14 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 		{
 			if (debug)
 				System.out.println("RXTXPort:MontitorThread:run()"); 
-/*
-			while( monThread.isInterrupted() )
+			if( monThreadisInterrupted )
 			{
-				//try {
-					System.out.println("eventLoop is interupted");
-				//} catch(java.lang.InterruptedException e) {}
+				System.out.println("eventLoop is interrupted?");
 			}
-*/
-			/* another eventLoop is exiting? */
-			try {
-				Thread.sleep(500);
-			} catch(java.lang.InterruptedException e) {}
-			Thread.yield();
 			eventLoop();
-			yield();
+
 			if (debug)
 				System.out.println("eventLoop() returned"); 
-
 		}
 		protected void finalize() throws Throwable 
 		{ 
@@ -1153,7 +1150,7 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 	{
 		return nativeGetDivisor();
 	}
-	
+
 	/**
 	*  Extension to CommAPI
 	*  returns boolean true on success
