@@ -688,9 +688,9 @@ JNIEXPORT void JNICALL RXTXPort(writeByte)( JNIEnv *env,
 	LEAVE( "RXTXPort:writeByte" );
 	if(result >= 0)
 	{
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 		report( "sending OUTPUT_BUFFER_EMPTY\n" );
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 		send_event( env, jobj, SPE_OUTPUT_BUFFER_EMPTY, 1 );
 		return;
 	}
@@ -715,9 +715,9 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 	int fd = get_java_var( env, jobj,"fd","I" );
 	int result=0,total=0;
 	jbyte *body = (*env)->GetByteArrayElements( env, jbarray, 0 );
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 	char message[1000];
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 #if defined ( __sun__ )
 	struct timespec retspec, tspec;
 
@@ -726,11 +726,11 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 #endif /* __sun__ */
 
 	ENTER( "writeArray" );
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 	/* warning Will Rogers */
 	sprintf( message, "::::RXTXPort:writeArray(%s);\n", (char *) body );
 	report( message );
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 	do {
 		result=WRITE (fd, body + total + offset, count - total); /* dima */
 		if(result >0){
@@ -767,9 +767,9 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 	LEAVE( "RXTXPort:writeArray" );
 	if( result < 0 ) throw_java_exception( env, IO_EXCEPTION,
 		"writeArray", strerror( errno ) );
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 	report( "sending OUTPUT_BUFFER_EMPTY\n" );
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 	send_event( env, jobj, SPE_OUTPUT_BUFFER_EMPTY, 1 );
 /*
 	usleep(50);
@@ -795,23 +795,23 @@ JNIEXPORT void JNICALL RXTXPort(nativeDrain)( JNIEnv *env,
 	int fd = get_java_var( env, jobj,"fd","I" );
 	int result, count=0;
 
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 	char message[80];
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 
 	ENTER( "SerialImp.c:drain()" );
 	do {
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 		report( "trying tcdrain\n" );
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 		result=tcdrain(fd);
 		count++;
 	}  while (result && errno==EINTR && count <5);
 
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 	sprintf( message, "RXTXPort:drain() returns: %i\n", result ); 
 	report( message );
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 	LEAVE( "RXTXPort:drain()" );
 	if( result ) throw_java_exception( env, IO_EXCEPTION, "nativeDrain",
 		strerror( errno ) );
@@ -1556,9 +1556,9 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 {
 	int fd, ret, change, rc;
 	fd_set rfds;
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 	char message[80];
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 	unsigned int mflags, omflags;
 	jboolean interrupted = 0;
 #if defined TIOCSERGETLSR
@@ -1588,9 +1588,9 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 	/* Some multiport serial cards do not implement TIOCGICOUNT ... */
 	/* So use the 'dumb' mode to enable using them after all! JK00 */
 	if( ioctl( fd, TIOCGICOUNT, &osis ) < 0 ) {
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 		report( "Port does not support TIOCGICOUNT events\n" );
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 		has_tiocgicount = 0;
 	}
 #endif /*  TIOCGICOUNT */
@@ -1633,9 +1633,9 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 		}
 		else
 		{
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 			report( "eventLoop did not detect MonThread closing\n" );
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 		}
 
 
@@ -1654,9 +1654,9 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 			}
 			else if( change )
 			{
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 				report( "sending OUTPUT_BUFFER_EMPTY\n" );
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 				send_event( env, jobj, SPE_OUTPUT_BUFFER_EMPTY,
 					1 );
 			}

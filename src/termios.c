@@ -810,14 +810,14 @@ struct termios_list *find_port( int fd )
 
 	struct termios_list *index = first_tl;
 
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 	ENTER( "find_port" );
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 	if( !first_tl )
 	{
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 		LEAVE( "find_port" );
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 		return NULL;
 	}
 
@@ -825,18 +825,18 @@ struct termios_list *find_port( int fd )
 	{
 		if ( index->fd == fd )
 		{
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 			LEAVE( "find_port" );
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 			return index;
 		}
 		if ( !index->next )
 			break;
 		index = index->next;
 	}
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 	LEAVE( "find_port" );
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 	return NULL;
 }
 
@@ -1138,11 +1138,11 @@ int serial_write( int fd, char *Str, int length )
 	/* FIXME: OXTABS: convert tabs to spaces */
 	/* FIXME: ONOEOT: discard ^D (004) */
 
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 	/* warning Will Rogers! */
 	sprintf( message, "===== trying to write %s\n", Str );
 	report( message );
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 	if ( !WriteFile( index->hComm, Str, length, &nBytes, &index->wol ) )
 	{
 		if ( GetLastError() != ERROR_IO_PENDING )
@@ -1235,9 +1235,9 @@ int serial_read( int fd, void *vb, int size )
 	{
 		vmin = 0;
 		do {
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 			report("vmin=0\n");
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 			error = ClearCommError( index->hComm, &error, &stat);
 			//usleep(50);
 		}
@@ -1247,9 +1247,9 @@ int serial_read( int fd, void *vb, int size )
 	{
 		/* VTIME is in units of 0.1 seconds */
 
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 		report("vmin!=0\n");
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 		vmin = index->ttyset->c_cc[VMIN];
 
 		c = clock() + index->ttyset->c_cc[VTIME] * CLOCKS_PER_SEC / 10;
@@ -1266,12 +1266,12 @@ int serial_read( int fd, void *vb, int size )
 	{
 		nBytes = 0;
 		err = ReadFile( index->hComm, vb + total, size, &nBytes, &index->rol ); 
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 	/* warning Will Rogers! */
 		sprintf(message, " ========== ReadFile = %i %s\n",
 			( int ) nBytes, (char *) vb + total );
 		report( message );
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 		size -= nBytes;
 		total += nBytes;
 		
@@ -1724,12 +1724,12 @@ int tcgetattr( int fd, struct termios *s_termios )
 	s_termios->c_cc[VSTOP] = myDCB.XoffChar;
 	s_termios->c_cc[VEOF] = myDCB.EofChar;
 
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 	sprintf( message,
 		"tcgetattr: VTIME:%d, VMIN:%d\n", s_termios->c_cc[VTIME],
 		s_termios->c_cc[VMIN] );
 	report( message );
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 
 	/***** line discipline ( c_line ) ( == c_cc[33] ) *****/
 
@@ -1898,11 +1898,11 @@ int tcsetattr( int fd, int when, struct termios *s_termios )
 		return -1;
 	}
 
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 	sprintf( message, "VTIME:%d, VMIN:%d\n", s_termios->c_cc[VTIME],
 		s_termios->c_cc[VMIN] );
 	report( message );
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 	vtime = s_termios->c_cc[VTIME] * 100;
 	timeouts.ReadTotalTimeoutConstant = vtime;
 	/* max between bytes */
@@ -1917,7 +1917,7 @@ int tcsetattr( int fd, int when, struct termios *s_termios )
 		timeouts.ReadTotalTimeoutConstant = 0;
 		timeouts.ReadTotalTimeoutMultiplier = 0;
 	}
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 	sprintf( message, "ReadIntervalTimeout=%ld\n",
 		timeouts.ReadIntervalTimeout );
 	report( message );
@@ -1933,7 +1933,7 @@ int tcsetattr( int fd, int when, struct termios *s_termios )
 	sprintf( message, "ReadTotalTimeoutMultiplier: %ld\n",
 		timeouts.ReadTotalTimeoutMultiplier );
 	report( message );
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 	if ( !SetCommTimeouts( index->hComm, &timeouts ) )
 	{
 		YACK();
@@ -2186,9 +2186,9 @@ int ioctl( int fd, int request, ... )
 	struct termios_list *index;
 	char message[80];
 
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 	ENTER( "ioctl" );
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 	if ( fd <= 0 )
 		return 0;
 	index = find_port( fd );
@@ -2460,7 +2460,7 @@ int ioctl( int fd, int request, ... )
 				return -1;
 			}
 			*arg = ( int ) Stat.cbInQue;
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 			sprintf( message, "FIONREAD:  %i bytes available\n",
 				(int) Stat.cbInQue );
 			report( message );
@@ -2469,7 +2469,7 @@ int ioctl( int fd, int request, ... )
 				sprintf( message, "FIONREAD: %i\n", *arg );
 				report( message );
 			}
-#endif /* VERBOSE_DEBUG */
+#endif /* DEBUG_VERBOSE */
 			ret = 0;
 			break;
 
@@ -2485,9 +2485,9 @@ int ioctl( int fd, int request, ... )
 			return -ENOIOCTLCMD;
 	}
 	va_end( ap );
-#ifdef VERBOSE_DEBUG
+#ifdef DEBUG_VERBOSE
 	LEAVE( "ioctl" );
-#endif VERBOSE_DEBUG
+#endif DEBUG_VERBOSE
 	return 0;
 }
 
