@@ -661,7 +661,7 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 }
 
 /*----------------------------------------------------------
-RXTXPort.drain
+RXTXPort.nativeDrain
 
    accept:      none
    perform:     wait until all data is transmitted
@@ -673,7 +673,7 @@ RXTXPort.drain
                 count logic added to avoid infinite loops when EINTR is
                 true...  Thread.yeild() was suggested.
 ----------------------------------------------------------*/
-JNIEXPORT void JNICALL RXTXPort(drain)( JNIEnv *env,
+JNIEXPORT void JNICALL RXTXPort(nativeDrain)( JNIEnv *env,
 	jobject jobj )
 {
 	int fd = get_java_var( env, jobj,"fd","I" );
@@ -684,7 +684,7 @@ JNIEXPORT void JNICALL RXTXPort(drain)( JNIEnv *env,
 		count++;
 	}  while (result && errno==EINTR && count <5);
 
-	if( result ) throw_java_exception( env, IO_EXCEPTION, "drain",
+	if( result ) throw_java_exception( env, IO_EXCEPTION, "nativeDrain",
 		strerror( errno ) );
 }
 
@@ -1381,12 +1381,12 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 	//exit(0);
 	write(output, message, strlen(message));
 	close(output);
+*/
 	if ( strcmp( name, "COM1" ) )
 		return( JNI_TRUE );
 	else
 		return( JNI_FALSE );
 	
-*/
 
 	/* 
 		LOCK is one of three functions defined in SerialImp.h

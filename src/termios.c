@@ -2191,6 +2191,24 @@ void Report( char *msg )
 #endif /* DEBUG */
 }
 
+static inline int inportb( int port )
+{
+   unsigned char value;
+  __asm__ volatile ("inb %1,%0"
+                    : "=a" (value)
+                    : "d" ((unsigned short)port));
+   return value;
+}
+
+static inline void outportb(unsigned char val, unsigned short int port)
+{
+  __asm__ volatile (
+                    "outb %0,%1\n"
+                    :
+                    : "a" (val), "d" (port)
+                    );
+}
+
 
 /*----------------------- END OF LIBRARY -----------------*/
 

@@ -443,7 +443,13 @@ final class RXTXPort extends SerialPort
 	private native void writeByte( int b ) throws IOException;
 	private native void writeArray( byte b[], int off, int len )
 		throws IOException;
-	private native void drain() throws IOException;
+	public void drain() throws IOException
+	{
+		if ( debug )
+			System.out.println("\nRXTXPort:drain()");
+		nativeDrain();
+	}
+	private native void nativeDrain() throws IOException;
 
 
 	/** RXTXPort read methods */
