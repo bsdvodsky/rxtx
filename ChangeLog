@@ -1,8 +1,22 @@
-This is ChangeLog Thu Oct  4 19:34:31 MDT 2001
+This is ChangeLog Sun Oct 14 14:13:12 MDT 2001
 
 rxtx-1.5 and rxtx-1.4 changes are kept in the same file.  skip to the version
 you downloaded.
 
+1.5-6  Oct 14, 2001   Mac OS X port to Code Warrier
+		      Documentation of the above
+		      possible double deletion fix
+		      all by Dmitry Markman <dmarkman@mac.com>
+		      Specified port fixes
+		      Santiago Nicolau <nicolaus@ing.unlpam.edu.ar>
+		      Merged with rxtx-1.4
+		      comm.jar renamed to RXTXcomm.jar to avoid confusion.
+		      port enumeration fixes
+		      multiple win32 fixes
+		      lockfile fixes for native threads
+		      thread fixes, thread test added.
+		      user defined lock directory support.
+		      Many more forgotten.
 1.5-5 Oct  4, 2001    Lock file fixes and other <wroberts1@home.com>
                       null termination of strings in lock_file
 		      <rob@pitman.co.za>
@@ -13,7 +27,7 @@ you downloaded.
 		      Code Warrior build files for Mac OS X 
 		      Dmitry Markman <dimitry.markman@verizon.net>
 		      win32 fixes and enhancments.
-1.5-5		      win32 fixes <wroberts1@home.com>
+		      win32 fixes <wroberts1@home.com>
 		      Initial Solaris port
 		      initial Mac OS X port
 		      Joseph Goldstone <joseph@lp.com>
@@ -62,13 +76,8 @@ you downloaded.
 		      Stallion Card support
 		      Greg Luck <gluck@tempo-services.com.au>
 		      CommPort enumeration with rxtx's comm.jar
-1.4-13 Oct 10, 2001   Java references cleanup
-		      Dmitry Markman <dimitry.markman@verizon.net>
-		      registered port fixes
-		      Santiago Nicolau <nicolaus@ing.unlpam.edu.ar>
-		      win32 fixes.  read/write code cleanup.
-		      Minor thread changes.
-1.4-12 Oct 10, 2001   Mac OS X port.  Dmitry's work.  Test Release.
+1.4-13 Oct 14, 2001   see rxtx-1.5-6
+1.4-12 Oct 10, 2001   see rxtx-1.5-6
 1.4-11 Oct  4, 2001   see rxtx-1.5-6
 1.4-10 Aug 31, 2001   see rxtx-1.5-5
 1.4-9  Jun 21, 2001   Steve Drach <drach@eng.sun.com>
