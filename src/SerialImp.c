@@ -521,8 +521,12 @@ int translate_speed( JNIEnv *env, jint speed )
 		case 9600:	return B9600;
 		case 19200:	return B19200;
 		case 38400:	return B38400;
+#ifdef B57600
 		case 57600:	return B57600;
+#endif /* B57600 */
+#ifdef B115200
 		case 115200:	return B115200;
+#endif /* B115200 */
 #ifdef B230400
 		case 230400:	return B230400;
 #endif /* B230400 */
