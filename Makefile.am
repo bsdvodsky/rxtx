@@ -26,7 +26,7 @@ export THREADS_FLAG=@THREAD_FLAG@
 JAVAC=$(JPATH)/bin/javac $(JCLASSPATH):$(COMM_JAR_PATH):$(JCL_JAR_PATH) -d $(TOP)/ -O 
 JAVAH=$(JPATH)/bin/javah $(JCLASSPATH) -d $(TOP)/$(target_alias) -jni
 JAVA=$(JPATH)/bin/java $(JCLASSPATH)
-JAR=$(JPATH)/bin/jar cf
+JAR=$(JPATH)/bin/jar 
 JAVADOC=$(JPATH)/bin/javadoc $(JCLASSPATH)
 LIBTOOL = $(SHELL) $(TOP)/libtool
 LINK = $(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) -version-info 1:0:1
@@ -68,20 +68,15 @@ all: @IDENTIFIERS@ @TARGETLIB@
 	@echo ""
 
 jcl:  $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class $(TOP)/gnu/io/RXTXPort.class @IDENTIFIERS@
-	$(JAR) jcl.jar gnu/io/*
+	$(JAR) cf jcl.jar gnu/io/*
 
 $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class \
 		$(TOP)/gnu/io/LPRPort.class \
 		: $(srcdir)/src/RXTXCommDriver.java \
 		$(srcdir)/src/LPRPort.java \
 		$(srcdir)/src/RXTXPort.java 
-	if [ ! $(THREADS_FLAG) ] && [ ! -d com ]; then \
-		if [ ! -f $(JPATH)/lib/comm.jar ]; then \
-			echo "Please install comm.jar from CommAPI in $(JPATH)/java/lib/"; \
-		else \
-			jar -xf $(JPATH)/lib/comm.jar; \
-		fi; \
-	fi;
+# handle java quirks here.
+	$(JAVAH_FIX) \
 	$(JAVAC) $(srcdir)/src/RXTXPort.java $(srcdir)/src/LPRPort.java $(srcdir)/src/RXTXCommDriver.java
 
 $(TOP)/$(target_alias)/libParallel.la: $(TOP)/$(target_alias)/ParallelImp.lo
