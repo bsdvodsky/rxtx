@@ -78,7 +78,7 @@ RXTXPort.Initialize
    return:      none
    exceptions:  none
    comments:    Basically this just causes rxtx to ignore signals.  signal
-                handlers where tried but the VM (circa 1.1) did not like it.
+		handlers where tried but the VM (circa 1.1) did not like it.
 
 		It also allows for some sanity checks on linux boxes if DEBUG
 		is enabled.
@@ -194,7 +194,7 @@ JNIEXPORT void JNICALL RXTXPort(nativeClose)( JNIEnv *env,
 	int fd = get_java_var( env, jobj,"fd","I" );
 	const char *filename = (*env)->GetStringUTFChars( env, jstr, 0 );
 
-	if(fd > 0)
+	if (fd > 0)
 	{
 		do {
 			result=close (fd);
@@ -1146,6 +1146,24 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(isDeviceGood)(JNIEnv *env,
 	(*env)->ReleaseStringUTFChars(env, tty_name, name);
 	return(result);
 }
+
+/*----------------------------------------------------------
+ getDeviceDirectory
+
+   accept:      
+   perform:     
+   return:      the directory containing the device files
+   exceptions:  
+   comments:    use this to avoid hard coded "/dev/"
+   		values are in SerialImp.h
+----------------------------------------------------------*/
+
+JNIEXPORT jstring  JNICALL RXTXCommDriver(getDeviceDirectory)(JNIEnv *env,
+	jobject jobj)
+{
+	return (*env)->NewStringUTF(env, DEVICEDIR);
+}
+
 /*----------------------------------------------------------
  setInputBufferSize
 
@@ -1298,8 +1316,10 @@ int get_java_var( JNIEnv *env, jobject jobj, char *id, char *type )
 	result = (int)( (*env)->GetIntField( env, jobj, jfd ) );
 /* ct7 & gel * Added DeleteLocalRef */
 	(*env)->DeleteLocalRef( env, jclazz );
+#ifdef DEBUG
 	if(!strncmp("fd",id,2) && result == 0)
 		report("invalid file descriptor\n");
+#endif /* DEBUG */
 	return result;
 }
 

@@ -22,7 +22,7 @@
 
 	basic problem is LP_P* appears to be ifdefed __KERNEL__ in the
         lp.h header file on linux.  It also looks as if LP_P* should be
-        LP_* for POSOX compliance.  So... Some P's got chopped out.
+        LP_* for POSIX compliance.  So... Some P's got chopped out.
         Its not clear what LP_PACK is supposed to become so its commented out
         below.
 

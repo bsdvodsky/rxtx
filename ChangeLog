@@ -81,7 +81,7 @@ you downloaded.
 		      Suse build fixes.
 		      Jean-Francois Fels <Jean-Francois.Fels@cnes.fr>
 		      jdk-1.3 build fix (lost the email that pointed this out) 
-		      took out extra code from 1.5 developement to simplify 
+		      took out extra code from 1.5 development to simplify 
 		      the package.
 1.3-13 Mar 26, 2000   patches for Cyclades support and other multi-port cards
 		      that do not support TIOCGICOUNT or TIOCSERGETLSR

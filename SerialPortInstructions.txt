@@ -1,3 +1,5 @@
+Thu Jan 18 15:59:35 MST 2001 removed jcl references for rxtx 1.5 Trent.
+
 The Following was contributed by Vaibhav Andleigh andleigh@mit.edu in hopes
 that it will make getting started easier for people new to commAPI.
 
@@ -50,7 +52,7 @@ anyways.
 
 Then install rxtx-1.4-4 following instructions given in
 their install page.  They have a really useful bit of info
-in the INSTALL file talking about where the jcl.jar, comm.jar,
+in the INSTALL file talking about where the comm.jar,
 javax.comm.properties files(and its contents) are supposed to go 
 (and what other files (libSerial.so and libParallel.so)should
 have been created and where).  Verify this happened properly.
@@ -72,10 +74,12 @@ java location if necessary):
 runBlackBox.sh
 #!/bin/sh
 /usr/local/java/bin/java -classpath
-./:/usr/local/java/jre/lib/ext/jcl.jar:/usrlocal/java/jre/lib/ext/comm.jar:/usr/local/java/samples/BlackBox/BlackBox.jar
+./:/usrlocal/java/jre/lib/ext/comm.jar:/usr/local/java/samples/BlackBox/BlackBox.jar
 BlackBox      
 
 Run this script as ROOT using ssh, not su!
+[or make sure permissions for the device files allow the user/group to read 
+them.  See also: lockfiles in INSTALL]
 
 It should put up a screen with a GUI of everything going on for each
 of your serial ports.  At the top of the screen, you can set the baud
@@ -96,13 +100,13 @@ programs below:
 runSimpleRead.sh  
 #!/bin/sh
 /usr/local/java/bin/java -classpath
-./:/usr/local/java/jre/lib/ext/jcl.jar:/usrlocal/java/jre/lib/ext/comm.jar
+./:/usrlocal/java/jre/lib/ext/comm.jar
 SimpleRead
 
 runSimpleWrite.sh 
 #!/bin/sh
 /usr/local/java/bin/java -classpath
-./:/usr/local/java/jre/lib/ext/jcl.jar:/usrlocal/java/jre/lib/ext/comm.jar
+./:/usrlocal/java/jre/lib/ext/comm.jar
 SimpleWrite
 
 

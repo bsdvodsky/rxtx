@@ -17,16 +17,16 @@
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
 package gnu.io;
-import java.io.*;
-import java.util.*;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.IOException;
+import java.util.TooManyListenersException;
 import java.lang.Math;
-import java.lang.Runtime;
-import javax.comm.*;
-
 
 /**
   * RXTXPort
   */
+
 final class RXTXPort extends SerialPort
 {
 
@@ -39,6 +39,7 @@ final class RXTXPort extends SerialPort
 
 	/** Initialize the native library */
 	private native static void Initialize();
+	private static boolean debug = false;
 
 
 	/** Actual SerialPort wrapper class */
@@ -47,6 +48,7 @@ final class RXTXPort extends SerialPort
 	/** Open the named port */
 	public RXTXPort( String name ) throws PortInUseException
 	{
+		if (debug) System.out.println("RXTXPort:RXTXPort("+name+")");
 	/* 
 	   commapi/javadocs/API_users_guide.html specifies that whenever
 	   an application tries to open a port in use by another application
@@ -62,6 +64,9 @@ final class RXTXPort extends SerialPort
 			fd = open( name );
 			this.name = name;
 	//	} catch ( PortInUseException e ){}
+		if (debug)
+			System.out.println("RXTXPort:RXTXPort("+name+") fd = " +
+				fd);
 	}
 	private native synchronized int open( String name )
 		throws PortInUseException;
@@ -447,7 +452,7 @@ final class RXTXPort extends SerialPort
 
 
 	/** Close the port */
-	private native void nativeClose(String name);
+	private native void nativeClose( String name );
 	public synchronized void close()
 	{
 		if ( fd <= 0 ) return;

@@ -18,13 +18,17 @@
 --------------------------------------------------------------------------*/
 package gnu.io;
 
-import java.io.*;
-import java.util.*;
-
 import javax.comm.*;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.IOException;
+import java.util.TooManyListenersException;
+import java.lang.Math;
+
 /**
   * LPRPort
   */
+
 final class LPRPort extends ParallelPort
 {
 
@@ -35,14 +39,30 @@ final class LPRPort extends ParallelPort
 
 	/** Initialize the native library */
 	private native static void Initialize();
+	private static boolean debug = false;
 
 	/** Open the named port */
 	public LPRPort( String name ) throws PortInUseException
 	{
-//		try {
+		if (debug) System.out.println("LPRPort:LPRPort("+name+")");
+	/* 
+	   commapi/javadocs/API_users_guide.html specifies that whenever
+	   an application tries to open a port in use by another application
+	   the PortInUseException will be thrown
+
+	   I know some didnt like it this way but I'm not sure how to avoid
+	   it.  We will just be writing to a bogus fd if we catch the 
+	   exeption
+
+	   Trent
+	*/
+	//	try {
 			fd = open( name );
 			this.name = name;
-//		} catch ( PortInUseException e ){}
+	//	} catch ( PortInUseException e ){}
+		if (debug)
+			System.out.println("LPRPort:LPRPort("+name+") fd = " +
+				fd);
 	}
 	private synchronized native int open( String name )
 		throws PortInUseException;
