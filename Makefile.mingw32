@@ -36,16 +36,16 @@ SRC=../src
 DOSSRC=..\\\src
 
 # path to the jdk directory that has include, bin, lib, ... Unix style path
-JDKHOME=/jdk118
+JDKHOME=C:/jdk118
 
 # path to install jcl.jar DOS style path
-COMMINSTALL="\jdk118\lib"
+COMMINSTALL="C:\jdk118\lib"
 
 # path to install the shared libraries DOS style path
-LIBINSTALL="\jdk118\bin"
+LIBINSTALL="C:\jdk118\bin"
 
 # path to the mingw32 libraries (directory with libmingw32.a) DOS style path
-LIBDIR="\mingw\lib"
+LIBDIR="C:\mingw\lib"
 
 ######################
 #  End of user defined variables
@@ -63,15 +63,16 @@ DLLTOOL=dlltool
 # this looks like a nice tool but I was not able to get symbols in the dll.
 DLLWRAP=dllwrap
 
-JAVAH=javah
-JAR=jar
-JAVAC=javac
+CLASSPATH=-classpath C:\\\jdk118\\\lib\\\comm.jar\;C:\\\jdk118\\\lib\\\jcl.jar\;c:\\\BlackBox.jar\;c:\\\jdk118\\\lib\\\classes.zip
+JAVAH=javah $(CLASSPATH)
+JAR=jar 
+JAVAC=javac $(CLASSPATH)
 
 ######################
 #  Tool Flags
 ######################
 
-CFLAGS= $(INCLUDE) -mno-cygwin -DWIN32 -D __int64="long long" -mno-fp-ret-in-387 -Wall 
+CFLAGS= $(INCLUDE) -mno-cygwin -DWIN32 -D __int64="long long" -mno-fp-ret-in-387 -Wall -D TRENT_IS_HERE_DEBUGGING_ENUMERATION # -DTRENT_IS_HERE
 INCLUDE= -I . -I $(JDKINCLUDE) -I $(JDKINCLUDE)/win32 -I $(SRC) -I include
 JAVAHFLAGS= -jni -d include
 LIBS=-L $(LIBDIR) -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmingw32 -lmoldname -lcrtdll
@@ -81,9 +82,12 @@ JDKINCLUDE=$(JDKHOME)/include
 JAVAFILES = $(wildcard $(SRC)/*.java)
 CFILES=$(wildcard $(SRC)/*.c) $(wildcard $(SRC)/*.cc)
 TARGETLIBS= Serial.dll 
-DLLOBJECTS= fixup.o SerialImp.o termios.o init.o
+DLLOBJECTS= fixup.o SerialImp.o termios.o init.o libmex.dll
 
-all:  $(TARGETLIBS)
+all:  $(TARGETLIBS) # rebuild  rebuild will force everything to be built.
+
+rebuild:
+	rm -rf gnu include jcl.jar Serial.* *.o gnutimestamp 
 
 include:
 	mkdir include
@@ -154,7 +158,9 @@ include/config.h:  gnutimestamp
 
 install: all
 	xcopy jcl.jar $(COMMINSTALL)
+	xcopy jcl.jar "d:\matlab~1\java\jarext\commapi\win32"
 	xcopy $(TARGETLIBS) $(LIBINSTALL)
+	xcopy $(TARGETLIBS) "d:\matlab~1\java\jarext\commapi\win32"
 
 uninstall:
 	del $(COMMINSTALL)\\\jcl.jar
