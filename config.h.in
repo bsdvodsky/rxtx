@@ -1,8 +1,5 @@
 /* config.h.in.  Generated automatically from configure.in by autoheader.  */
 
-#undef PACKAGE
-#undef VERSION
-
 /* Define if you have the <fcntl.h> header file.  */
 #undef HAVE_FCNTL_H
 
@@ -17,3 +14,10 @@
 
 /* Define if you have the <termios.h> header file.  */
 #undef HAVE_TERMIOS_H
+
+/* Name of package */
+#undef PACKAGE
+
+/* Version number of package */
+#undef VERSION
+
