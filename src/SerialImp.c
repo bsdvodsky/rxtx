@@ -5090,7 +5090,7 @@ get_java_var
    exceptions:  none
    comments:
 ----------------------------------------------------------*/
-int
+size_t
 get_java_var (JNIEnv * env, jobject jobj, char *id, char *type)
 {
   int result = 0;
