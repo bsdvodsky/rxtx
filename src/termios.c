@@ -8,6 +8,8 @@
 #endif /* DEBUG_MW */
 #endif /* TRENT_IS_HERE */
 extern void report( char * );
+extern void report_warning( char * );
+extern void report_error( char * );
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
 |   Copyright 1997-2001 by Trent Jarvi trentjarvi@yahoo.com.

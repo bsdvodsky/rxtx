@@ -1523,7 +1523,7 @@ unlock_monitor_thread
 void unlock_monitor_thread( struct event_info_struct *eis )
 {
 	JNIEnv *env = eis->env;
-	jclass jclazz = (*env)->GetObjectClass( env, *eis->jobj );
+
 	jfieldID jfid = (*env)->GetFieldID( env, eis->jclazz,
 		"MonitorThreadLock", "Z" );
 	(*env)->SetBooleanField( env, *eis->jobj, jfid, JNI_FALSE );
@@ -1671,11 +1671,11 @@ check_tiocmget_changes
 
    accept:      event_info_struct
    perform:     use TIOCMGET to report events
-   return:      0 if not available
+   return:      none
    exceptions:  none
    comments:    not supported on all devices/drivers.
 ----------------------------------------------------------*/
-unsigned int check_tiocmget_changes( struct event_info_struct * eis )
+void check_tiocmget_changes( struct event_info_struct * eis )
 {
 	unsigned int mflags;
 	int change = eis->change;
@@ -1723,7 +1723,15 @@ void system_wait()
 	} while( tspec.tv_nsec != 0 );
 */
 #else
-//	usleep(50000);
+#ifdef TRENT_IS_HERE_DEBUGGING_THREADS
+	/* On NT4 The following was observed in a intense test:
+		50000   95%   179 sec
+		200000  95%   193 sec
+		1000000 95%   203 sec	some callback failures sometimes.
+		2000000 0-95% 		callback failures.
+	*/
+	usleep(500000);
+#endif /* TRENT_IS_HERE_DEBUGGING_THREADS */
 #endif /* __sun__ */
 }
 
