@@ -1,9 +1,14 @@
-This is ChangeLog Thu Oct 18 14:08:20 MDT 2001
+This is ChangeLog Wed Nov 14 16:52:11 MST 2001
 
 rxtx-1.5 and rxtx-1.4 changes are kept in the same file.  skip to the version
 you downloaded.
 
-1.5-7  Oct 18, 2001   UnixWare and OpenUNIX ports
+1.5-8  Nov 14, 2001   True64 Port Finbarr O'Kane <finbarr@e-merge.ie>
+		      FreeBSD fixes Peter C. Verhage <peter@no-nonsense.org>
+		      --disable-lockfiles fixed.
+		      Same exception messages as Sun's CommAPI for baudrate
+		      errors.
+1.5-7  Nov 2, 2001    UnixWare and OpenUNIX ports
 		      Jonathan Schilling <jls@caldera.com>
 		      autotool support for Mac OS X
 		      Dmitry Markman <dmarkman@mac.com>
