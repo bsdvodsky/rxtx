@@ -32,7 +32,7 @@ import javax.comm.*;
 final class RXTXPort extends SerialPort
 {
 
-	private static boolean debug = false;
+	private static boolean debug = flase;
 	static
 	{
 		if(debug ) 
@@ -443,14 +443,7 @@ final class RXTXPort extends SerialPort
 	private native void writeByte( int b ) throws IOException;
 	private native void writeArray( byte b[], int off, int len )
 		throws IOException;
-	public void drain() throws IOException
-	{
-		if ( debug )
-			System.out.println("\nRXTXPort:drain()");
-		nativeDrain();
-	}
 	private native void nativeDrain() throws IOException;
-
 
 	/** RXTXPort read methods */
 	private native int nativeavailable() throws IOException;
@@ -773,7 +766,7 @@ final class RXTXPort extends SerialPort
 			if (debug)
 				System.out.println("\nRXTXPort:SerialOutputStream:flush()");
 			if ( fd == 0 ) throw new IOException();
-                        drain();
+                        nativeDrain();
 		}
 	}
 
