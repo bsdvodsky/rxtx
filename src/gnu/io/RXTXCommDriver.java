@@ -27,18 +27,21 @@ import javax.comm.*;
 public class RXTXCommDriver implements CommDriver {
 
 
-	/** Serial port prefixes to check for */
-	private static final String[] portPrefix = {
-		"modem",	// modem ports
-		"ttyS",	// standard serial ports
-		"ttyd",	// irix serial ports
-		"ttyf",	// irix serial ports with hardware flow
-		"ttym",	// irix modems
-		"ttyq",	// irix pseudo ttys
-		"ttyW",	// specialix cards
-		"ttyC",	// cyclades cards
-		"ttyI"  // ISDN4Linux
-	};
+	/** Get the Serial port prefixes for the running OS */
+	private final String[] getSerialPortPrefixes() {
+		String os = System.getProperties().getProperty( "os.name" );
+		if( os.equals( "Linux" ) )
+			return new String [] { "modem", "ttyS", "ttyW", "ttyC", "ttyI" };
+		return new String [] {
+			"modem",	// modem ports
+			"ttyd",	// irix serial ports
+			"ttyf",	// irix serial ports with hardware flow
+			"ttym",	// irix modems
+			"ttyq",	// irix pseudo ttys
+			"ttyW",	// specialix cards
+			"ttyC"	// cyclades cards
+		};
+	}
 
 
    /*
@@ -53,6 +56,7 @@ public class RXTXCommDriver implements CommDriver {
 	public void initialize() {
 		File dev = new File( "/dev" );
 		String[] devs = dev.list();
+		String[] portPrefix = getSerialPortPrefixes();
 		for( int i = 0; i < devs.length; i++ ) {
 			for( int p = 0; p < portPrefix.length; p++ ) {
 				if( devs[ i ].startsWith( portPrefix[ p ] ) ) {
