@@ -30,7 +30,8 @@ public class ParallelPortEvent extends EventObject
 	private int eventType;
 	/*public int eventType           =0; depricated */
 
-	public ParallelPortEvent(ParallelPort srcport, int eventtype, boolean oldvalue, boolean newvalue)
+	public ParallelPortEvent(ParallelPort srcport, int eventtype, 
+		boolean oldvalue, boolean newvalue)
 	{
 		super( srcport );	
 		OldValue=oldvalue;

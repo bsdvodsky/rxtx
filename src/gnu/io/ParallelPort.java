@@ -25,13 +25,14 @@ import java.util.*;
 /**
   * ParallelPort
   */
-public  abstract class ParallelPort extends CommPort {
-	public int  LPT_MODE_ANY   =0;
-	public int  LPT_MODE_SPP   =1;
-	public int  LPT_MODE_PS2   =2;
-	public int  LPT_MODE_EPP   =3;
-	public int  LPT_MODE_ECP   =4;
-	public int  LPT_MODE_NIBBLE=5;
+public  abstract class ParallelPort extends CommPort 
+{
+	public static final int  LPT_MODE_ANY   =0;
+	public static final int  LPT_MODE_SPP   =1;
+	public static final int  LPT_MODE_PS2   =2;
+	public static final int  LPT_MODE_EPP   =3;
+	public static final int  LPT_MODE_ECP   =4;
+	public static final int  LPT_MODE_NIBBLE=5;
 
 	public abstract int getMode();
 	public abstract int setMode(int mode);
@@ -43,7 +44,8 @@ public  abstract class ParallelPort extends CommPort {
 	public abstract boolean isPrinterSelected();
 	public abstract boolean isPrinterTimedOut();
 	public abstract int getOutputBufferFree();
-	public abstract void addEventListener( ParallelPortEventListener lsnr ) throws TooManyListenersException;
+	public abstract void addEventListener( ParallelPortEventListener lsnr )
+		throws TooManyListenersException;
 	public abstract void removeEventListener();
 	public abstract void notifyOnError( boolean enable );
 	public abstract void notifyOnBuffer( boolean enable );
@@ -60,7 +62,8 @@ public  abstract class ParallelPort extends CommPort {
 	private final ParallelInputStream in = new ParallelInputStream();
 	public InputStream getInputStream();
 	private int lprmode=LPT_MODE_ANY;
-	public native boolean setLPRMode(int mode) throws UnsupportedCommOperationException;
+	public native boolean setLPRMode(int mode) 
+		throws UnsupportedCommOperationException;
         private int speed;
         public int getBaudRate();
         private int dataBits;
@@ -71,7 +74,8 @@ public  abstract class ParallelPort extends CommPort {
 	public int getParity();
 	private native void nativeClose();
 	public void close();
-	public void enableReceiveFraming( int f ) throws UnsupportedCommOperationException;
+	public void enableReceiveFraming( int f ) 
+		throws UnsupportedCommOperationException;
 	public void disableReceiveFraming() {}
 	public boolean isReceiveFramingEnabled();
 	public int getReceiveFramingByte();
@@ -90,11 +94,13 @@ public  abstract class ParallelPort extends CommPort {
 	public native void setOutputBufferSize( int size );
 	public Abstract int getOutputBufferSize();
 	private native void writeByte( int b ) throws IOException;
-	private native void writeArray( byte b[], int off, int len ) throws IOException;
+	private native void writeArray( byte b[], int off, int len ) 
+		throws IOException;
 	private native void drain() throws IOException;
 	private native int nativeavailable() throws IOException;
 	private native int readByte() throws IOException;
-	private native int readArray( byte b[], int off, int len ) throws IOException;
+	private native int readArray( byte b[], int off, int len ) 
+		throws IOException;
 	private ParallelPortEventListener PPEventListener;
 	private MonitorThread monThread;
 	native void eventLoop();
