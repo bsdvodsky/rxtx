@@ -703,3 +703,8 @@ int fcntl(int fd, int command, int arg) {
 	fprintf(stderr, "FIXME: fcntl(%d, %#o, %#o)\n", fd, command, arg);
 	return 0;
 }
+int  serial_select(int  n,  fd_set  *readfds,  fd_set  *writefds, fd_set *exceptfds, struct timeval *timeout) {
+	return 1;
+	/* FIXME */
+}
+

@@ -19,17 +19,19 @@
 
 
 /* javax.comm.SerialPort constants */
+#ifndef WIN32
 #define DATABITS_5		5
 #define DATABITS_6		6
 #define DATABITS_7		7
 #define DATABITS_8		8
-#define STOPBITS_1		1
-#define STOPBITS_2		2
 #define PARITY_NONE		0
 #define PARITY_ODD		1
 #define PARITY_EVEN		2
 #define PARITY_MARK		3
 #define PARITY_SPACE		4
+#endif
+#define STOPBITS_1		1
+#define STOPBITS_2		2
 #define FLOWCONTROL_NONE	0
 #define FLOWCONTROL_RTSCTS_IN	1
 #define FLOWCONTROL_RTSCTS_OUT	2

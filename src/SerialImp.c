@@ -22,24 +22,29 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
+#ifndef WIN32
 #include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/errno.h>
 #include <sys/param.h>
-#include <sys/time.h>
 #include <sys/utsname.h>
 #ifdef HAVE_TERMIOS_H
 #	include <termios.h>
 #endif
+#ifdef HAVE_SYS_SIGNAL_H
+#   include <sys/signal.h>
+#endif
+#else
+#	include <win32termios.h>
+#	include <stdlib.h>
+#endif
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/time.h>
 #ifdef HAVE_SYS_FCNTL_H
 #   include <sys/fcntl.h>
 #endif
 #ifdef HAVE_SYS_FILE_H
 #   include <sys/file.h>
-#endif
-#ifdef HAVE_SYS_SIGNAL_H
-#   include <sys/signal.h>
 #endif
 
 #if defined(__linux__)
@@ -64,6 +69,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_Initialize(
 	jclass jclazz 
 	)
 {
+#ifndef WIN32
 	struct utsname name;
 	/* This bit of code checks to see if there is a signal handler installed
 	   for SIGIO, and installs SIG_IGN if there is not.  This is necessary
@@ -89,6 +95,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_Initialize(
 		getchar();
 	}
 #endif /* __linux__ */
+#endif /* WIN32 */
 	
 
 }
@@ -137,8 +144,10 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_open(
 #endif
 	if( tcsetattr( fd, TCSAFLUSH, &ttyset ) < 0 ) goto fail;
 
+#ifndef WIN32
 	fcntl( fd, F_SETOWN, getpid() );
 	fcntl( fd, F_SETFL, FASYNC );
+#endif /* WIN32 */
 
 	return (jint)fd;
 
@@ -1133,7 +1142,11 @@ void throw_java_exception( JNIEnv *env, char *exc, char *foo, char *msg )
 		(*env)->ExceptionClear( env );
 		return;
 	}
+#if defined(_GNU_SOURCE)
 	snprintf( buf, 60, "%s in %s", msg, foo );
+#else
+	sprintf( buf,"%s in %s", msg, foo );
+#endif /* _GNU_SOURCE */
 	(*env)->ThrowNew( env, clazz, buf );
 }
 
