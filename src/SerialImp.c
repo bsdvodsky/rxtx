@@ -3573,11 +3573,11 @@ int check_lock_pid( const char *file, int openpid )
 int check_group_uucp()
 {
 #ifndef USER_LOCK_DIRECTORY
-	struct group *g = getgrnam( "uucp" );
+	int group_count;
 	struct passwd *user = getpwuid( geteuid() );
 	struct stat buf;
-	gid_t res = getegid();
 	char msg[80];
+	gid_t list[ NGROUPS_MAX ];
 
 	if( stat( LOCKDIR, &buf) )
 	{
@@ -3585,8 +3585,19 @@ int check_group_uucp()
 		report_error( msg );
 		return( 1 );
 	}
-	if( res && buf.st_gid != res )
+	group_count = getgroups( NGROUPS_MAX, list );
+	list[ group_count ] = geteuid();
+
+	if( user->pw_gid )
 	{
+		while( group_count >= 0 && buf.st_gid != list[ group_count ] )
+		{
+  			group_count--; 
+		}
+		if( buf.st_gid == list[ group_count ] )
+			return 0;
+		sprintf( msg, "%i %i\n", buf.st_gid, list[ group_count ] );
+		report_error( msg );
 		report_error( UUCP_ERROR );
 		return 1;
 	}
