@@ -67,8 +67,8 @@ final class LPRPort extends ParallelPort {
 		lprmode = mode;
 		return(0);
 	}
-	public void restart(){};
-	public void suspend(){};
+	public void restart(){System.out.println("restart() is not implemented"};
+	public void suspend(){System.out.println("suspend() is not implemented"};
 	
 	public native boolean setLPRMode(int mode) throws UnsupportedCommOperationException;
 	public native boolean isPaperOut();
@@ -94,7 +94,12 @@ final class LPRPort extends ParallelPort {
 	public int getParity() { return parity; }
 
 	/** Close the port */
-	public native void close();
+	private native void nativeClose();
+	public void close(){
+		nativeClose();
+		super.close();
+		fd = 0;
+	}
 	/** Receive framing control */
 	public void enableReceiveFraming( int f )
 		throws UnsupportedCommOperationException
@@ -152,17 +157,17 @@ final class LPRPort extends ParallelPort {
 	private ParallelPortEventListener PPEventListener;
 
 	/** Thread to monitor data */
-	private Thread monThread;
+	private MonitorThread monThread;
 
 	/** Process ParallelPortEvents */
 	native void eventLoop();
 	void sendEvent( int event, boolean state ) {
 		switch( event ) {
 			case ParallelPortEvent.PAR_EV_BUFFER:
-				if( monBuffer ) break;
+				if(  monThread.monBuffer ) break;
 				return;
 			case ParallelPortEvent.PAR_EV_ERROR:
-				if( monError ) break;
+				if(  monThread.monError ) break;
 				return;
 			default:
 		}
@@ -176,12 +181,8 @@ final class LPRPort extends ParallelPort {
 	{
 		if( PPEventListener != null ) throw new TooManyListenersException();
 		PPEventListener = lsnr;
-		monThread = new Thread() {
-			public void run() {
-				eventLoop();
-			}
-		};
-		monThread.start(); 
+		monThread = new MonitorThread();
+		monThread.start();
 	}
 
 	/** Remove the parallel port event listener */
@@ -191,21 +192,18 @@ final class LPRPort extends ParallelPort {
 			monThread.interrupt();
 			monThread = null;
 		}
-		/* FIXME: Should we reset all the notify flags here? */
 	}
 
 	/** Note: these have to be separate boolean flags because the
 	   ParallelPortEvent constants are NOT bit-flags, they are just
 	   defined as integers from 1 to 10  -DPL */
-	private boolean monError = false;
-	public void notifyOnError( boolean enable ) { monError = enable; }
-	private boolean monBuffer = false;
-	public void notifyOnBuffer( boolean enable ) { monBuffer = enable; }
+	public void notifyOnError( boolean enable ) { monThread.monError = enable; }
+	public void notifyOnBuffer( boolean enable ) { monThread.monBuffer = enable; }
 
 
 	/** Finalize the port */
 	protected void finalize() {
-		close();
+		if ( fd > 0 ) close();
 	}
 
         /** Inner class for ParallelOutputStream */
@@ -238,5 +236,13 @@ final class LPRPort extends ParallelPort {
 		public int available() throws IOException {
 			return nativeavailable();
 		}
+	}
+class MonitorThread extends Thread {
+	private boolean monError = false;
+	private boolean monBuffer = false; 
+                MonitorThread() { }
+                public void run() {
+                        eventLoop();
+                }
 	}
 }

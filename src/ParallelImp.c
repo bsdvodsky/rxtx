@@ -223,14 +223,14 @@ fail:
 
 
 /*----------------------------------------------------------
-LPRPort.close
+LPRPort.nativeClose
 
    accept:      none
    perform:     get the fd from the java end and close it
    return:      none
    exceptions:  none
 ----------------------------------------------------------*/ 
-JNIEXPORT void JNICALL Java_gnu_io_LPRPort_close( JNIEnv *env,
+JNIEXPORT void JNICALL Java_gnu_io_LPRPort_nativeClose( JNIEnv *env,
 	jobject jobj )
 {
 	int fd = get_java_fd( env, jobj );
@@ -456,12 +456,21 @@ LPRPort.eventLoop
    return:      none
    exceptions:  none
    comments:    lots of work needed here
+struct lp_stats {
+        unsigned long chars;
+        unsigned long sleeps;
+        unsigned int maxrun;
+        unsigned int maxwait;
+        unsigned int meanwait;
+        unsigned int mdev;
+};
+
 ----------------------------------------------------------*/ 
 JNIEXPORT void JNICALL Java_gnu_io_LPRPort_eventLoop( JNIEnv *env,
 	jobject jobj )
 {
 	int fd, ret, change;
-	unsigned int mflags;
+	unsigned int pflags;
 	fd_set rfds;
 	struct timeval sleep;
 	jfieldID jfield;
@@ -482,10 +491,23 @@ JNIEXPORT void JNICALL Java_gnu_io_LPRPort_eventLoop( JNIEnv *env,
 		sleep.tv_usec = 0;
 		ret = select( fd + 1, &rfds, NULL, NULL, &sleep );
 		if( ret < 0 ) break;
-	/*	if( ioctl( fd, TIOCGICOUNT, &sis ) ) break;
-		if( ioctl( fd, TIOCMGET, &mflags ) ) break;
-		serial sepecific
+		if( ioctl( fd, LPGETSTATUS, &pflags ) ) break;
+
+/*
+                       PAR_EV_BUFFER:
+                       PAR_EV_ERROR:
 */
+
+		if (pflags&LP_PBUSY)    /* inverted input, active high */
+			(*env)->CallVoidMethod( env, jobj, method, (jint)PAR_EV_ERROR, JNI_TRUE );
+		if (pflags&LP_PACK)     /* unchanged input, active low */
+			(*env)->CallVoidMethod( env, jobj, method, (jint)PAR_EV_ERROR, JNI_TRUE );
+		if (pflags&LP_POUTPA)   /* unchanged input, active high */
+			(*env)->CallVoidMethod( env, jobj, method, (jint)PAR_EV_ERROR, JNI_TRUE );
+		if (pflags&LP_PSELECD)  /* unchanged input, active high */
+			(*env)->CallVoidMethod( env, jobj, method, (jint)PAR_EV_ERROR, JNI_TRUE );
+		if (pflags&LP_PERRORP)  /* unchanged input, active low */
+			(*env)->CallVoidMethod( env, jobj, method, (jint)PAR_EV_ERROR, JNI_TRUE );
 		interrupted = (*env)->CallStaticBooleanMethod( env, jthread, interrupt );
 	}
 	return;
