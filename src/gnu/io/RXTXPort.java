@@ -466,7 +466,7 @@ final class RXTXPort extends SerialPort
 	/** 
 	*  @return boolean  true if monitor thread is interrupted
 	*/
-	public boolean checkMonitorThread() 
+	public synchronized boolean checkMonitorThread() 
 	{
 		if (debug)
 			System.out.println("RXTXPort:checkMonitorThread()");
