@@ -54,7 +54,7 @@ extern void report_error( char * );
 int my_errno;
 struct termios_list
 {
-	char *filename;
+	char filename[80];
 	int my_errno;
 	int interrupt;
 	int event_flag;
@@ -87,13 +87,36 @@ void MexPrintf( char *string )
 }
 #endif DEBUG_SELECT
 
+/*----------------------------------------------------------
+serial_test
+
+   accept: filename to test     
+   perform:     
+   return:      1 on success 0 on failure
+   exceptions:  
+   win32api:    CreateFile CloseHandle
+   comments:    if the file opens it should be ok.
+----------------------------------------------------------*/
+int serial_test( char * filename )
+{
+	unsigned long *hcomm;
+	int ret;
+	hcomm = CreateFile( filename, GENERIC_READ |GENERIC_WRITE, 0, 0, OPEN_EXISTING, 0, 0 );
+	if ( hcomm == INVALID_HANDLE_VALUE )
+		ret = 0;
+	else
+		ret = 1;
+	CloseHandle( hcomm );
+	return(ret);
+}
+
 void termios_setflags( int fd, int termios_flags[] )
 {
 	struct termios_list *index = find_port( fd );
-	int i;
+	int i, result;
 	int windows_flags[11] = { 0, EV_RXCHAR, EV_TXEMPTY, EV_CTS, EV_DSR,
-					EV_RING, EV_RLSD, EV_ERR,
-					//EV_RING|0x2000, EV_RLSD, EV_ERR,
+					//EV_RING, EV_RLSD, EV_ERR,
+					EV_RING|0x2000, EV_RLSD, EV_ERR,
 					EV_ERR, EV_ERR, EV_BREAK
 				};
 					//EV_RING|0x2000, EV_RLSD, EV_ERR,
@@ -103,7 +126,25 @@ void termios_setflags( int fd, int termios_flags[] )
 	for(i=0;i<11;i++)
 		if( termios_flags[i] )
 			index->event_flag |= windows_flags[i];
-	SetCommMask( index->hComm, index->event_flag );
+	result = SetCommMask( index->hComm, index->event_flag );
+	/*
+	   This is rank.  0x2000 was used to detect the trailing edge of ring.
+	   The leading edge is detedted by EV_RING.
+
+	   The trailing edge is reliable.  The leading edge is not.
+	   Softie no longer allows the trailing edge to be detected in NTsp2
+	   and beyond.
+
+	   So... Try the reliable option above and if it fails, use the less
+	   reliable means.
+
+	   The screams for a giveio solution that bypasses the kernel.
+	*/
+	if( index->event_flag & 0x2000 && result == 0 )
+	{
+		index->event_flag &= ~0x2000;
+		SetCommMask( index->hComm, index->event_flag );
+	}
 }
 
 /*----------------------------------------------------------
@@ -524,7 +565,7 @@ serial_close()
 int serial_close( int fd )
 {
 	struct termios_list *index;
-	char message[80];
+	/* char message[80]; */
 	MexPrintf("C");
 
 	ENTER( "close" );
@@ -589,7 +630,9 @@ int serial_close( int fd )
 		if ( index->ttyset )   free( index->ttyset );
 		if ( index->astruct )  free( index->astruct );
 		if ( index->sstruct )  free( index->sstruct );
+		/* had problems with strdup
 		if ( index->filename ) free( index->filename );
+		*/
 		free( index );
 	}
 	//dump_termios_list( "close" );
@@ -965,7 +1008,8 @@ struct termios_list *add_port( const char *filename )
 */
 	port->MSR = 0;
 
-	port->filename=strdup( filename );
+	strcpy(port->filename, filename );
+	/* didnt free well? strdup( filename ); */
 	if( ! port->filename )
 		goto fail;
 
@@ -1003,7 +1047,9 @@ fail:
 	if ( port->ttyset )   free( port->ttyset );
 	if ( port->astruct )  free( port->astruct );
 	if ( port->sstruct )  free( port->sstruct );
+	/* had problems with strdup
 	if ( port->filename ) free( port->filename );
+	*/
 	if ( port ) free( port );
 	return port;
 }
@@ -1254,7 +1300,8 @@ serial_read()
 
 int serial_read( int fd, void *vb, int size )
 {
-	unsigned long nBytes = 0, total = 0, waiting = 0, error;
+	unsigned long nBytes = 0, total = 0, error;
+	/* unsigned long waiting = 0; */
 	int err, vmin;
 	struct termios_list *index;
 	char message[80];
@@ -1310,7 +1357,7 @@ int serial_read( int fd, void *vb, int size )
 		do {
 			error = ClearCommError( index->hComm, &error, &stat);
 			usleep(1000);
-			mexPrintf("%i/n", CLOCKS_PER_SEC/40);
+			//mexPrintf("%i/n", CLOCKS_PER_SEC/40);
 		} while ( c > clock() );
 
 	}
@@ -2817,6 +2864,8 @@ end:
 	LEAVE( "serial_select" );
 #endif /* DEBUG_VERBOSE */
 	return( 1 );
+#ifdef asdf
+	/* FIXME this needs to be cleaned up... */
 fail:
 	MexPrintf("f<\n");
 	sprintf( message, "< select called error %i\n", n );
@@ -2827,6 +2876,7 @@ fail:
 	LEAVE( "serial_select" );
 #endif /* DEBUG_VERBOSE */
 	return( 1 );
+#endif /* asdf */
 	
 }
 

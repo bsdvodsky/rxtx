@@ -16,8 +16,10 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
-
 /* javax.comm.SerialPort constants */
+#ifdef WIN32
+#include "win32termios.h"
+#endif /* WIN32 */
 #define JDATABITS_5		5
 #define JDATABITS_6		6
 #define JDATABITS_7		7
@@ -63,6 +65,30 @@
 #define B256000		1010004
 #endif /* dima */
 
+#if !defined(TIOCSERGETLSR) && !defined(WIN32)
+struct tpid_info_struct
+{
+	/* threads, bean counting, and lifespan */
+	int write_counter, closing, tcdrain;
+	pthread_t tpid;
+
+	pthread_mutex_t *mutex_writing;
+	pthread_mutex_t *mutex_draining;
+	pthread_mutex_t *mutex_closing;
+	pthread_mutex_t *mutex_event;
+	pthread_cond_t *cpt_writing;
+	pthread_cond_t *cpt_draining;
+	pthread_cond_t *cpt_closing;
+	pthread_cond_t *cpt_event;
+	//pthread_attr_t *attr;
+
+	int length;
+	int done;
+	int inuse;
+	char *buff;
+};
+#endif /* !defined(TIOCSERGETLSR) && !defined(WIN32) */
+
 struct event_info_struct
 {
 	int fd;
@@ -70,8 +96,6 @@ struct event_info_struct
 	int eventflags[11];
 	
 	int initialised;
-	fd_set rfds;
-	struct timeval tv_sleep;
 	int ret, change;
 	unsigned int omflags;
 	char message[80];
@@ -83,10 +107,16 @@ struct event_info_struct
 	jclass jclazz;
 	jmethodID send_event;
 	jmethodID checkMonitorThread;
-#if defined(TIOCGICOUNT)
+	struct event_info_struct *next, *prev;
+	fd_set rfds;
+	struct timeval tv_sleep;
+#if !defined(TIOCSERGETLSR) && !defined(WIN32)
+	int output_buffer_empty_flag;
+	struct tpid_info_struct *tpid;
+#endif /* !TIOCSERGETLSR !WIN32 */
+#	if defined(TIOCGICOUNT)
 	struct serial_icounter_struct osis;
 #endif /* TIOCGICOUNT */
-	struct event_info_struct *next, *prev;
 };
 
 /*  Ports known on the OS */
@@ -152,7 +182,7 @@ as I said before, we use the same binary javax.comm files for both
 UnixWare/Open UNIX and OpenServer.  Thus we can't #ifdef one or the
 other; it would have to be a runtime test.  Your code and your macros
 aren't set up for doing this (understandably!).  So I didn't implement
-these; the javax.comm locks won't fully work on UnixWare/Open UNIX
+these; the javx.comm locks won't fully work on UnixWare/Open UNIX
 as a result, which I mentioned in the Release Notes.
 
 
@@ -180,7 +210,7 @@ Trent
 #endif /* __hpux__ */
 #if defined(__osf__)  /* Digital Unix */
 #	define DEVICEDIR "/dev/"
-#	define LOCKDIR "/var/spool/uucp"
+#	define LOCKDIR ""
 #	define LOCKFILEPREFIX "LK."
 #	define UUCP
 #endif /* __osf__ */
@@ -188,7 +218,9 @@ Trent
 #	define DEVICEDIR "/dev/"
 #	define LOCKDIR "/var/spool/locks"
 #	define LOCKFILEPREFIX "LK."
+/*
 #	define UUCP
+*/
 #endif /* __sun__ */
 #if defined(__BEOS__)
 #	define DEVICEDIR "/dev/ports/"
@@ -223,18 +255,18 @@ Trent
 #endif /* WIN32 */
 
 /* allow people to override the directories */
-/* #define USER_LOCK_DIRECTORY "/home/tjarvi/1.12/build" */
+/* #define USER_LOCK_DIRECTORY "/home/tjarvi/1.5/build" */
 #ifdef USER_LOCK_DIRECTORY
 #	define LOCKDIR USER_LOCK_DIRECTORY
 #endif /* USER_LOCK_DIRECTORY */
 
-
-/*  That should be all you need to look at in this file for porting */
 #ifdef DISABLE_LOCKFILES
 #undef UUCP
 #undef FHS
 #undef OLDUUCP
 #endif /* DISABLE_LOCKFILES */
+
+/*  That should be all you need to look at in this file for porting */
 #ifdef UUCP
 #	define LOCK uucp_lock
 #	define UNLOCK uucp_unlock
@@ -311,11 +343,13 @@ extern int mexPrintf( const char *, ... );
 #	define printf mexPrintf
 #endif /* DEBUG_MW */
 #ifdef __BEOS__
+struct tpid_info_struct *add_tpid( struct tpid_info_struct * );
 data_rate translate_speed( JNIEnv*, jint  );
 int translate_data_bits( JNIEnv *, data_bits *, jint );
 int translate_stop_bits( JNIEnv *, stop_bits *, jint );
 int translate_parity( JNIEnv *, parity_mode *, jint );
 #else
+int spawn_write_thread( int, char *, int, JNIEnv *, jobject *);
 int translate_speed( JNIEnv*, jint  );
 int translate_data_bits( JNIEnv *, tcflag_t *, jint );
 int translate_stop_bits( JNIEnv *, tcflag_t *, jint );

@@ -22,6 +22,7 @@
  * lists of ports, October 2000. */
 /* Joseph Goldstone <joseph@lp.com> reorganized to support registered ports,
  * known ports, and scanned ports, July 2001 */
+
 package gnu.io;
 
 import java.util.*;
@@ -113,7 +114,7 @@ public class RXTXCommDriver implements CommDriver
 	private void checkSolaris(String PortName, int PortType)
 	{
 		char p[] =  { 91 };
-		for( p[0] =91 ;p[0] < 123; p[0]++ )
+		for( p[0] =97 ;p[0] < 123; p[0]++ )
 		{
 			if (testRead(PortName.concat(new String(p)),PortType))
 			{
@@ -130,8 +131,21 @@ public class RXTXCommDriver implements CommDriver
 		String ValidPortPrefixes[],
 		int PortType
 	) {
-		int p =0 ;
 		int i =0;
+		int p =0 ;
+		/* FIXME quick fix to get COM1-8 on windows working.  The
+		   Read test is not working properly and its crunch time...
+		if(osName.toLowerCase().indexOf("windows") != -1 )
+		{
+			for( i=0;i < CandidateDeviceNames.length;i++ )
+			{
+			CommPortIdentifier.addPortName( CandidateDeviceNames[i],
+							PortType, this );
+			}
+			return;
+
+		}
+		*/
 		if (debug)
 		{
 			System.out.println("Entering registerValidPorts()");
@@ -342,10 +356,17 @@ public class RXTXCommDriver implements CommDriver
 		String[] CandidateDeviceNames;
 		if (debug)
 			System.out.println("scanning device directory "+deviceDirectory+" for ports of type "+PortType);
+		/* //./name is supposed to work for port numbers > 9 */
 		if(osName.toLowerCase().indexOf("windows") != -1 )
 		{
-			String[] temp = { "COM1", "COM2","COM3","COM4" };
-			/*FIXME Untested , "COM5", COM6", COM7", "COM8"  */
+			String[] temp = 
+			/*
+					{ "//./COM1", "//./COM2", "//./COM3",
+					"//./COM4", "//./COM5", "//./COM6",
+					"//./COM7", "//./COM8" };
+			*/
+			{ "COM1", "COM2","COM3","COM4",
+			"COM5", "COM6", "COM7", "COM8" };
 			CandidateDeviceNames=temp;
 		}
 		else if ( osName.equals("Solaris") || osName.equals("SunOS"))

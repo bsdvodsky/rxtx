@@ -110,6 +110,7 @@ struct serial_icounter_struct {
 	int reserved[9]; 	/* unused */
 };
 
+int serial_test( char * );
 int serial_open(const char *File, int flags, ... );
 int serial_close(int fd);
 int serial_read(int fd, void *b, int size);
@@ -127,6 +128,8 @@ int serial_select(int, struct fd_set *, struct fd_set *, struct fd_set *, struct
 #define READ serial_read
 #define WRITE serial_write
 
+void termios_interrupt_event_loop( int , int );
+void termios_setflags( int , int[] );
 struct termios_list *find_port( int );
 void usleep(unsigned long usec);
 int fcntl(int fd, int command, ...);
