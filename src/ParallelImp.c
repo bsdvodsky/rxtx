@@ -42,7 +42,7 @@
 #   include <sys/signal.h>
 #endif
 
-#include <linux/serial.h>
+#include <linux/lp.h>
 
 extern int errno;
 
@@ -62,63 +62,81 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_setLPRMode(JNIEnv *env,
 }
 /*----------------------------------------------------------
 LPRPort.isPaperOut
-   accept:      
-   perform:     
-   return:      
-   exceptions:  
-   comments:    
+   accept:      none   
+   perform:     check if printer reports paper is out   
+   return:      Paper Out: JNI_TRUE  Not Paper Out: JNI_FALSE     
+   exceptions:  none
+   comments:    LP_POUTPA    unchanged out-of-paper input, active high
 ----------------------------------------------------------*/ 
 JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isPaperOut(JNIEnv *env,
-        jclass jclazz){
-	return(JNI_FALSE);
+	jobject jobj){
+
+	int status;
+	int fd = get_java_fd( env, jobj );
+
+	ioctl(fd, LPGETSTATUS,&status);
+	return( status & LP_POUTPA ? JNI_TRUE : JNI_FALSE );
 }
 /*----------------------------------------------------------
-LPRPort.isPaperOut
-   accept:      
-   perform:     
-   return:      
-   exceptions:  
-   comments:    
+LPRPort.isPaperBusy
+   accept:      none   
+   perform:     Check to see if the printer is printing.   
+   return:      JNI_TRUE if the printer is Busy, JNI_FALSE if its idle   
+   exceptions:  none
+   comments:    LP_PBUSY     inverted busy input, active high
 ----------------------------------------------------------*/ 
 JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isPrinterBusy(JNIEnv *env,
-        jclass jclazz){
-	return(JNI_FALSE);
+	jobject jobj){
+	int status;
+	int fd = get_java_fd( env, jobj );
+	ioctl(fd, LPGETSTATUS, &status);
+	return( status & LP_PBUSY ? JNI_TRUE : JNI_FALSE );
 }
 /*----------------------------------------------------------
 LPRPort.isPrinterError
-   accept:      
-   perform:     
-   return:      
-   exceptions:  
-   comments:    
+   accept:      none
+   perform:     check for printer error
+   return:      JNI_TRUE if there is an printer error otherwise JNI_FALSE
+   exceptions:  none
+   comments:    LP_PERRORP   unchanged error input, active low 
 ----------------------------------------------------------*/ 
 JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isPrinterError(JNIEnv *env,
-        jclass jclazz){
-	return(JNI_FALSE);
+	jobject jobj){
+	int status;
+	int fd = get_java_fd( env, jobj );
+	ioctl(fd, LPGETSTATUS, &status);
+	return( status & LP_PERRORP ? JNI_TRUE : JNI_FALSE );
 }
 /*----------------------------------------------------------
 LPRPort.isPrinterSelected
-   accept:      
-   perform:     
-   return:      
-   exceptions:  
-   comments:    
+   accept:      none
+   perform:     check if printer is selected
+   return:      JNI_TRUE if printer is selected other wise JNI_FALSE
+   exceptions:  none
+   comments:    LP_PSELECD   unchanged selected input, active high 
 ----------------------------------------------------------*/ 
 JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isPrinterSelected(JNIEnv *env,
-        jclass jclazz){
-	return(JNI_FALSE);
+	jobject jobj){
+	int status;
+	int fd = get_java_fd( env, jobj );
+	ioctl(fd, LPGETSTATUS, &status);
+	return( status & LP_PSELECD ? JNI_TRUE : JNI_FALSE );
 }
 /*----------------------------------------------------------
 LPRPort.isPrinterTimedOut
-   accept:      
-   perform:     
-   return:      
-   exceptions:  
-   comments:    
+   accept:       none
+   perform:      Not really sure see isPaperOut
+   return:       JNI_FALSE if the printer does not return out of paper other
+                 wise JNI_TRUE.
+   exceptions:   none
+   comments:     Is this documented right in the javadocs?
 ----------------------------------------------------------*/ 
 JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isPrinterTimedOut(JNIEnv *env,
-        jclass jclazz){
-	return(JNI_FALSE);
+	jobject jobj){
+	int status;
+	int fd = get_java_fd( env, jobj );
+	ioctl(fd, LPGETSTATUS, &status);
+	return( status & LP_PBUSY ? JNI_TRUE : JNI_FALSE );
 }
 
 
@@ -145,9 +163,8 @@ JNIEXPORT void JNICALL Java_gnu_io_LPRPort_Initialize( JNIEnv *env,
 /*----------------------------------------------------------
 LPRPort.open
 
-   accept:      The device to open.  ie "/dev/ttyS0"
-   perform:     open the device, set the termios struct to sane settings and 
-                return the filedescriptor
+   accept:      The device to open.  ie "/dev/lp0"
+   perform:     open the device and return the filedescriptor
    return:      fd
    exceptions:  IOExcepiton
    comments:    Very often people complain about not being able to get past
@@ -159,28 +176,9 @@ JNIEXPORT jint JNICALL Java_gnu_io_LPRPort_open( JNIEnv *env, jobject jobj,
 {
 	struct termios ttyset;
 	const char *filename = (*env)->GetStringUTFChars( env, jstr, 0 );
-	int fd = open( filename, O_RDWR | O_NOCTTY | O_NONBLOCK );
+	int fd = open( filename, O_RDWR | O_NONBLOCK );
 	(*env)->ReleaseStringUTFChars( env, jstr, NULL );
 	if( fd < 0 ) goto fail;
-
-	ttyset.c_iflag = INPCK;
-	ttyset.c_lflag = 0;
-	ttyset.c_oflag = 0;
-	ttyset.c_cflag = CREAD | CS8;
-	ttyset.c_cc[ VMIN ] = 0;
-	ttyset.c_cc[ VTIME ] = 1;
-
-#ifdef __FreeBSD__
-	if( cfsetspeed( &ttyset, B9600 ) < 0 ) goto fail;
-#else
-	if( cfsetispeed( &ttyset, B9600 ) < 0 ) goto fail;
-	if( cfsetospeed( &ttyset, B9600 ) < 0 ) goto fail;
-#endif
-	if( tcsetattr( fd, TCSAFLUSH, &ttyset ) < 0 ) goto fail;
-
-	fcntl( fd, F_SETOWN, getpid() );
-	fcntl( fd, F_SETFL, FASYNC );
-
 	return (jint)fd;
 
 fail:
@@ -206,81 +204,6 @@ JNIEXPORT void JNICALL Java_gnu_io_LPRPort_close( JNIEnv *env,
 	return;
 }
 
-
-/*----------------------------------------------------------
- LPRPort.nativeSetSerialPortParams
-
-   accept:     speed, data bits, stop bits, parity
-   perform:    set the serial port parameters
-   return:     void
-   exceptions: UnsupportedCommOperationException
-----------------------------------------------------------*/ 
-JNIEXPORT void JNICALL Java_gnu_io_LPRPort_nativeSetSerialPortParams(
-	JNIEnv *env, jobject jobj, jint speed, jint dataBits, jint stopBits,
-	jint parity )
-{
-	struct termios ttyset;
-	int fd = get_java_fd( env, jobj );
-	int cspeed = translate_speed( env, speed );
-	if( !cspeed ) return;
-	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
-	if( !translate_data_bits( env, &(ttyset.c_cflag), dataBits ) ) return;
-	if( !translate_stop_bits( env, &(ttyset.c_cflag), stopBits ) ) return;
-	if( !translate_parity( env, &(ttyset.c_cflag), parity ) ) return;
-#ifdef __FreeBSD__
-	if( cfsetspeed( &ttyset, cspeed ) < 0 ) goto fail;
-#else
-	if( cfsetispeed( &ttyset, cspeed ) < 0 ) goto fail;
-	if( cfsetospeed( &ttyset, cspeed ) < 0 ) goto fail;
-#endif
-	if( tcsetattr( fd, TCSAFLUSH, &ttyset ) < 0 ) goto fail;
-	return;
-
-fail:
-	UnsupportedCommOperationException( env, strerror( errno ) );
-}
-
-
-/*----------------------------------------------------------
- translate_speed
-
-   accept:     speed in bits-per-second
-   perform:    convert bits-per-second to a speed_t constant
-   return:     speed_t constant
-   exceptions: UnsupportedCommOperationException
-   comments:   Only the lowest level code should know about
-               the magic constants.
-----------------------------------------------------------*/ 
-int translate_speed( JNIEnv *env, jint speed )
-{
-	switch( speed ) {
-		case 0:		return B0;
-		case 50:		return B50;
-		case 75:		return B75;
-		case 110:	return B110;
-		case 134:	return B134;
-		case 150:	return B150;
-		case 200:	return B200;
-		case 300:	return B300;
-		case 600:	return B600;
-		case 1200:	return B1200;
-		case 1800:	return B1800;
-		case 2400:	return B2400;
-		case 4800:	return B4800;
-		case 9600:	return B9600;
-		case 19200:	return B19200;
-		case 38400:	return B38400;
-		case 57600:	return B57600;
-		case 115200:	return B115200;
-		case 230400:	return B230400;
-		case 460800:	return B460800;
-	}
-
-	UnsupportedCommOperationException( env, "speed" );
-	return 0;
-}
-
-
 /*----------------------------------------------------------
  translate_data_bits
 
@@ -290,102 +213,6 @@ int translate_speed( JNIEnv *env, jint speed )
 					0 if an exception is thrown
    exceptions: UnsupportedCommOperationException
 ----------------------------------------------------------*/ 
-int translate_data_bits( JNIEnv *env, int *cflag, jint dataBits )
-{
-	int temp = (*cflag) & ~CSIZE;
-
-	switch( dataBits ) {
-		case DATABITS_5:
-			(*cflag) = temp | CS5;
-			return 1;
-		case DATABITS_6:
-			(*cflag) = temp | CS6;
-			return 1;
-		case DATABITS_7:
-			(*cflag) = temp | CS7;
-			return 1;
-		case DATABITS_8:
-			(*cflag) = temp | CS8;
-			return 1;
-	}
-
-	UnsupportedCommOperationException( env, "data bits" );
-	return 0;
-}
-
-
-/*----------------------------------------------------------
- translate_stop_bits
-
-   accept:     javax.comm.SerialPort.STOPBITS_* constant
-   perform:    set proper termios c_cflag bits
-   return:     1 if successful
-					0 if an exception is thrown
-   exceptions: UnsupportedCommOperationException
-   comments:   If you specify 5 data bits and 2 stop bits, the port will
-               allegedly use 1.5 stop bits.  Does anyone care?
-----------------------------------------------------------*/ 
-int translate_stop_bits( JNIEnv *env, int *cflag, jint stopBits )
-{
-	switch( stopBits ) {
-		case STOPBITS_1:
-			(*cflag) &= ~CSTOPB;
-			return 1;
-		case STOPBITS_2:
-			(*cflag) |= CSTOPB;
-			return 1;
-	}
-
-	UnsupportedCommOperationException( env, "stop bits" );
-	return 0;
-}
-
-
-/*----------------------------------------------------------
- translate_parity
-
-   accept:     javax.comm.SerialPort.PARITY_* constant
-   perform:    set proper termios c_cflag bits
-   return:     1 if successful
-               0 if an exception is thrown
-   exceptions: UnsupportedCommOperationException
-   comments:   The CMSPAR bit should be used for 'mark' and 'space' parity,
-               but it's not in glibc's includes.  Oh well, rarely used anyway.
-----------------------------------------------------------*/ 
-int translate_parity( JNIEnv *env, int *cflag, jint parity )
-{
-	switch( parity ) {
-		case PARITY_NONE:
-			(*cflag) &= ~PARENB;
-			return 1;
-#ifdef CMSPAR
-		case PARITY_EVEN:
-			(*cflag) |= PARENB & ~PARODD & ~CMSPAR;
-			return 1;
-		case PARITY_ODD:
-			(*cflag) |= PARENB | PARODD & ~CMSPAR;
-			return 1;
-		case PARITY_MARK:
-			(*cflag) |= PARENB | PARODD | CMSPAR;
-			return 1;
-		case PARITY_SPACE:
-			(*cflag) |= PARENB & ~PARODD | CMSPAR;
-			return 1;
-#else
-		case PARITY_EVEN:
-			(*cflag) |= PARENB & ~PARODD;
-			return 1;
-		case PARITY_ODD:
-			(*cflag) |= PARENB | PARODD;
-			return 1;
-#endif
-	}
-
-	UnsupportedCommOperationException( env, "parity" );
-	return 0;
-}
-
-
 /*----------------------------------------------------------
 LPRPort.writeByte
 
@@ -427,222 +254,6 @@ JNIEXPORT void JNICALL Java_gnu_io_LPRPort_writeArray( JNIEnv *env,
 	if( write( fd, bytes, count ) < 0 )
 		IOException( env, strerror( errno ) );
 	free( bytes );
-}
-
-
-/*----------------------------------------------------------
-LPRPort.drain
-
-   accept:      none
-   perform:     wait until all data is transmitted
-   return:      none
-   exceptions:  IOException
-   comments:    java.io.OutputStream.flush() is equivalent to tcdrain,
-                not tcflush, which throws away unsent bytes
-----------------------------------------------------------*/
-JNIEXPORT void JNICALL Java_gnu_io_LPRPort_drain( JNIEnv *env,
-	jobject jobj )
-{
-	int fd = get_java_fd( env, jobj );
-	if( tcdrain( fd ) )
-		IOException( env, strerror( errno ) );
-}
-
-
-/*----------------------------------------------------------
-LPRPort.sendBreak
-
-   accept:     duration in milliseconds.
-   perform:    send break for actual time.  not less than 0.25 seconds.
-   exceptions: none
-   comments:   not very precise
-----------------------------------------------------------*/ 
-JNIEXPORT void JNICALL Java_gnu_io_LPRPort_sendBreak( JNIEnv *env,
-	jobject jobj, jint duration )
-{
-	int fd = get_java_fd( env, jobj );
-	tcsendbreak( fd, (int)( duration / 250 ) );
-}
-
-
-/*----------------------------------------------------------
-LPRPort.isDSR
-
-   accept:      none
-   perform:     check status of DSR
-   return:      true if TIOCM_DSR is set
-                false if TIOCM_DSR is not set
-   exceptions:  none
-   comments:    DSR stands for Data Set Ready
-----------------------------------------------------------*/
-JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isDSR( JNIEnv *env,
-	jobject jobj ) 
-{
-	unsigned int result = 0;
-	int fd = get_java_fd( env, jobj );
-
-	ioctl( fd, TIOCMGET, &result );
-	if( result & TIOCM_DSR ) return JNI_TRUE;
-	else return JNI_FALSE;
-}
-
-
-/*----------------------------------------------------------
-LPRPort.isCD
-
-   accept:      none
-   perform:     check status of CD
-   return:      true if TIOCM_CD is set
-                false if TIOCM_CD is not set
-   exceptions:  none
-   comments:    CD stands for Carrier Detect
-----------------------------------------------------------*/
-JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isCD( JNIEnv *env,
-	jobject jobj )
-{
-	unsigned int result = 0;
-	int fd = get_java_fd( env, jobj );
-
-	ioctl( fd, TIOCMGET, &result );
-	if( result & TIOCM_CD ) return JNI_TRUE;
-	else return JNI_FALSE;
-}
-
-
-/*----------------------------------------------------------
-LPRPort.isCTS
-
-   accept:      none
-   perform:     check status of CTS
-   return:      true if TIOCM_CTS is set
-                false if TIOCM_CTS is not set
-   exceptions:  none
-   comments:    CTS stands for Clear To Send.
-----------------------------------------------------------*/
-JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isCTS( JNIEnv *env,
-	jobject jobj ) 
-{
-	unsigned int result = 0;
-	int fd = get_java_fd( env, jobj );
-
-	ioctl( fd, TIOCMGET, &result );
-	if( result & TIOCM_CTS ) return JNI_TRUE;
-	else return JNI_FALSE;
-}
-
-
-/*----------------------------------------------------------
-LPRPort.isRI
-
-   accept:      none
-   perform:     check status of RI
-   return:      true if TIOCM_RI is set
-                false if TIOCM_RI is not set
-   exceptions:  none
-   comments:    RI stands for Ring Indicator
-----------------------------------------------------------*/
-JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isRI( JNIEnv *env,
-	jobject jobj )
-{
-	unsigned int result = 0;
-	int fd = get_java_fd( env, jobj );
-
-	ioctl( fd, TIOCMGET, &result );
-	if( result & TIOCM_RI ) return JNI_TRUE;
-	else return JNI_FALSE;
-}
-
-
-/*----------------------------------------------------------
-LPRPort.isRTS
-
-   accept:      none
-   perform:     check status of RTS
-   return:      true if TIOCM_RTS is set
-                false if TIOCM_RTS is not set
-   exceptions:  none
-   comments:    tcgetattr with c_cflag CRTS_IFLOW
-----------------------------------------------------------*/
-JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isRTS( JNIEnv *env,
-	jobject jobj )
-{
-	unsigned int result = 0;
-	int fd = get_java_fd( env, jobj );
-
-	ioctl( fd, TIOCMGET, &result );
-	if( result & TIOCM_RTS ) return JNI_TRUE;
-	else return JNI_FALSE;
-}
-
-
-/*----------------------------------------------------------
-LPRPort.setRTS
-
-   accept:      state  flag to set/unset.
-   perform:     depends on the state flag
-                if true TIOCM_RTS is set
-                if false TIOCM_RTS is unset
-   return:      none
-   exceptions:  none
-   comments:    tcsetattr with c_cflag CRTS_IFLOW
-----------------------------------------------------------*/
-JNIEXPORT void JNICALL Java_gnu_io_LPRPort_setRTS( JNIEnv *env,
-	jobject jobj, jboolean state ) 
-{
-	unsigned int result = 0;
-	int fd = get_java_fd( env, jobj );
-
-	ioctl( fd, TIOCMGET, &result );
-	if( state == JNI_TRUE ) result |= TIOCM_RTS;
-	else result &= ~TIOCM_RTS;
-	ioctl( fd, TIOCMSET, &result );
-	return;
-}
-
-
-/*----------------------------------------------------------
-LPRPort.isDTR
-
-   accept:      none
-   perform:     check status of DTR
-   return:      true if TIOCM_DTR is set
-                false if TIOCM_DTR is not set
-   exceptions:  none
-   comments:    DTR stands for Data Terminal Ready
-----------------------------------------------------------*/
-JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isDTR( JNIEnv *env,
-	jobject jobj )
-{
-	unsigned int result = 0;
-	int fd = get_java_fd( env, jobj );
-
-	ioctl( fd, TIOCMGET, &result );
-	if( result & TIOCM_DTR ) return JNI_TRUE;
-	else return JNI_FALSE;
-}
-
-
-/*----------------------------------------------------------
-LPRPort.setDTR
-
-   accept:      new DTR state
-   perform:     if state is true, TIOCM_DTR is set
-                if state is false, TIOCM_DTR is unset
-   return:      none
-   exceptions:  none
-   comments:    DTR stands for Data Terminal Ready
-----------------------------------------------------------*/
-JNIEXPORT void JNICALL Java_gnu_io_LPRPort_setDTR( JNIEnv *env,
-	jobject jobj, jboolean state )
-{
-	unsigned int result = 0;
-	int fd = get_java_fd( env, jobj );
-
-	ioctl( fd, TIOCMGET, &result );
-	if( state == JNI_TRUE ) result |= TIOCM_DTR;
-	else result &= ~TIOCM_DTR;
-	ioctl( fd, TIOCMSET, &result );
-	return;
 }
 
 
@@ -806,17 +417,8 @@ LPRPort.setHWFC
 JNIEXPORT void JNICALL Java_gnu_io_LPRPort_setHWFC( JNIEnv *env,
 	jobject jobj, jboolean state )
 {
-	struct termios ttyset;
 	int fd = get_java_fd( env, jobj );
-	if( tcgetattr( fd, &ttyset ) ) goto fail;
-	if( state == JNI_TRUE )
-		ttyset.c_cflag |= HARDWARE_FLOW_CONTROL;
-	else
-		ttyset.c_cflag &= ~HARDWARE_FLOW_CONTROL;
-	if( tcsetattr( fd, TCSAFLUSH, &ttyset ) ) goto fail;
 	return;
-fail:
-	IOException( env, strerror( errno ) );
 }
 
 
@@ -835,7 +437,9 @@ JNIEXPORT void JNICALL Java_gnu_io_LPRPort_eventLoop( JNIEnv *env,
 	unsigned int mflags;
 	fd_set rfds;
 	struct timeval sleep;
-	struct serial_icounter_struct sis, osis;
+/*	struct serial_icounter_struct sis, osis;
+	serial specific
+*/
 	jfieldID jfield;
 	jmethodID method, interrupt;
 	jboolean interrupted = 0;
@@ -848,11 +452,6 @@ JNIEXPORT void JNICALL Java_gnu_io_LPRPort_eventLoop( JNIEnv *env,
 	interrupt = (*env)->GetStaticMethodID( env, jthread, "interrupted", "()Z" );
 
 	/* Some multiport serial cards do not implement TIOCGICOUNT ... */
-	if( ioctl( fd, TIOCGICOUNT, &osis ) < 0 ) {
-		fprintf( stderr, "Port does not support events\n" );
-		return;
-	}
-
 	FD_ZERO( &rfds );
 	while( !interrupted ) {
 		FD_SET( fd, &rfds );
@@ -860,41 +459,10 @@ JNIEXPORT void JNICALL Java_gnu_io_LPRPort_eventLoop( JNIEnv *env,
 		sleep.tv_usec = 0;
 		ret = select( fd + 1, &rfds, NULL, NULL, &sleep );
 		if( ret < 0 ) break;
-		if( ioctl( fd, TIOCGICOUNT, &sis ) ) break;
+	/*	if( ioctl( fd, TIOCGICOUNT, &sis ) ) break;
 		if( ioctl( fd, TIOCMGET, &mflags ) ) break;
-#ifdef FULL_EVENT
-		if( sis.rx != osis.rx ) (*env)->CallVoidMethod( env, jobj, method,
-			(jint)SPE_DATA_AVAILABLE, JNI_TRUE );
-		while( sis.frame > osis.frame ) {
-			(*env)->CallVoidMethod( env, jobj, method, (jint)SPE_FE, JNI_TRUE );
-			osis.frame++;
-		}
-		while( sis.overrun > osis.overrun ) {
-			(*env)->CallVoidMethod( env, jobj, method, (jint)SPE_OE, JNI_TRUE );
-			osis.overrun++;
-		}
-		while( sis.parity > osis.parity ) {
-			(*env)->CallVoidMethod( env, jobj, method, (jint)SPE_PE, JNI_TRUE );
-			osis.parity++;
-		}
-		while( sis.brk > osis.brk ) {
-			(*env)->CallVoidMethod( env, jobj, method, (jint)SPE_BI, JNI_TRUE );
-			osis.brk++;
-		}
-#endif /* FULL_EVENT */
-		change = sis.cts - osis.cts;
-		if( change ) send_modem_events( env, jobj, method, SPE_CTS, change,
-			mflags & TIOCM_CTS );
-		change = sis.dsr - osis.dsr;
-		if( change ) send_modem_events( env, jobj, method, SPE_DSR, change,
-			mflags & TIOCM_DSR );
-		change = sis.rng - osis.rng;
-		if( change ) send_modem_events( env, jobj, method, SPE_RI, change,
-			mflags & TIOCM_RNG );
-		change = sis.dcd - osis.dcd;
-		if( change ) send_modem_events( env, jobj, method, SPE_CD, change,
-			mflags & TIOCM_CD );
-		osis = sis;
+		serial sepecific
+*/
 		interrupted = (*env)->CallStaticBooleanMethod( env, jthread, interrupt );
 	}
 	return;
