@@ -102,6 +102,8 @@ A.  Japanese
 		$ cd rxtx-1.4
 		$ ./configure  (follow the instructions)
 		$ make install
+		Read "T.  How can I use Lock Files with rxtx?"
+
 
 	If that does not work or you do not want a script messing with the 
 	system, read on..
@@ -191,7 +193,9 @@ A.  Japanese
 
 			No changes are needed.
 		
-		This completes the process.
+		This completes the process.  You will need to read the Section
+		on Lock Files to make sure the user can create a Lock File.
+		"T.  How can I use Lock Files with rxtx?"
 
 	G.  Where did everything end up?
 
@@ -584,14 +588,10 @@ device nodes.
 T.  How can I use Lock Files with rxtx?
 
 Lock files are used to prevent more than one program accessing a port at a
-time.  Rxtx intentionally avoids defaulting to lock files at this point because
-the code has not been well tested and requires a bit of sysadmin most people
-do not want to deal with.
+time.  Lock files require a bit of sysadmin to work properly..
 
 Rxtx has preliminary support for lock files on Linux.  It may work on other
-platforms but read the source before blindly trying it.  In order to use lock 
-files you will need to configure rxtx with --enable-lockfiles.
-ie  ./configure --enable-lockfiles
+platforms but read the source before blindly trying it. 
 
 Before you use lock files you need to do one of two things:
 
@@ -609,9 +609,9 @@ Do not change the number (14).  Whatever is in your group file is correct.
 
 User jarvi in this case can now use rxtx with lock files.
 
-Be careful.  The lock file code does not support kermit style lock files or
-lock files in /var/spool.  Its sure to fail if your using subdirectories in
-/dev or do not have /dev.
+The lock file code does not support kermit style lock files or lock files in
+/var/spool.  Its sure to fail if your using subdirectories in /dev or do not
+have /dev.
 
 U.  How can I tell which version of rxtx is installed?
 
