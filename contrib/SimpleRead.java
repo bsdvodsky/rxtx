@@ -11,7 +11,7 @@
 
 import java.io.*;
 import java.util.*;
-import javax.comm.*;
+import gnu.io.*;
 
 public class SimpleRead implements Runnable, SerialPortEventListener {
 

@@ -18,7 +18,7 @@
 
 import java.util.*;
 import java.io.*;
-import javax.comm.*;		//Comms Extensions
+import gnu.io.*;		//Comms Extensions
 
 /** Class To Talk To A GSM Cellular Modem, Dial an SNU and retrieve the data.
 * Uses Java Comm API 2.0
