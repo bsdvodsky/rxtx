@@ -2,11 +2,11 @@
 #define TRACE
 #define DEBUG
 #define DEBUG_MW
-#endif /* TRENT_IS_HERE */
 #ifdef DEBUG_MW
 	extern void mexWarMsgTxt( const char * );
 	extern void mexPrintf( const char *, ... );
 #endif /* DEBUG_MW */
+#endif /* TRENT_IS_HERE */
 extern void report( char * );
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
@@ -57,6 +57,9 @@ struct termios_list
 	unsigned long *hComm;
 	struct termios *ttyset;
 	struct serial_struct *sstruct;
+	/* for DTR DSR */
+	unsigned char MSR;
+	struct async_struct *astruct;
 	int flags;
 	OVERLAPPED rol;
 	OVERLAPPED wol;
@@ -548,7 +551,8 @@ int serial_close( int fd )
 		if ( index->rol.hEvent ) CloseHandle( index->rol.hEvent );
 		if ( index->wol.hEvent ) CloseHandle( index->wol.hEvent );
 		if ( index->sol.hEvent ) CloseHandle( index->sol.hEvent );
-		if ( index->ttyset )  free( index->ttyset );
+		if ( index->ttyset )   free( index->ttyset );
+		if ( index->astruct )  free( index->astruct );
 		if ( index->sstruct )  free( index->sstruct );
 		if ( index->filename ) free( index->filename );
 		free( index );
@@ -700,12 +704,12 @@ int port_opened( const char *filename )
 	if ( ! index )
 		return 0;
 	if( !strcmp( index->filename, filename ) )
-		return 1;
+		return index->fd;
 	while ( index->next )
 	{
 		index = index->next;
 		if( !strcmp( index->filename, filename ) )
-			return 1;
+			return index->fd;
 	}
 	LEAVE( "port_opened" );
 	return 0;
@@ -914,9 +918,17 @@ struct termios_list *add_port( const char *filename )
 	memset( port->ttyset, 0, sizeof( struct termios ) );
 
 	port->sstruct = malloc( sizeof( struct serial_struct ) );
-	if( ! port->ttyset )
+	if( ! port->sstruct )
 		goto fail;
 	memset( port->sstruct, 0, sizeof( struct serial_struct ) );
+
+/*	FIXME  the async_struct is being defined by mingw32 headers?
+	port->astruct = malloc( sizeof( struct async_struct ) );
+	if( ! port->astruct )
+		goto fail;
+	memset( port->astruct, 0, sizeof( struct async_struct ) );
+*/
+	port->MSR = 0;
 
 	port->filename=strdup( filename );
 	if( ! port->filename )
@@ -953,7 +965,8 @@ struct termios_list *add_port( const char *filename )
 
 fail:
 	report( "add_port:  Out Of Memory\n");
-	if ( port->ttyset )  free( port->ttyset );
+	if ( port->ttyset )   free( port->ttyset );
+	if ( port->astruct )  free( port->astruct );
 	if ( port->sstruct )  free( port->sstruct );
 	if ( port->filename ) free( port->filename );
 	if ( port ) free( port );
@@ -1033,13 +1046,13 @@ int serial_open( const char *filename, int flags, ... )
 	ENTER( "serial_open" );
 	if ( port_opened( filename ) )
 	{
-		report( "Port is already opened" );
+		report( "Port is already opened\n" );
 		return( -1 );
 	}
 	port = add_port( filename );
 	if( !port )
 	{
-		report( "open !port\n" );
+		report( "open !port\n" );
 		return( -1 );
 	}
 	
@@ -1054,7 +1067,7 @@ int serial_open( const char *filename, int flags, ... )
 
 	if( check_port_capabilities( port ) )
 	{
-		report( "check_port_capabilites!" );
+		report( "check_port_capabilites!" );
 		close( port->fd );
 		return -1;
 	}
@@ -1072,7 +1085,7 @@ int serial_open( const char *filename, int flags, ... )
 		port->flags = 0;
 
 
-	dump_termios_list( "open filename" );
+	dump_termios_list( "open filename" );
 	if( !first_tl->hComm )
 	{
 		sprintf( message, "open():  Invalid Port Reference for %s\n",
@@ -1164,8 +1177,8 @@ int serial_write( int fd, char *Str, int length )
 		
 	}
 end:
-	//FlushFileBuffers( index->hComm );
-	Sleep( 50 );
+	FlushFileBuffers( index->hComm );
+	//Sleep( 50 );
 #ifdef DEBUG
 	//sprintf( message, "serial_write: returning %i\n", (int) nBytes );
 	LEAVE( "serial_write" );
@@ -1709,6 +1722,7 @@ int tcgetattr( int fd, struct termios *s_termios )
 
 	s_termios->c_cc[VSTART] = myDCB.XonChar;
 	s_termios->c_cc[VSTOP] = myDCB.XoffChar;
+	s_termios->c_cc[VEOF] = myDCB.EofChar;
 
 #ifdef VERBOSE_DEBUG
 	sprintf( message,
@@ -1853,6 +1867,7 @@ int tcsetattr( int fd, int when, struct termios *s_termios )
 	dcb.XoffChar        = s_termios->c_cc[VSTOP];
 	dcb.XonLim          = 0;	/* ? */
 	dcb.XoffLim         = 0;	/* ? */
+	dcb.EofChar         = s_termios->c_cc[VEOF];
 	if ( EV_BREAK|EV_CTS|EV_DSR|EV_ERR|EV_RING | ( EV_RLSD & EV_RXFLAG ) )
 		dcb.EvtChar = '\n';
 	else
@@ -2142,7 +2157,7 @@ int ioctl( int fd, int request, ... )
 {
 	unsigned long dwStatus = 0, ErrCode;
 	va_list ap;
-	int *arg, ret;
+	int *arg, ret, result;
 	struct serial_struct *sstruct;
 	struct async_struct *astruct;
 	struct serial_multiport_struct *mstruct;
@@ -2173,16 +2188,20 @@ int ioctl( int fd, int request, ... )
 	{
 		case TCSBRK:
 			arg = va_arg( ap, int * );
-			return -ENOIOCTLCMD;;
+			return -ENOIOCTLCMD;
 		case TCSBRKP:
 			arg = va_arg( ap, int * );
-			return -ENOIOCTLCMD;;
+			return -ENOIOCTLCMD;
 		case TIOCGSOFTCAR:
 			arg = va_arg( ap, int * );
-			return -ENOIOCTLCMD;;
+			return -ENOIOCTLCMD;
 		case TIOCSSOFTCAR:
 			arg = va_arg( ap, int * );
-			return -ENOIOCTLCMD;;
+			return -ENOIOCTLCMD;
+
+                return -EFAULT;
+
+
 		case TIOCMGET:
 			arg = va_arg( ap, int * );
 			GetCommModemStatus( index->hComm, &dwStatus );
@@ -2194,11 +2213,18 @@ int ioctl( int fd, int request, ... )
 			else *arg &= ~TIOCM_DSR;
 			if ( dwStatus & MS_CTS_ON ) *arg |= TIOCM_CTS;
 			else *arg &= ~TIOCM_CTS;
+			/*  I'm not seeing a way to read the MSR directly
+			    we store the state using TIOCM_*
 
-/*			if ( index->dwFunction & SETDTR ) *arg |= TIOCM_DTR;
-			if ( index->dwFunction & CLRDTR ) *arg &= ~TIOCM_DTR;
-			if ( index->dwFunction & SETRTS ) *arg |= TIOCM_RTS;
-			if ( index->dwFunction & CLRRTS ) *arg &= ~TIOCM_RTS;	*/
+			    Trent
+			*/
+			if ( index->MSR & TIOCM_DTR )
+				*arg |= TIOCM_DTR;
+			else *arg &= ~TIOCM_DTR;
+			if ( index->MSR & TIOCM_RTS )
+				*arg |= TIOCM_RTS;
+			else *arg &= ~TIOCM_RTS;
+
 /*
 			TIOCM_LE
 			TIOCM_ST
@@ -2208,16 +2234,131 @@ int ioctl( int fd, int request, ... )
 		/* TIOCMIS, TIOCMBIC and TIOCMSET all do the same thing... */
 		case TIOCMBIS:
 			arg = va_arg( ap, int * );
-			return -ENOIOCTLCMD;;
+			return -ENOIOCTLCMD;
 		case TIOCMBIC:
 			arg = va_arg( ap, int * );
-			return -ENOIOCTLCMD;;
+			return -ENOIOCTLCMD;
 		case TIOCMSET:
 			arg = va_arg( ap, int * );
-			EscapeCommFunction( index->hComm,
+			//sprintf( message, "DTR = %i, RTS=%i was DTR = %i RTS = %i\n",
+			//	*arg & TIOCM_DTR,
+			//	*arg & TIOCM_RTS,
+			//	index->MSR &TIOCM_DTR,
+			//	index->MSR &TIOCM_RTS
+			//);
+			//mexPrintf( message );
+			if (( *arg & TIOCM_DTR) == (index->MSR & TIOCM_DTR) )
+			{
+				report("DTR is unchanged\n");
+			}
+			//else
+			//{
+				sprintf(message, "DTR %i %i\n", *arg&TIOCM_DTR, index->MSR & TIOCM_DTR );
+				report( message );
+				if ( *arg & TIOCM_DTR )
+				{
+					index->MSR |= TIOCM_DTR;
+				}
+				else
+				{
+					index->MSR &= ~TIOCM_DTR;
+				}
+				if ( EscapeCommFunction( index->hComm, 
+					( *arg & TIOCM_DTR ) ? SETDTR :
+					CLRDTR ) )
+					report("EscapeCommFunction: True\n");
+				else
+					report("EscapeCommFunction: False\n");
+			//}
+			if ( (*arg & TIOCM_RTS) == ( index->MSR & TIOCM_RTS) )
+			{
+				report("RTS is unchanged\n");
+			}
+			//else
+			//{
+				sprintf( message, "RTS %i %i\n", *arg&TIOCM_RTS, index->MSR & TIOCM_RTS );
+				report( message );
+				if ( *arg & TIOCM_RTS )
+				{
+					index->MSR |= TIOCM_RTS;
+					result &= SETRTS;
+				}
+				else
+				{
+					index->MSR &= ~TIOCM_RTS;
+					result &= CLRRTS;
+				}
+				if( EscapeCommFunction( index->hComm,
+					( *arg & TIOCM_RTS ) ? SETRTS :
+					CLRRTS ) )
+					report("EscapeCommFunction: True\n");
+				else
+					report("EscapeCommFunction: False\n");
+			//}
+/*
+			if ( *arg & TIOCM_DTR )
+			{
+				index->MSR |= TIOCM_DTR;
+			}
+			else
+			{
+				index->MSR &= ~TIOCM_DTR;
+			}
+			if ( *arg & TIOCM_RTS )
+			{
+				index->MSR |= TIOCM_RTS;
+				result &= SETRTS;
+			}
+			else
+			{
+				index->MSR &= ~TIOCM_RTS;
+				result &= CLRRTS;
+			}
+			if( EscapeCommFunction( index->hComm,
+				( *arg & TIOCM_RTS ) ? SETRTS : CLRRTS ) )
+				report("EscapeCommFunction: True\n");
+			else
+				report("EscapeCommFunction: False\n");
+			if ( EscapeCommFunction( index->hComm, 
+				( *arg & TIOCM_DTR ) ? SETDTR : CLRDTR ) )
+				report("EscapeCommFunction: True\n");
+			else
+				report("EscapeCommFunction: False\n");
+*/
+/*
+			if ( ! (*arg & TIOCM_DTR) != (index->MSR & TIOCM_DTR))
+			{
+				report("Changing DTR\n");
+				EscapeCommFunction( index->hComm,
 				( *arg & TIOCM_DTR ) ? SETDTR : CLRDTR );
-			EscapeCommFunction( index->hComm,
+				if ( *arg & TIOCM_DTR )
+				{
+					index->MSR |= TIOCM_DTR;
+				}
+				else
+				{
+					index->MSR &= ~TIOCM_DTR;
+				}
+			}
+			else
+				report("not changing DTR\n");
+			if ( ! (*arg & TIOCM_RTS) != (index->MSR & TIOCM_RTS))
+			{
+				report("Changing RTS\n");
+				EscapeCommFunction( index->hComm,
 				( *arg & TIOCM_RTS ) ? SETRTS : CLRRTS );
+				if ( *arg & TIOCM_RTS )
+				{
+					index->MSR |= TIOCM_RTS;
+				}
+				else
+				{
+					index->MSR &= ~TIOCM_RTS;
+				}
+			}
+			else
+				report("not changing RTS\n");
+*/
 			break;
 		/* get the serial struct info from the underlying API */
 		case TIOCGSERIAL:
@@ -2265,16 +2406,16 @@ int ioctl( int fd, int request, ... )
 			break;
 		case TIOCSERGSTRUCT:
 			astruct = va_arg( ap, struct async_struct * );
-			return -ENOIOCTLCMD;;
+			return -ENOIOCTLCMD;
 		case TIOCSERGETMULTI:
 			mstruct = va_arg( ap, struct serial_multiport_struct * );
-			return -ENOIOCTLCMD;;
+			return -ENOIOCTLCMD;
 		case TIOCSERSETMULTI:
 			mstruct = va_arg( ap, struct serial_multiport_struct * );
-			return -ENOIOCTLCMD;;
+			return -ENOIOCTLCMD;
 		case TIOCMIWAIT:
 			arg = va_arg( ap, int * );
-			return -ENOIOCTLCMD;;
+			return -ENOIOCTLCMD;
 		/*
 			On linux this fills a struct with all the line info
 			(data available, bytes sent, ...
@@ -2282,7 +2423,7 @@ int ioctl( int fd, int request, ... )
 #ifdef TIOCGICOUNT
 		case TIOCGICOUNT:
 			sistruct= va_arg( ap, struct  serial_icounter_struct * );
-			return -ENOIOCTLCMD;;
+			return -ENOIOCTLCMD;
 		/* abolete ioctls */
 #endif /* TIOCGICOUNT */
 		case TIOCSERGWILD:
@@ -2317,13 +2458,13 @@ int ioctl( int fd, int request, ... )
 		/* pending bytes to be sent */
 		case TIOCOUTQ:
 			arg = va_arg( ap, int * );
-			return -ENOIOCTLCMD;;
+			return -ENOIOCTLCMD;
 		default:
 			sprintf( message,
 				"FIXME:  ioctl: unknown request: %#x\n",
 				request );
 			report( message );
-			return -ENOIOCTLCMD;;
+			return -ENOIOCTLCMD;
 	}
 	va_end( ap );
 #ifdef VERBOSE_DEBUG
@@ -2423,23 +2564,30 @@ int  serial_select( int  n,  fd_set  *readfds,  fd_set  *writefds,
 		report( message );
 		return -1;
 	}
+	/* 0x2000 should pick up rings  */
 	if ( !SetCommMask( index->hComm,
 		EV_RXCHAR|EV_TXEMPTY|EV_BREAK|EV_CTS|EV_DSR|
-		EV_ERR|EV_RING|EV_RLSD|EV_RXFLAG ) )
+		EV_ERR|EV_RING|EV_RLSD|EV_RXFLAG|0x2000 ) )
 	{
-		YACK();
+		sprintf( message, "SetCommMask filename = %s\n", index->filename);
+		report( message );
 		goto fail;
 	}
 	
 	if ( !WaitCommEvent( index->hComm, &dwCommEvent, &index->sol ) )
 	{
 		if ( GetLastError() != ERROR_IO_PENDING )
+		{
+			sprintf( message, "WaitCommEvent filename = %s\n", index->filename);
+			report( message );
 			goto fail;
+		}
 	}
-	while ( wait == WAIT_TIMEOUT )
-	{
+	//while ( wait == WAIT_TIMEOUT )
+	//{
 		wait = WaitForSingleObject( index->sol.hEvent, 50 );
 		//wait = WaitForSingleObject( index->rol.hEvent, 500 );
+		printf(" TICK \n");
 #ifdef DEBUG_VERBOSE
 		switch ( wait )
 		{
@@ -2454,20 +2602,69 @@ int  serial_select( int  n,  fd_set  *readfds,  fd_set  *writefds,
 				break;
 		}
 #endif /* DEBUG_VERBOSE */
-	}
+	//}
 #ifdef DEBUG_VERBOSE
 	LEAVE( "serial_select" );
 #endif /* DEBUG_VERBOSE */
 	return( 1 );
 fail:
-
 	sprintf( message, "< select called error %i\n", n );
+	YACK();
 	report( message );
 	set_errno( EBADFD );
-	return( -1 );
+#ifdef DEBUG_VERBOSE
+	LEAVE( "serial_select" );
+#endif /* DEBUG_VERBOSE */
+	return( 1 );
 	
 }
 
+/*----------------------------------------------------------
+termiosSetParityError()
+
+   accept:      fd The device opened
+   perform:     Get the Parity Error Char
+   return:      the Parity Error Char
+   exceptions:  none
+   win32api:    GetCommState()
+   comments:    No idea how to do this in Unix  (handle in read?)
+----------------------------------------------------------*/
+
+int termiosGetParityErrorChar( int fd )
+{
+	struct termios_list *index;
+	DCB	dcb;
+
+	ENTER( "termiosGetParityErrorChar" );
+	index = find_port( fd );
+	GetCommState( index->hComm, &dcb );
+	LEAVE( "termiosGetParityErrorChar" );
+	return( dcb.ErrorChar );
+}
+
+/*----------------------------------------------------------
+termiosSetParityError()
+
+   accept:      fd The device opened, value the new Parity Error Char
+   perform:     Set the Parity Error Char
+   return:      void
+   exceptions:  none
+   win32api:    GetCommState(), SetCommState()
+   comments:    No idea how to do this in Unix  (handle in read?)
+----------------------------------------------------------*/
+
+void termiosSetParityError( int fd, char value )
+{
+	DCB	dcb;
+	struct termios_list *index;
+
+	index = find_port( fd );
+	ENTER( "termiosGetParityErrorChar" );
+	GetCommState( index->hComm, &dcb );
+	dcb.ErrorChar = value;
+	SetCommState( index->hComm, &dcb );
+	LEAVE( "termiosGetParityErrorChar" );
+}
 /*----------------------- END OF LIBRARY -----------------*/
 
 static inline int inportb( int port )
