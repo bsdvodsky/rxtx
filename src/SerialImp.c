@@ -20,12 +20,12 @@
 #define DEBUG
 #define DEBUG_MW
 #endif /* TRENT_IS_HERE */
-#if defined(__MWERKS__)//dima
-#include "RXTXPort.h"//dima
-#else //dima
+#if defined(__MWERKS__) /* dima */
+#include "RXTXPort.h" /* dima */
+#else  /* dima */
 #include "config.h"
 #include "gnu_io_RXTXPort.h"
-#endif//dima
+#endif /* dima */
 #ifndef __LCC__
 #   include <unistd.h>
 #else /* windows lcc compiler for fd_set. probably wrong */
@@ -535,12 +535,12 @@ int translate_speed( JNIEnv *env, jint speed )
 #endif /* B460800 */
 		case 14400:	return B14400;
 		case 28800:	return B28800;
-#ifdef B128000 //dima
+#ifdef B128000  /* dima */
 		case 128000:	return B128000;
-#endif //dima
-#ifdef B256000 //dima
+#endif  /* dima */
+#ifdef B256000  /* dima */
 		case 256000:	return B256000;
-#endif //dima
+#endif  /* dima */
 	}
 
 	LEAVE( "RXTXPort:translate_speed" );
@@ -730,7 +730,7 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 	report( message );
 #endif /* VERBOSE_DEBUG */
 	do {
-		result=WRITE (fd, body + total + offset, count - total);//dima
+		result=WRITE (fd, body + total + offset, count - total); /* dima */
 		if(result >0){
 			total += result;
 		}
@@ -749,12 +749,18 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 		Things just start spinning out of control after that.
 	*/
 #if defined (__sun__ )
-	//do {
-	//	tspec = retspec;
+/*
+	do {
+		tspec = retspec;
+*/
 		nanosleep( &tspec, &retspec );
-	//} while( tspec.tv_nsec != 0 );
+/*
+	} while( tspec.tv_nsec != 0 );
+*/
 #else
-	//usleep(50000);
+/*
+	usleep(50000);
+*/
 #endif /* __sun__ */
 	LEAVE( "RXTXPort:writeArray" );
 	if( result < 0 ) throw_java_exception( env, IO_EXCEPTION,
@@ -763,7 +769,9 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 	report( "sending OUTPUT_BUFFER_EMPTY\n" );
 #endif /* VERBOSE_DEBUG */
 	send_event( env, jobj, SPE_OUTPUT_BUFFER_EMPTY, 1 );
-	//usleep(50);
+/*
+	usleep(50);
+*/
 }
 
 /*----------------------------------------------------------
@@ -1228,7 +1236,9 @@ JNIEXPORT jint JNICALL RXTXPort(readByte)( JNIEnv *env,
 	}
 	LEAVE( "RXTXPort:readByte" );
 	return ( (jint) buffer[ 0 ] );
-	//return (bytes ? (jint)buffer[ 0 ] : -1);
+/*
+	return (bytes ? (jint)buffer[ 0 ] : -1);
+*/
 }
 
 /*----------------------------------------------------------
@@ -1260,7 +1270,7 @@ JNIEXPORT jint JNICALL RXTXPort(readArray)( JNIEnv *env,
 		return -1;
 	}
 	body = (*env)->GetByteArrayElements( env, jbarray, 0 );
-	bytes = read_byte_array( fd, (unsigned char *)(body+offset), length, timeout );//dima
+	bytes = read_byte_array( fd, (unsigned char *)(body+offset), length, timeout );/* dima */
 	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
 	if( bytes < 0 ) {
 		report( "RXTXPort:readArray bytes < 0" );
@@ -1376,7 +1386,7 @@ RXTXPort.eventLoop
 ----------------------------------------------------------*/
 JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 {
-	int fd, ret, change;
+	int fd, ret, change, rc;
 	fd_set rfds;
 #ifdef VERBOSE_DEBUG
 	char message[80];
@@ -1540,7 +1550,7 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 
 		omflags = mflags;
 
-		int rc = ioctl( fd, FIONREAD, &change );
+		rc = ioctl( fd, FIONREAD, &change );
 #ifdef __unixware__
 		/*
 		   On SCO OpenServer FIONREAD always fails for serial devices,
@@ -1559,10 +1569,14 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 			{
 				/* select wont block */
 #if defined (__sun__ )
-			//	do {
-			//		tspec = retspec;
+/*
+				do {
+					tspec = retspec;
+*/
 					nanosleep( &tspec, &retspec );
-			//	} while( tspec.tv_nsec != 0 );
+/*
+				} while( tspec.tv_nsec != 0 );
+*/
 	/*
 		50 ms sleep to make sure read can get in
 
@@ -1578,8 +1592,10 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 		sigh.. but this may be causing timeouts in some tests.
 	*/
 #else
-				//usleep(10000);
-				//usleep(50000);
+/*
+				usleep(10000);
+				usleep(50000);
+*/
 #endif /* __sun__ */
 			}
 		}
@@ -1804,41 +1820,41 @@ getRegistryString(io_object_t sObj, char *propName)
    comments:
 ----------------------------------------------------------*/
 int
-registerKnownSerialPorts(JNIEnv *env, jobject jobj, jint portType)//dima
+registerKnownSerialPorts(JNIEnv *env, jobject jobj, jint portType) /* dima */
 {
     io_iterator_t    theSerialIterator;
     io_object_t      theObject;
-    int              numPorts = 0;//dima it should initiated
+    int              numPorts = 0;/* dima it should initiated */
     if (createSerialIterator(&theSerialIterator) != KERN_SUCCESS)
     {
         printf( "createSerialIterator failed\n" );
     } else {
-	jclass cls;//dima
-	jmethodID mid;//dima
-        cls = (*env)->FindClass(env,"javax/comm/CommPortIdentifier" );//dima
-        if (cls == 0) {//dima
-            report( "can't find class of javax/comm/CommPortIdentifier\n" );//dima
-            return numPorts;//dima
-        }//dima
-        mid = (*env)->GetStaticMethodID(env, cls, "addPortName", "(Ljava/lang/String;ILjavax/comm/CommDriver;)V" );//dima
+	jclass cls; /* dima */
+	jmethodID mid; /* dima */
+        cls = (*env)->FindClass(env,"javax/comm/CommPortIdentifier" ); /* dima */
+        if (cls == 0) { /* dima */
+            report( "can't find class of javax/comm/CommPortIdentifier\n" ); /* dima */
+            return numPorts; /* dima */
+        } /* dima */
+        mid = (*env)->GetStaticMethodID(env, cls, "addPortName", "(Ljava/lang/String;ILjavax/comm/CommDriver;)V" ); /* dima */
 
         if (mid == 0) {
             printf( "getMethodID of CommDriver.addPortName failed\n" );
         } else {
             while (theObject = IOIteratorNext(theSerialIterator))
             {
-//begin dima
+ /* begin dima */
             	jstring	tempJstring;
 				tempJstring = (*env)->NewStringUTF(env,getRegistryString(theObject, kIODialinDeviceKey));
-                (*env)->CallStaticVoidMethod(env, cls, mid,tempJstring,portType,jobj);//dima
+                (*env)->CallStaticVoidMethod(env, cls, mid,tempJstring,portType,jobj);/* dima */
  				(*env)->DeleteLocalRef(env,tempJstring);
                 numPorts++;
 
  				tempJstring = (*env)->NewStringUTF(env,getRegistryString(theObject, kIOCalloutDeviceKey));
-               (*env)->CallStaticVoidMethod(env, cls, mid,tempJstring,portType,jobj);//dima
+               (*env)->CallStaticVoidMethod(env, cls, mid,tempJstring,portType,jobj);/* dima */
  				(*env)->DeleteLocalRef(env,tempJstring);
                 numPorts++;
-//end dima
+/* end dima */
             }
         }
     }
@@ -1869,7 +1885,7 @@ JNIEXPORT jboolean JNICALL RXTXCommDriver(registerKnownPorts)(JNIEnv *env,
 		case PORT_TYPE_SERIAL:
 #if defined(__APPLE__)
 			if (registerKnownSerialPorts(env, jobj,
-				PORT_TYPE_SERIAL) > 0) {//dima
+				PORT_TYPE_SERIAL) > 0) {/* dima */
 				result = JNI_TRUE;
 			}
 #endif
@@ -2204,7 +2220,9 @@ void report_error(char *msg)
 #ifndef DEBUG_MW
 	fprintf(stderr, msg);
 #else
-	//mexErrMsgTxt( msg );
+/*
+	mexErrMsgTxt( msg );
+*/
 	mexWarnMsgTxt( msg );
 #endif /* DEBUG_MW */
 }
