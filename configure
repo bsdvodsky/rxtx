@@ -2645,13 +2645,26 @@ check_prefix()
 }
 check_kernel_headers()
 {
-	if  ! grep -q `uname -r` /usr/include/linux/version.h ;then 
+	cat > conftest.c << EOF
+
+#include <linux/version.h>
+
+int main(int argc, char *argv)
+{
+	printf(UTS_RELEASE"\n");
+	exit(0);
+}
+EOF
+	cc conftest.c -o conftest
+	if  test `uname -r` != `./conftest` ;then 
 		echo 1>&2
 		echo "       WARNING:  Kernel include files do not match the current kernel" 1>&2
 		echo 1>&2
 		echo "                 Press enter to continue." 
 		read REPLY
 	fi 1>&2
+	rm -f conftest.c
+	rm -f conftest
 }
 fix_comm_jar()
 {
