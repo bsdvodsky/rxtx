@@ -1,3 +1,9 @@
+1.4-3  Jun 14, 2000   synchronization fixes(?) 
+                      Chris Portal <cportal@mathworks.com>
+		      Joey Armstrong <joeya@mathworks.com>
+		      Allow Event loop to die silently after closing the fd.
+		      LPRPort open() throws PortInUseException not IOException
+		      cleanup of LPRPort java variable access.
 1.4-2  Jun 13, 2000   Documentation changes Bryce Nesbitt <bryce@nextbus.com>
 1.4-1  Jun  6, 2000   HP-UX build fixes (still a messed up compile flag I think)
 		      "Peter Pastrnak" <praktfp1@hpbbm.bbn.hp.com>

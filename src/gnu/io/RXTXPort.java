@@ -276,8 +276,11 @@ final class RXTXPort extends SerialPort
 	/** Process SerialPortEvents */
 	native void eventLoop();
 	private int dataAvailable=0;
-	public void sendEvent( int event, boolean state )
+	public synchronized void sendEvent( int event, boolean state )
 	{
+
+		if ( fd == 0 ) return;  /* close() was called */
+
 		switch( event )
 		{
 			case SerialPortEvent.DATA_AVAILABLE:
@@ -405,7 +408,7 @@ final class RXTXPort extends SerialPort
 
 	/** Close the port */
 	private native void nativeClose();
-	public void close()
+	public synchronized void close()
 	{
 		setDTR(false);
 		setDSR(false);

@@ -383,8 +383,6 @@ EOF
 		echo 1>&2
 		echo "       WARNING:  Kernel include files do not match the current kernel" 1>&2
 		echo 1>&2
-		echo "                 Press enter to continue." 
-		read REPLY
 	fi
 	rm -f conftest.c
 	rm -f conftest

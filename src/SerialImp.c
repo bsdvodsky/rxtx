@@ -76,7 +76,9 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_Initialize(
 	)
 {
 #ifndef WIN32
+#ifdef DEBUG
 	struct utsname name;
+#endif
 	/* This bit of code checks to see if there is a signal handler installed
 	   for SIGIO, and installs SIG_IGN if there is not.  This is necessary
 	   for the native threads jdk, but we don't want to do it with green
@@ -88,7 +90,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_Initialize(
 	sigaction( SIGIO, NULL, &handler );
 	if( !handler.sa_handler ) signal( SIGIO, SIG_IGN );
 #endif /* !__FreeBSD__ */
-#if defined(__linux__) 
+#ifdef DEBUG
 	/* Lets let people who upgraded kernels know they may have problems */
 	if (uname (&name) == -1)
 	{
@@ -107,7 +109,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_Initialize(
 
 
 /*----------------------------------------------------------
-RXTXPort.open
+RXTXPort.Open
 
    accept:      The device to open.  ie "/dev/ttyS0"
    perform:     open the device, set the termios struct to sane settings and 
@@ -160,7 +162,8 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_open(
 	return (jint)fd;
 
 fail:
-	throw_java_exception( env, PORT_IN_USE_EXCEPTION, "open", strerror( errno ) );
+	throw_java_exception( env, PORT_IN_USE_EXCEPTION, "open", 
+		strerror( errno ) );
 	return -1;
 }
 
@@ -958,6 +961,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 	int fd, ret, change;
 	fd_set rfds;
 	struct timeval tv_sleep;
+	struct stat fstatbuf;
 	unsigned int mflags;
 #if defined(TIOCGICOUNT)
 	struct serial_icounter_struct sis, osis;
@@ -1020,6 +1024,9 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 #if defined TIOCSERGETLSR
 		/* JK00: work around for Multi IO cards without TIOCSERGETLSR */
 		if( has_tiocsergetlsr ) {
+
+			if (fstat(fd, &fstatbuf))  break;
+
 			if( ioctl( fd, TIOCSERGETLSR, &change ) ) {
 				fprintf( stderr, "TIOCSERGETLSR Failed\n" );
 				break;
@@ -1142,7 +1149,7 @@ void send_modem_events( JNIEnv *env, jobject jobj, jmethodID method,
 }
 
 /*----------------------------------------------------------
-get_java_fd
+get_java_var
 
    accept:      env (keyhole to java)
                 jobj (java RXTXPort object)

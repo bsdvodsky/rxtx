@@ -30,6 +30,13 @@
 #define PAR_EV_ERROR	1
 #define PAR_EV_BUFFER	2
 
+/* java exception class names */
+#define UNSUPPORTED_COMM_OPERATION "javax/comm/UnsupportedCommOperationException"
+#define ARRAY_INDEX_OUT_OF_BOUNDS "java/lang/ArrayIndexOutOfBoundsException"
+#define OUT_OF_MEMORY "java/lang/OutOfMemoryError"
+#define IO_EXCEPTION "java/io/IOException"
+#define PORT_IN_USE_EXCEPTION "javax/comm/PortInUseException"
+
 /*
 Flow Control defines inspired by reading how mgetty by Gert Doering does it
 */
@@ -37,8 +44,5 @@ Flow Control defines inspired by reading how mgetty by Gert Doering does it
 /* PROTOTYPES */
 int read_byte_array( int fd, unsigned char *buffer, int length, int threshold,
    int timeout );
-int get_java_fd( JNIEnv *env, jobject jobj );
-void send_modem_events( JNIEnv *env, jobject jobj, jmethodID method,
-   int event, int change, int state );
-void IOException( JNIEnv *Env, char *msg );
-void UnsupportedCommOperationException( JNIEnv *env, char *msg );
+int get_java_var( JNIEnv *, jobject, char *, char * );
+void throw_java_exception( JNIEnv *, char *, char *, char * );
