@@ -353,7 +353,25 @@ JNIEXPORT void JNICALL Java_gnu_io_NativePort_writeArray( JNIEnv *env,
 	if( write( fd, bytes, count ) < 0 )
 		IOException( env, strerror( errno ) );
 	free( bytes );
-	return;
+}
+
+
+/*----------------------------------------------------------
+NativePort.drain
+
+   accept:      none
+   perform:     wait until all data is transmitted
+   return:      none
+   exceptions:  IOException
+   comments:    java.io.OutputStream.flush() is equivalent to tcdrain,
+                not tcflush, which throws away unsent bytes
+----------------------------------------------------------*/
+JNIEXPORT void JNICALL Java_gnu_io_NativePort_drain( JNIEnv *env,
+	jobject jobj )
+{
+	int fd = get_java_fd( env, jobj );
+	if( tcdrain( fd ) )
+		IOException( env, strerror( errno ) );
 }
 
 
