@@ -424,3 +424,22 @@ SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
 		return	requestId.equals(qID);				// Are you busy doing this job
 	}
 }
+/* the following was added so the code will compile.  Its not proper */
+class SNLogger
+{
+	public void debugInfo(java.lang.String it)
+	{
+	}
+	public void log(java.lang.String it)
+	{
+	}
+}
+class SNComThread
+{
+	public void queRequest(java.lang.String a, java.lang.String b, java.lang.String c)
+	{
+	} 
+}
+class SNConfig
+{
+}
