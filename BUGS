@@ -98,5 +98,29 @@ Known 'Features'.
 
 	 portDisp = new SerialPortDisplay[50];
 
+6.  I've ran into the following error:
 
-Older Linux Systems (libc5) should upgrade to a glibc system with libpthread-0.7 or newer.  We have run into many problems with older libraries.  SIGSEGV was the most common symptom.  Reported by  Peter Bennett <bencom@bencom.co.nz>
+Exception in thread "main" java.lang.VerifyError: (class: gnu/io/RXTXPort$SerialOutputStream, method: flush signature: ()V) Illegal use of nonvirtual function call
+        at gnu.io.RXTXCommDriver.getCommPort(Compiled Code)
+        at javax.comm.CommPortIdentifier.open(Compiled Code)
+        at SerialPortDisplay.openBBPort(Compiled Code)
+        at SerialPortDisplay.<init>(Compiled Code)
+        at BlackBox.addPort(Compiled Code)
+        at BlackBox.main(Compiled Code)
+
+I found the following info:
+
+Louis Tribble on the blackdown mail list:
+
+JDK 1.1 compilers sometimes generate code that won't verify under 1.2.
+
+If you don't have the sources for the offending class to recompile with a
+1.2 javac, the only solution I know of is to launch the VM with the
+-noverify option.
+
+Louis
+
+In otherwords start with a fresh build directory, rebuild, and reinstall to
+avoid the problem.
+
+7.  Older Linux Systems (libc5) should upgrade to a glibc system with libpthread-0.7 or newer.  We have run into many problems with older libraries.  SIGSEGV was the most common symptom.  Reported by  Peter Bennett <bencom@bencom.co.nz>
