@@ -16,10 +16,10 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
-//#ifdef TRENT_IS_HERE
+#ifdef TRENT_IS_HERE
 #define DEBUG
-//#define DEBUG_MW
-//#endif /* TRENT_IS_HERE */
+#define DEBUG_MW
+#endif /* TRENT_IS_HERE */
 #if defined(__MWERKS__)//dima
 #include "RXTXPort.h"//dima
 #else //dima
@@ -692,7 +692,7 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 	report( message );
 #endif /* VERBOSE_DEBUG */
 	do {
-		result=WRITE (fd, body + total, count - total);
+		result=WRITE (fd, body + total + offset, count - total);
 		if(result >0){
 			total += result;
 		}
@@ -1223,7 +1223,8 @@ JNIEXPORT jint JNICALL RXTXPort(readArray)( JNIEnv *env,
 		return -1;
 	}
 	body = (*env)->GetByteArrayElements( env, jbarray, 0 );
-	bytes = read_byte_array( fd, (unsigned char *)body, length, timeout );
+	bytes = read_byte_array( fd, ( unsigned char * )( body + offset ), 
+				length, timeout );
 	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
 	if( bytes < 0 ) {
 		report("RXTXPort:readArray bytes < 0");
