@@ -1438,7 +1438,7 @@ fi
 
 PACKAGE=Serial
 
-VERSION=1.4.13
+VERSION=1.4.14
 
 if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status; then
   { echo "configure: error: source directory already configured; run "make distclean" there first" 1>&2; exit 1; }
@@ -2718,7 +2718,7 @@ Mac\ OS\ X)
 	CFLAGS="$CFLAGS -bundle"
 	LDFLAGS="$LDFLAGS -module -framework JavaVM -framework IOKit -framework CoreFoundation"
 	CLASSPATH=".:\$(TOP):\$(TOP)/src:\$(JPATH)/lib/ext/comm.jar:$CLASSPATH"
-	#  email trentjarvi@yahoo.com if you know a nicer fix.
+	#  email trentjarvi@yahoo.com if you know a nicer fix.  Needed anymore?
 	LIBTOOL_FIX="sed s/echo\ so/echo\ jnilib/g libtool > tmp; mv tmp libtool; chmod +x libtool;"
 ;;
 
