@@ -100,6 +100,7 @@ public class RXTXCommDriver implements CommDriver {
 		String[] devs = dev.list();
 		String[] AllKnownSerialPorts={
 			"modem",// linux symbolic link to modem.
+			"cuaa", // FreeBSD Serial Ports
 			"ttyS", // linux Serial Ports
 			"ttyI", // linux virtual modems
 			"ttyW", // linux specialix cards

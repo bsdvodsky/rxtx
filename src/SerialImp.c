@@ -66,9 +66,13 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_Initialize(
 	   for SIGIO, and installs SIG_IGN if there is not.  This is necessary
 	   for the native threads jdk, but we don't want to do it with green
 	   threads, because it slows things down.  Go figure. */
+
+	/* POSIX signal handling functions */
+#if !defined(__FreeBSD___)
 	struct sigaction handler;
 	sigaction( SIGIO, NULL, &handler );
 	if( !handler.sa_handler ) signal( SIGIO, SIG_IGN );
+#endif /* __FreeBSD__ */
 }
 
 
@@ -366,7 +370,8 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeArray( JNIEnv *env,
 	jobject jobj, jbyteArray jbarray, jint offset, jint count )
 {
 	int fd = get_java_fd( env, jobj );
-	int result;
+	int result=0,total=0,c=count;
+
 	jbyte *body = (*env)->GetByteArrayElements( env, jbarray, 0 );
 	unsigned char *bytes = (unsigned char *)malloc( count );
 	int i;
@@ -375,6 +380,9 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeArray( JNIEnv *env,
 	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
 	do {
 		result=write (fd, bytes, count);
+		total += result;
+		c -= result;
+		bytes += result;
 	}  while (result < 0 && errno==EINTR);
 	free( bytes );
 	if( result < 0 ) throw_java_exception( env, IO_EXCEPTION,
@@ -743,7 +751,7 @@ int read_byte_array( int fd, unsigned char *buffer, int length, int timeout )
 #endif /* DEBUG_TIMEOUT */
 		ret = read( fd, buffer + bytes, left );
 #ifdef DEBUG_TIMEOUT
-		printf("<read returned %i\n",ret);
+		printf("<read returned %i (%x) %c\n",ret,*(buffer + bytes), *(buffer+bytes));
 #endif /* DEBUG_TIMEOUT */
 		if( ret == 0 ) break;
 		if( ret < 0 ) return -1;
@@ -917,9 +925,9 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 	jobject jobj )
 {
 	int fd, ret, change;
-	unsigned int mflags;
 	fd_set rfds;
 	struct timeval sleep;
+	unsigned int mflags,omflags;
 #if defined(__linux__)
 	struct serial_icounter_struct sis, osis;
 #endif
@@ -941,8 +949,11 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 		return; 
 	}
 #else
-	fprintf( stderr, "Port does not support events\n" );
- 	return;
+	if( ioctl( fd, TIOCMGET, &omflags) <0 {
+		fprintf( stderr, "Port does not support events\n" );
+ 		return;
+	}
+	fprintf( stderr, "Port does not support all Hardware events\n" );
 #endif
 
 	FD_ZERO( &rfds );
@@ -997,6 +1008,38 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 			mflags & TIOCM_CD );
 		osis = sis;
 		interrupted = (*env)->CallStaticBooleanMethod( env, jthread, interrupt );
+#else /*  __linux__ */
+	       /* A Portable non-linux implementation */
+		change = (mflags&TIOCM_CTS) - (omflags&TIOCM_CTS);
+		if( change ) {
+			fprintf(stderr, "Sending SPE_CTS\n");
+			(*env)->CallVoidMethod( env, jobj, method,
+				(jint)SPE_CTS, JNI_TRUE );
+		}
+		change = (mflags&TIOCM_DSR) - (omflags&TIOCM_DSR);
+		if( change ) {
+			fprintf(stderr, "Sending SPE_DSR\n");
+			(*env)->CallVoidMethod( env, jobj, method,
+				(jint)SPE_DSR, JNI_TRUE );
+		}
+		change = (mflags&TIOCM_RNG) - (omflags&TIOCM_RNG);
+		if( change ) {
+			fprintf(stderr, "Sending SPE_RI\n");
+			(*env)->CallVoidMethod( env, jobj, method,
+				(jint)SPE_RI, JNI_TRUE );
+		}
+		change = (mflags&TIOCM_CD) - (omflags&TIOCM_CD);
+		if( change ) {
+			fprintf(stderr, "Sending SPE_CD\n");
+			(*env)->CallVoidMethod( env, jobj, method,
+				(jint)SPE_CD, JNI_TRUE );
+		}
+		omflags = mflags;
+		if( ioctl( fd, FIONREAD, &change ) ) break;
+		if( change ) {
+			(*env)->CallVoidMethod( env, jobj, method,
+				(jint)SPE_DATA_AVAILABLE, JNI_TRUE );
+		}
 #endif /* __linux__ */
 	}
 	return;
