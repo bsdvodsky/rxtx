@@ -1041,6 +1041,10 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 
 /*------------------------  END OF CommAPI -----------------------------*/
 
+	private native boolean nativeSetParityErrorChar( byte b )
+		throws UnsupportedCommOperationException;
+	private native boolean nativeSetEndOfInputChar( byte b )
+		throws UnsupportedCommOperationException;
 	private native boolean nativeSetUartType(String type, boolean test)
 		throws UnsupportedCommOperationException;
 	native String nativeGetUartType()
@@ -1061,6 +1065,39 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 		throws UnsupportedCommOperationException;
 	private native boolean nativeGetCallOutHangup()
 		throws UnsupportedCommOperationException;
+	/**
+	*  Extension to CommAPI
+	*  This is an extension to CommAPI.  It may not be supported on
+	*  all operating systems.
+	*  @param b Parity Error Character
+	*  @return boolean true on success
+	*  @throws UnsupportedCommOperationException;
+	*/
+
+	boolean setParityErrorChar( byte b )
+		throws UnsupportedCommOperationException
+	{
+		if ( debug )
+			System.out.println( "setParityErrorChar(" + b + ")" );
+		return( nativeSetParityErrorChar( b ) );
+	}
+
+	/**
+	*  Extension to CommAPI
+	*  This is an extension to CommAPI.  It may not be supported on
+	*  all operating systems.
+	*  @param b End Of Input Character
+	*  @return boolean true on success
+	*  @throws UnsupportedCommOperationException;
+	*/
+
+	boolean setEndOfInputChar( byte b )
+		throws UnsupportedCommOperationException
+	{
+		if ( debug )
+			System.out.println( "setEndOfInputChar(" + b + ")" );
+		return( nativeSetEndOfInputChar( b ) );
+	}
 
 	/**
 	*  Extension to CommAPI
