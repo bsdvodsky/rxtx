@@ -10,6 +10,11 @@ The good side is the stuff compiles as is.
 	kernel specific implementations
 	buggy event loop.
 
+Win95/98 with mingw32
+	select()
+	http://msdn.microsoft.com/library/techart/msdn_serial.htm
+	for documentation.
+
 RXTXPort.java
 	framing control -?-
 	buffer control -?-
