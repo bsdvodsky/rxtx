@@ -48,7 +48,7 @@
 extern int errno;
 
 #include "SerialImp.h"
-/* #define DEBUG_TIMEOUT */
+#define DEBUG_TIMEOUT 
 
 /*----------------------------------------------------------
 RXTXPort.Initialize
@@ -370,20 +370,22 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeArray( JNIEnv *env,
 	jobject jobj, jbyteArray jbarray, jint offset, jint count )
 {
 	int fd = get_java_fd( env, jobj );
-	int result=0,total=0,c=count;
+	int result=0,total=0,i;
+
+	unsigned char *bytes = (unsigned char *)malloc( count );
 
 	jbyte *body = (*env)->GetByteArrayElements( env, jbarray, 0 );
-	unsigned char *bytes = (unsigned char *)malloc( count );
-	int i;
-
 	for( i = 0; i < count; i++ ) bytes[ i ] = body[ i + offset ];
 	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
+	for( i = 0; i < count; i++ ) bytes[ i ] = '1';
 	do {
-		result=write (fd, bytes, count);
-		total += result;
-		c -= result;
-		bytes += result;
-	}  while (result < 0 && errno==EINTR);
+		result=write (fd, bytes + total, count - total);
+		if(result >0){
+			total += result;
+		}
+		printf(".");
+	}  while ((total<count)||(result < 0 && errno==EINTR));
+	printf("out=%i\n",total);
 	free( bytes );
 	if( result < 0 ) throw_java_exception( env, IO_EXCEPTION,
 		"writeArray", strerror( errno ) );
@@ -993,7 +995,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 		if( ioctl( fd, FIONREAD, &change ) ) break;
 		if( change ) (*env)->CallVoidMethod( env, jobj, method,
 			(jint)SPE_DATA_AVAILABLE, JNI_TRUE );
-#endif /* FULL_EVENT __linux__ */
+#endif /* FULL_EVENT */
 		change = sis.cts - osis.cts;
 		if( change ) send_modem_events( env, jobj, method, SPE_CTS, abs(change),
 			mflags & TIOCM_CTS );
