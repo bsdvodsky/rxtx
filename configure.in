@@ -67,12 +67,14 @@ AC_SUBST(EXTENSION)
 AC_SUBST(LIBTOOL_FIX)
 AC_SUBST(LDFLAGS)
 AC_SUBST(LINK)
+AC_SUBST(COMPILE)
 AC_SUBST(OBJECT_EXTENSION)
 
 JHOME=
 RXTX_PATH=
 EXTENSION="c"
 OBJECT_EXTENSION="lo"
+COMPILE="cc "
 TOP="`pwd`"
 LINK="\$(TOP)/libtool --mode=link \$(CC) \$(CFLAGS) \$(LDFLAGS) -release \$(VERSION) -o lib\$*.la -rpath \$(RXTX_PATH)"
 
@@ -623,6 +625,8 @@ UnixWare|OpenUNIX)
 	CLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:\$(JPATH)/jre/lib/rt.jar:\$(JPATH)/jre/lib/ext/comm.jar"
 	TARGETLIB="\$(target_alias)/libSerial.so \
 		\$(target_alias)/libParallel.so"
+	COMPILE="\$(CC) \$(INCLUDES) \$(CPPFLAGS) \$(CFLAGS) \$(VERBOSE_IOEXCEPTIONS) -c "
+	LINK="\$(CC) \$(CFLAGS) \$(LDFLAGS)"
 	echo "In UnixWare, CLASSPATH is $CLASSPATH"     
 ;;
 
