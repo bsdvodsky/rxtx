@@ -1,7 +1,7 @@
 This is the INSTALL file for RXTX.  
 
 If while following the instructions you find it unclear or incorrect please 
-make a note and email the details to jarvi@ezlink.com.  
+make a note and email the details to trentjarvi@yahoo.com.  
 
 This is a developers release.  Current focus is on linux-2.2.  Work 
 is required to port this to other OS's.  There should be few problems
@@ -83,11 +83,11 @@ For the methodical:
     these features. 
 
     If, for some reason, no Makefile is generated please send bug reports to
-    jarvi@ezlink.com.  You may be able to continue by installing the latest
+    trentjarvi@yahoo.com.  You may be able to continue by installing the latest
     GNU make package and then running ./autogen.sh; ./configure.
 
     Win32 users:   The rxtx package has dropped win32 support.  Email 
-                  jarvi@ezlink.com if you have an interest in developing it.
+                  trentjarvi@yahoo.com if you have an interest in developing it.
 
 4) JAVA INCLUDE FILES
 
@@ -179,6 +179,6 @@ For the methodical:
        2.  in the rxtx directory type cvs login.
            there is no password.  hit return when prompted for one.
        3.  type cvs update.
-       4.  if your interested in contributing please email jarvi@ezlink.com
+       4.  if your interested in contributing please email trentjarvi@yahoo.com
            to obtain an account with write permission.
        5.  The latest development is held in the rxtx-devel module.

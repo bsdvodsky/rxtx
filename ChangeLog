@@ -88,7 +88,7 @@
                       giving credit where necessary.  (Sheldon Young - 
                       sheldon_young@yahoo.com)
                       
-                      Commented SerialImp.c (jarvi@ezlink.com)
+                      Commented SerialImp.c (trentjarvi@yahoo.com)
 1.2pre4 Aug 12, 1998  The CommAPI has changed in the newest beta from Sun,
                       now named "javacomm20-ea".  I have attached RXTXPort.java,                      which I have modified so it now compiles.
                       Sheldon Young sheldon@intergate.bc.ca

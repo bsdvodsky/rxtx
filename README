@@ -21,8 +21,8 @@ There are numerous possibilities for projects that involve serial communication.
 Java is an excellent language for putting GUI apps together.  Well have fun.  
 Send back stories. 
 
-Copies of the latest RXTX will be on ftp://jarvi.ezlink.com/pub/rxtx.
-The primary source for information/support is http://jarvi.ezlink.com/rxtx/.
+Copies of the latest RXTX will be on http://www.frii.com/~jarvi/rxtx/download
+The primary source for information/support is http://www.frii.com/~jarvi/rxtx/.
 
 This is a native lib for jdk 1.1.*/1.2.*.  If you find changes required
 for different platforms or OS's please pass them back this way so we may share
@@ -68,5 +68,5 @@ For bug reports please follow the directions in BUGS.  For installation help
 see INSTALL.
 
 Trent Jarvi
-jarvi@ezlink.com
+trentjarvi@yahoo.com
 

@@ -16,11 +16,11 @@ If you want to port rxtx to a new unix platform do the following.
       CLASSPATH
 
 We will gladly help with any UNIX platform.  Send questions to
-jarvi@ezlink.com.  New OS's usually require tweaks.
+trentjarvi@yahoo.com.  New OS's usually require tweaks.
 
 If its not compiling try backing out functionality until it compiles.
 
-win32 support has been removed.  contact jarvi@ezlink.com if your interested
+win32 support has been removed.  contact trentjarvi@yahoo.com if your interested
 in developing win32 support.  We will gladly put win32 code back in if there is
 developer interest.
 
