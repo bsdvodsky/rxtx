@@ -1,8 +1,38 @@
+While looking through the blackdown mail list, it was obvious that some people
+really want printer support.  Here is a chance to put it in themselves.
 
-add ParallelPort support.  (shell is in.  just needs some code )
+ParallelPort and CommPortIdentifier files are provided so you can start 
+implementing right away without worrying about how automake works.  They are 
+not written in stone.  If you want to do it differently feel free.
+The good side is the stuff compiles as is.  
+
+ParallelPort support.  Needs some code.
 	./configure --enable-PRINTER will create a Makefile that uses it.
-CommPortIdentifier support. (shell is in.  just needs some code )
+	The SerialPort code should help one get up to speed on implementing
+	files:
+		ParallelImp.c stubs + a copy of SerialImp.c
+		ParallelImp.h
+		LPRPort.java simular to RXTXPort.java + stubs.
+
+CommPortIdentifier support. Needs some code.
 	./configure --enable-RXTXIDENT will create a Makefile that uses it.
+	Plenty of example code can be found in commapi/samples/porting
+	Please dont send in Sun's code.  
+
+	Only reason I can think of for implementing CommPortIdentifier is
+	to get rid of the "Port In Use By Unknown Solaris Application"
+	message.
+
+	files:
+		CommPortEnumerator.java  All stubs.
+		CommPortIdentifier.java     "
+		CpoList.java                "
+		CpoListEntry.java           "
+		LPRPort.java                "
+		OwnershipEventThread.java   "
+	
+------------------
+backwards compatibility for older linux systems.
 ------------------
 non linux specific implementations
 ------------------
