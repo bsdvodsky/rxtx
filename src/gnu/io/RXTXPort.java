@@ -512,6 +512,46 @@ final class RXTXPort extends SerialPort
 					System.out.println( "OUTPUT_BUF_EMPTY " +
 						monThread.Output + ")" );
 				break;
+			case SerialPortEvent.CTS:
+				if( debug )
+					System.out.println( "CTS " +
+						monThread.Output + ")" );
+				break;
+			case SerialPortEvent.DSR:
+				if( debug )
+					System.out.println( "DSR " +
+						monThread.Output + ")" );
+				break;
+			case SerialPortEvent.RI:
+				if( debug )
+					System.out.println( "RI " +
+						monThread.Output + ")" );
+				break;
+			case SerialPortEvent.CD:
+				if( debug )
+					System.out.println( "CD " +
+						monThread.Output + ")" );
+				break;
+			case SerialPortEvent.OE:
+				if( debug )
+					System.out.println( "OE " +
+						monThread.Output + ")" );
+				break;
+			case SerialPortEvent.PE:
+				if( debug )
+					System.out.println( "PE " +
+						monThread.Output + ")" );
+				break;
+			case SerialPortEvent.FE:
+				if( debug )
+					System.out.println( "FE " +
+						monThread.Output + ")" );
+				break;
+			case SerialPortEvent.BI:
+				if( debug )
+					System.out.println( "BI " +
+						monThread.Output + ")" );
+				break;
 			default:
 				if( debug )
 					System.out.println( "XXXXXXXXXXXXXXXX " +
@@ -583,7 +623,9 @@ final class RXTXPort extends SerialPort
 		}
 		else 
 		{
-			try{Thread.sleep(50);} catch(Exception exc){}
+			try{
+				Thread.sleep(50);
+			} catch(Exception exc){}
 			return(false);  
 		}
 	}
@@ -608,7 +650,7 @@ final class RXTXPort extends SerialPort
 	/**
 	*  Remove the serial port event listener
 	*/
-	public synchronized void removeEventListener()
+	public void removeEventListener()
 	{
 		if (debug)
 			System.out.println("RXTXPort:removeEventListener()");
@@ -770,9 +812,14 @@ final class RXTXPort extends SerialPort
                 public synchronized void write( byte b[] ) throws IOException
 		{
 			if (debug)
-				System.out.println("RXTXPort:SerialOutputStream:write(" +b.length +")");
+			{
+				System.out.println("::::: Entering RXTXPort:SerialOutputStream:write(" +b.length +")" );
+				System.out.println("RXTXPort:SerialOutputStream:write() data = " + new String(b) );
+			}
 			if ( fd == 0 ) throw new IOException();
                         writeArray( b, 0, b.length );
+			if (debug)
+				System.out.println("::::: Leaving RXTXPort:SerialOutputStream:write(" +b.length +")");
                 }
 	/**
 	*  @param b[]
@@ -783,19 +830,37 @@ final class RXTXPort extends SerialPort
                 public synchronized void write( byte b[], int off, int len )
 			throws IOException
 		{
+			if( off + len  > b.length )
+			{
+				throw new IndexOutOfBoundsException(
+					"Invalid offset/length passed to read"
+				);
+			}
+ 
+			byte send[] = new byte[len];
+			System.arraycopy( b, off, send, 0, len );
 			if (debug)
-				System.out.println("RXTXPort:SerialOutputStream:write(" + b.length + " " + off + " " + len + " " +")");
+			{
+				System.out.println("::::: Entering RXTXPort:SerialOutputStream:write(" + send.length + " " + off + " " + len + " " +")" +  new String(send) );
+				System.out.println("RXTXPort:SerialOutputStream:write() data = " +  new String(send) );
+			}
 			if ( fd == 0 ) throw new IOException();
-                        writeArray( b, off, len );
+                        writeArray( send, 0, len );
+			if( debug )
+				System.out.println("::::: Leaving RXTXPort:SerialOutputStream:write(" + send.length + " " + off + " " + len + " " +")" +  new String(send) );
                 }
 	/**
 	*/
-                public synchronized void flush() throws IOException
+                //public synchronized void flush() throws IOException
+                public void flush() throws IOException
 		{
 			if (debug)
-				System.out.println("RXTXPort:SerialOutputStream:flush()");
+				System.out.println("RXTXPort:SerialOutputStream:flush() enter");
 			if ( fd == 0 ) throw new IOException();
                         nativeDrain();
+			Thread.yield();
+			if (debug)
+				System.out.println("RXTXPort:SerialOutputStream:flush() leave");
 		}
 	}
 
@@ -841,6 +906,7 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 		{
 			if (debug)
 				System.out.println("RXTXPort:SerialInputStream:read(" + b.length + " " + off + " " + len + ")");
+			int result;
 			/*
 			 * Some sanity checks
 			 */
@@ -885,7 +951,10 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 			 */
 				Minimum = Math.min(Minimum, threshold);
 			}
-			return readArray( b, off, Minimum);
+			result = readArray( b, off, Minimum);
+			if (debug)
+				System.out.println("RXTXPort:SerialInputStream:read(" + b.length + " " + off + " " + len + ") = " + result + " bytes containing "  + new String(b) );
+			return( result );
 		}
 	/**
 	*  @return int bytes available
@@ -930,6 +999,19 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 		{
 			if (debug)
 				System.out.println("RXTXPort:MontitorThread:run()"); 
+/*
+			while( monThread.isInterrupted() )
+			{
+				//try {
+					System.out.println("eventLoop is interupted");
+				//} catch(java.lang.InterruptedException e) {}
+			}
+*/
+			/* another eventLoop is exiting? */
+			try {
+				Thread.sleep(500);
+			} catch(java.lang.InterruptedException e) {}
+			Thread.yield();
 			eventLoop();
 			yield();
 			if (debug)
