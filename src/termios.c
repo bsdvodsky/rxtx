@@ -1846,10 +1846,20 @@ int tcsetattr( int fd, int when, struct termios *s_termios )
 	{
 		dcb.fParity = TRUE;
 	} else dcb.fParity = FALSE;
-	/* not in win95? */
+	/* not in win95?
+	   Some years later...
+	   eww..  FIXME This is used for changing the Parity 
+	   error character 
+
+	   I think this code is hosed.  See VEOF below
+
+	   Trent
+	*/
+
 	if ( s_termios->c_iflag & ISTRIP ) dcb.fBinary = FALSE;
 	/* ISTRIP: strip to seven bits */
 	else dcb.fBinary = TRUE;
+
 	/* FIXME: IGNBRK: ignore break */
 	/* FIXME: BRKINT: interrupt on break */
 	dcb.fOutX = ( s_termios->c_iflag & IXON ) ? TRUE : FALSE;
@@ -1868,6 +1878,14 @@ int tcsetattr( int fd, int when, struct termios *s_termios )
 	dcb.XonLim          = 0;	/* ? */
 	dcb.XoffLim         = 0;	/* ? */
 	dcb.EofChar         = s_termios->c_cc[VEOF];
+	if( dcb.EofChar != '\0' )
+	{
+		dcb.fBinary = 0;
+	}
+	else
+	{
+		dcb.fBinary = 1;
+	}
 	if ( EV_BREAK|EV_CTS|EV_DSR|EV_ERR|EV_RING | ( EV_RLSD & EV_RXFLAG ) )
 		dcb.EvtChar = '\n';
 	else

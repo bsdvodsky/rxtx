@@ -16,6 +16,10 @@ DIE=0
 }
 
 /* avoid libtool on Mac OS X codename Darwin Dmitry */
+if test `uname` != "Darwin"; then
+	libtoolize --copy --force; \
+fi
+
 
 if test `uname` != "Darwin"; then
 (libtool --version) < /dev/null > /dev/null 2>&1 || {
