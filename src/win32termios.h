@@ -73,17 +73,18 @@ struct termios
  *  custom_divisor
  */
 struct serial_struct {
+/*
+	Mainly we are after baud_base/custom_diviser to match
+	the ioctl() in SerialImp.c
+*/
 	int custom_divisor;   /* use to set unsupported speeds */
 	int baud_base;        /* use to set unsupported speeds */
 
-/*
- * 	not used:
 	unsigned short	close_delay, closing_wait, iomem_reg_shift;
 	int type, line, irq, flags, xmit_fifo_size, hub6;
 	unsigned int	port, port_high;
 	char		io_type;
 	unsigned char	*iomem_base;
-*/
 };
 struct serial_icounter_struct {
 	int cts;		/* clear to send count */
@@ -273,7 +274,7 @@ void cfmakeraw(struct termios *s_termios);
 #define  B9600	0000015
 #define  B19200	0000016
 #define  B38400	0000017
-#define  B57600   0010001
+#define  B57600	  0010001
 #define  B115200  0010002
 #define  B230400  0010003
 #define  B460800  0010004
@@ -288,6 +289,14 @@ void cfmakeraw(struct termios *s_termios);
 #define  B3000000 0010015
 #define  B3500000 0010016
 #define  B4000000 0010017
+
+/* glue for unsupported linux speeds see also SerialImp.h.h */
+
+#define B14400		1010001
+#define B28800		1010002
+#define B128000		1010003
+#define B256000		1010004
+
 #define EXTA B19200
 #define EXTB B38400
 #define CSIZE	0000060
@@ -323,7 +332,9 @@ void cfmakeraw(struct termios *s_termios);
 #define IEXTEN  0100000
 
 /* glue for unsupported windows speeds */
+
 #define CBR_230400	230400
+#define CBR_28800	28800
 #define CBR_460800	460800
 #define CBR_500000	500000
 #define CBR_576000	576000
@@ -336,12 +347,6 @@ void cfmakeraw(struct termios *s_termios);
 #define CBR_3000000	3000000
 #define CBR_3500000	3500000
 #define CBR_4000000	4000000
-
-/* glue for unsupported linux speeds */
-
-#define B14400		0010100
-#define B128000		0010101
-#define B256000		0010102
 
 
 /* Values for the ACTION argument to `tcflow'.  */

@@ -56,7 +56,7 @@ $(CLASSES): $(javafiles) $(TOP)/Makefile
 	$(JAVAH_FIX)
 	$(JAVAC) $(javafiles)
 	@$(JAVAH) `(for i in $(javahfiles);do \
-		if grep -q native.*\( $(SPATH)/$$i.java; then \
+		if grep > /dev/null native.*\( $(SPATH)/$$i.java; then \
 			echo $(CLASSDIR).$$i; \
 		fi; \
 	done)`

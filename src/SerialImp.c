@@ -69,6 +69,10 @@
 #	include <linux/serial.h>
 #	include <linux/version.h>
 #endif /* __linux__ */
+#if defined(__sun__)
+#	include <sys/filio.h>
+#	include <sys/mkdev.h>
+#endif
 #if defined(__hpux__)
 #include <sys/modem.h>
 #endif /* __hpux__ */
@@ -252,31 +256,97 @@ JNIEXPORT void JNICALL RXTXPort(nativeSetSerialPortParams)(
 	struct termios ttyset;
 	int fd = get_java_var( env, jobj,"fd","I" );
 	int cspeed = translate_speed( env, speed );
+#ifdef TIOCGSERIAL
+	struct serial_struct sstruct;
+#endif /* TIOCGSERIAL */
+
+
 	if( !cspeed )
 	{
 		fprintf(stderr, "Invalid Speed Selected\n");
 		return;
 	}
+
 	if( tcgetattr( fd, &ttyset ) < 0 )
 	{
 		fprintf(stderr, "Cannot Get Serial Port Settings\n");
 		goto fail;
 	}
+
 	if( !translate_data_bits( env, &(ttyset.c_cflag), dataBits ) )
 	{
 		fprintf(stderr, "Invalid Data Bits Selected\n");
 		return;
 	}
+
 	if( !translate_stop_bits( env, &(ttyset.c_cflag), stopBits ) )
 	{
 		fprintf(stderr, "Invalid Stop Bits Selected\n");
 		return;
 	}
+
 	if( !translate_parity( env, &(ttyset.c_cflag), parity ) )
 	{
 		fprintf(stderr, "Invalid Parity Selected\n");
 		return;
 	}
+
+#ifdef TIOCGSERIAL
+	if ( cspeed > 1000000 )
+	{
+		/*
+		The following speeds can not be set using cfset*speed()
+		The defines are added in SerialImp.h.
+
+		The speed is set to 38400 which is actually a custom
+		speed.
+
+		The baud_base and desired speed are then used to
+		calculate a custom divisor.
+
+		On linux the setserial man page covers this.
+		*/
+
+		if ( ioctl( fd, TIOCGSERIAL, &sstruct ) < 0 )
+		{
+			goto fail;
+		}
+
+		switch( cspeed )
+		{
+			case B14400:
+				cspeed = 14400;
+				break;
+			case B28800:
+				cspeed = 28800;
+				break;
+			case B128000:
+				cspeed = 128000;
+				break;
+			case B256000:
+				cspeed = 256000;
+				break;
+			default:
+				goto fail;
+		}
+	
+		if ( cspeed < 1  || sstruct.baud_base < 1 )
+		{
+			goto fail;
+		}
+
+		sstruct.custom_divisor = ( sstruct.baud_base/cspeed );
+
+		if (	sstruct.baud_base < 1 ||
+			ioctl( fd, TIOCSSERIAL, &sstruct ) < 0 )
+		{
+			goto fail;
+		}
+
+		cspeed = 38400;
+	}
+#endif /* TIOCGSERIAL */
+
 #ifdef __FreeBSD__
 	if( cfsetspeed( &ttyset, cspeed ) < 0 )
 	{
@@ -284,22 +354,20 @@ JNIEXPORT void JNICALL RXTXPort(nativeSetSerialPortParams)(
 		goto fail;
 	}
 #else
-	if( cfsetispeed( &ttyset, cspeed ) < 0 )
+	if(
+		cfsetispeed( &ttyset, cspeed ) < 0 ||
+		cfsetospeed( &ttyset, cspeed ) < 0 )
 	{
-		fprintf(stderr, "Cannot Set Input Speed\n");
-		goto fail;
-	}
-	if( cfsetospeed( &ttyset, cspeed ) < 0 )
-	{
-		fprintf(stderr, "Cannot Set Output Speed\n");
+		fprintf(stderr, "Cannot Set Speed\n");
 		goto fail;
 	}
 #endif  /* __FreeBSD__ */
+
 	if( tcsetattr( fd, TCSANOW, &ttyset ) < 0 )
 	{
-		fprintf(stderr, "Cannot Set Serial Port Parameters.\n");
 		goto fail;
 	}
+
 	return;
 
 fail:
@@ -322,8 +390,8 @@ int translate_speed( JNIEnv *env, jint speed )
 	printf("speed = %i\n", (int) speed);
 	switch( speed ) {
 		case 0:		return B0;
-		case 50:		return B50;
-		case 75:		return B75;
+		case 50:	return B50;
+		case 75:	return B75;
 		case 110:	return B110;
 		case 134:	return B134;
 		case 150:	return B150;
@@ -345,6 +413,10 @@ int translate_speed( JNIEnv *env, jint speed )
 #ifdef B460800
 		case 460800:	return B460800;
 #endif /* B460800 */
+		case 14400:	return B14400;
+		case 28800:	return B28800;
+		case 128000:	return B128000;
+		case 256000:	return B256000;
 	}
 
 	throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,
@@ -366,18 +438,19 @@ int translate_data_bits( JNIEnv *env, tcflag_t *cflag, jint dataBits )
 	int temp = (*cflag) & ~CSIZE;
 
 	switch( dataBits ) {
-		case DATABITS_5:
+		case JDATABITS_5:
 			(*cflag) = temp | CS5;
 			return 1;
-		case DATABITS_6:
+		case JDATABITS_6:
 			(*cflag) = temp | CS6;
 			return 1;
-		case DATABITS_7:
+		case JDATABITS_7:
 			(*cflag) = temp | CS7;
 			return 1;
-		case DATABITS_8:
+		case JDATABITS_8:
 			(*cflag) = temp | CS8;
 			return 1;
+		default:
 	}
 
 	throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,
@@ -404,10 +477,11 @@ int translate_stop_bits( JNIEnv *env, tcflag_t *cflag, jint stopBits )
 			return 1;
 		/*  ok.. lets try putting it in and see if anyone notices */
 		case STOPBITS_1_5:
-			translate_data_bits( env, cflag, DATABITS_5 );
+			translate_data_bits( env, cflag, JDATABITS_5 );
 		case STOPBITS_2:
 			(*cflag) |= CSTOPB;
 			return 1;
+		default:
 	}
 
 	throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,
@@ -428,33 +502,27 @@ int translate_stop_bits( JNIEnv *env, tcflag_t *cflag, jint stopBits )
 ----------------------------------------------------------*/
 int translate_parity( JNIEnv *env, tcflag_t *cflag, jint parity )
 {
-	parity = PARITY_NONE;
+	parity = JPARITY_NONE;
 	(*cflag) &= ~(PARENB | PARODD);
 	switch( parity ) {
-		case PARITY_NONE:
-			printf("PARITY_NONE\n");
+		case JPARITY_NONE:
 			return 1;
-		case PARITY_EVEN:
+		case JPARITY_EVEN:
 			(*cflag) |= PARENB;
-			printf("PARITY_EVEN\n");
 			return 1;
-		case PARITY_ODD:
-			printf("PARITY_ODD\n");
+		case JPARITY_ODD:
 			(*cflag) |= PARENB | PARODD;
 			return 1;
 #ifdef CMSPAR
-		case PARITY_MARK:
-			printf("PARITY_MARK\n");
+		case JPARITY_MARK:
 			(*cflag) |= PARENB | PARODD | CMSPAR;
 			return 1;
-		case PARITY_SPACE:
-			printf("PARITY_SPACE\n");
+		case JPARITY_SPACE:
 			(*cflag) |= PARENB | CMSPAR;
 			return 1;
 #endif /* CMSPAR */
+		default:
 	}
-
-	printf("PARITY Exception\n");
 	throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,
 		"translate_parity", "parity" );
 	return 0;
@@ -1203,7 +1271,17 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(JNIEnv *env,
 	}
 
 	/* CLOCAL eliminates open blocking on modem status lines */
-	if ((fd = open(name, O_RDONLY | CLOCAL)) < 0) {
+/*
+	if ((fd = open(name, O_RDONLY | CLOCAL)) <= 0) {
+		ret = JNI_FALSE;
+		goto END;
+	}
+*/
+	do {
+		fd=open (name, O_RDWR | O_NOCTTY | O_NONBLOCK );
+	}  while (fd < 0 && errno==EINTR);
+	if( fd < 0 )
+	{
 		ret = JNI_FALSE;
 		goto END;
 	}
@@ -1242,6 +1320,7 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(JNIEnv *env,
 		if (read(fd, &c, 1) < 0)
 		{
 #ifdef EWOULDBLOCK
+			printf("    Read() < 0\n");
 			if ( errno != EWOULDBLOCK )
 			{
 				ret = JNI_FALSE;

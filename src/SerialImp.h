@@ -18,17 +18,15 @@
 --------------------------------------------------------------------------*/
 
 /* javax.comm.SerialPort constants */
-#ifndef WIN32
-#define DATABITS_5		5
-#define DATABITS_6		6
-#define DATABITS_7		7
-#define DATABITS_8		8
-#define PARITY_NONE		0
-#define PARITY_ODD		1
-#define PARITY_EVEN		2
-#define PARITY_MARK		3
-#define PARITY_SPACE		4
-#endif
+#define JDATABITS_5		5
+#define JDATABITS_6		6
+#define JDATABITS_7		7
+#define JDATABITS_8		8
+#define JPARITY_NONE		0
+#define JPARITY_ODD		1
+#define JPARITY_EVEN		2
+#define JPARITY_MARK		3
+#define JPARITY_SPACE		4
 #define STOPBITS_1		1
 #define STOPBITS_2		2
 #define STOPBITS_1_5		3
@@ -55,6 +53,14 @@
 #define PORT_I2C		 3
 #define PORT_RS485		 4
 #define PORT_RAW		 5
+
+/* glue for unsupported linux speeds see also win32termios.h */
+
+#define B14400		1010001
+#define B28800		1010002
+#define B128000		1010003
+#define B256000		1010004
+
 
 /*  Ports known on the OS */
 #if defined(__linux__)
