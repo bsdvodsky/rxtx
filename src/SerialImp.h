@@ -131,6 +131,14 @@
 #	define CLOSE close
 #	define WRITE write
 #	define READ read
+#ifdef TRACE
+#define ENTER(x) report("entering "x" \n");
+#define LEAVE(x) report("leaving "x" \n");
+#else
+#define ENTER(x)
+#define LEAVE(x)
+#endif /* TRACE */
+
 #endif /* WIN32 */
 
 

@@ -36,7 +36,7 @@ import java.util.StringTokenizer;
 public class RXTXCommDriver implements CommDriver
 {
 
-	private static boolean debug = true;
+	private static boolean debug = false;
 
 	static
 	{
@@ -299,7 +299,7 @@ public class RXTXCommDriver implements CommDriver
 				/* if you want to enumerate all ports ~5000
 				   possible, then replace the above with this
 				*/
-				if(osName.equals("Linux-all-ports"))
+				else if(osName.equals("Linux-all-ports"))
 				{
 					String[] Temp = {
 					"comx",      // linux COMMX synchronous serial card

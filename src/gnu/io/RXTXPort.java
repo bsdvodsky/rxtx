@@ -32,7 +32,7 @@ import javax.comm.*;
 final class RXTXPort extends SerialPort
 {
 
-	private static boolean debug = true;
+	private static boolean debug = false;
 	static
 	{
 		if(debug ) 
