@@ -1,7 +1,7 @@
 # this is not ready for prime time.
 # It's in the process of being removed from the build process and being
 # used external to the .tgz
-# Trent Jarvi trentjarvi@yahoo.com
+# Trent Jarvi taj@www.linux.org.uk
 Summary: RXTX -- W/Escient Mods
 Name: rxtx
 %define version 1.3

@@ -3,7 +3,7 @@ Changes from maintained version 18 (30-AUG-1998)
 =============================
  - This is not the maintained version.  It would be nice to merge this
    into the maintained version but its too much of a hack.
- - _hacks_ to get a lib Trent Jarvi trentjarvi@yahoo.com
+ - _hacks_ to get a lib Trent Jarvi taj@www.linux.org.uk
  - basically chopped main out of fuser.c and exported foo()'s requried
    to get a string back showing who had a fd opened.
 
