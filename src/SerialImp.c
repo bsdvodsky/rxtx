@@ -17,8 +17,6 @@
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
 #include "config.h"
-/* work around for linux libc5 */
-/*#include <typedefs_md.h>*/
 #include "gnu_io_RXTXPort.h"
 #include <time.h>
 #include <unistd.h>
@@ -56,7 +54,7 @@
 
 extern int errno;
 #include "SerialImp.h"
-/* #define DEBUG_TIMEOUT  */
+/* #define DEBUG_TIMEOUT */
 
 /*----------------------------------------------------------
 RXTXPort.Initialize
@@ -714,6 +712,7 @@ read_byte_array
    accept:      int                fd   file descriptor to read from
                 unsigned char *buffer   buffer to read data into
                 int            length   number of bytes to read
+		int           timeout   milliseconds to wait before returning
    perform:     read bytes from the port into a buffer
    return:      status of read
                 -1 fail (IOException)
@@ -725,83 +724,59 @@ read_byte_array
 		The nuts and bolts are documented in
 		NativeEnableReceiveTimeoutThreshold()
 ----------------------------------------------------------*/ 
-int read_byte_array( int fd, unsigned char *buffer, int length )
+int read_byte_array( int fd, unsigned char *buffer, int length, int timeout )
 {
-	int ret;
+	int ret, left, bytes = 0;
+	fd_set rfds;
+	struct timeval sleep;
+	struct timeval *psleep=&sleep;
 
-	/*
-	printf("read_byte_array() length = %i \n",length );
-	*/
-	ret = read( fd, buffer, length );
-	if( ret < 0 ) return -1;
-	return ret;
-}		
+	left = length;
+	FD_ZERO( &rfds );
+	FD_SET( fd, &rfds );
+	if( timeout != 0 )
+	{
+		sleep.tv_sec = timeout / 1000;
+		sleep.tv_usec = 1000 * ( timeout % 1000 );
+	}
+	while( bytes < length ) 
+	{
+         /* FIXME: In Linux, select updates the timeout automatically, so
+            other OSes will need to update it manually if they want to have
+            the same behavior.  For those OSes, timeouts will occur after no
+            data AT ALL is received for the timeout duration.  No big deal. */
+		do {
+			if( timeout == 0 ) psleep = NULL;
+			ret=select( fd + 1, &rfds, NULL, NULL, psleep );
+		}  while (ret < 0 && errno==EINTR);
+		if( ret == 0 ) break;
+		if( ret < 0 ) return -1;
+		ret = read( fd, buffer + bytes, left );
+		if( ret == 0 ) break;
+		if( ret < 0 ) return -1;
+		bytes += ret;
+		left -= ret;
+	}
+	return bytes;
+}
+
 /*----------------------------------------------------------
 NativeEnableReceiveTimeoutThreshold
-   accept:      int  threshold, int vtime
+   accept:      int  threshold, int vtime,int buffer
    perform:     Set c_cc->VMIN to threshold and c_cc=>VTIME to vtime
    return:      void
    exceptions:  IOException
-   comments:    
-
-From libc.info-26
-
-* Both TIME and MIN are nonzero.
-
-In this case, TIME specifies how long to wait after each input
-character to see if more input arrives.  After the first character
-received, `read' keeps waiting until either MIN bytes have arrived
-in all, or TIME elapses with no further input.
-
-`read' always blocks until the first character arrives, even if
-TIME elapses first.  `read' can return more than MIN characters if
-more than MIN happen to be in the queue.
-
-	
-* Both MIN and TIME are zero.
-
-In this case, `read' always returns immediately with as many
-characters as are available in the queue, up to the number
-requested.  If no input is immediately available, `read' returns a
-value of zero.
-
-* MIN is zero but TIME has a nonzero value.
-
-In this case, `read' waits for time TIME for input to become
-available; the availability of a single byte is enough to satisfy
-the read request and cause `read' to return.  When it returns, it
-returns as many characters as are available, up to the number
-requested.  If no input is available before the timer expires,
-`read' returns a value of zero.
-
-* TIME is zero but MIN has a nonzero value.
-
-In this case, `read' waits until at least MIN bytes are available
-in the queue.  At that time, `read' returns as many characters as
-are available, up to the number requested.  `read' can return more
-than MIN characters if more than MIN happen to be in the queue.
+   comments:    This is actually all handled in read with select in 
+                canonical input mode.
 ----------------------------------------------------------*/ 
  
-JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_NativeEnableReceiveTimeoutThreshold(JNIEnv *env, jobject jobj, jint vtime, jint threshold)
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_NativeEnableReceiveTimeoutThreshold(JNIEnv *env, jobject jobj, jint vtime, jint threshold, jint buffer)
 {
 	int fd = get_java_var( env, jobj,"fd","I" );
 	struct termios ttyset;
 
 	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
-/*
-	The MIN slot is only meaningful in noncanonical input mode; it
-	specifies the minimum number of bytes that must be available in the
-	input queue in order for `read' to return.
-*/
 	ttyset.c_cc[ VMIN ] = threshold;
-/*
-	The TIME slot is only meaningful in noncanonical input mode; it
-	specifies how long to wait for input before returning, in units of
-	0.1 seconds.
-*/
-/*
-	Javacomm passes the number of miliseconds 
-*/
 	ttyset.c_cc[ VTIME ] = vtime/100;
 	if( tcsetattr( fd, TCSAFLUSH, &ttyset ) < 0 ) goto fail;
 
@@ -825,8 +800,9 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_readByte( JNIEnv *env,
 	int bytes;
 	unsigned char buffer[ 1 ];
 	int fd = get_java_var( env, jobj,"fd","I" );
+	int timeout = get_java_var( env, jobj, "timeout", "I" );
 
-	bytes = read_byte_array( fd, buffer, 1 );
+	bytes = read_byte_array( fd, buffer, 1, timeout );
 	if( bytes < 0 ) {
 		throw_java_exception( env, IO_EXCEPTION, "readByte",
 			strerror( errno ) );
@@ -849,35 +825,34 @@ RXTXPort.readArray
 JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_readArray( JNIEnv *env,
 	jobject jobj, jbyteArray jbarray, jint offset, jint length )
 {  
-	int bytes, i;
+	int bytes;
 	jbyte *body;
 	unsigned char *buffer;
 	int fd = get_java_var( env, jobj, "fd", "I" );
+	int timeout = get_java_var( env, jobj, "timeout", "I" );
 
-	if( length == 0 ) return 0;
 	if( length > SSIZE_MAX || length < 0 ) {
 		throw_java_exception( env, ARRAY_INDEX_OUT_OF_BOUNDS,
 			"readArray", "Invalid length" );
 		return -1;
 	}
 
-	buffer = (unsigned char *)malloc( sizeof( unsigned char ) * length );
+	buffer = (unsigned char *)malloc( sizeof( unsigned char ) * (length + offset) );
 	if( buffer == 0 ) {
 		throw_java_exception( env, OUT_OF_MEMORY, "readArray",
 			"Unable to allocate buffer" );
 		return -1;
 	}
 
-	bytes = read_byte_array( fd, buffer, length );
+	bytes = read_byte_array( fd, buffer, length + offset, timeout );
 	if( bytes < 0 ) {
 		free( buffer );
 		throw_java_exception( env, IO_EXCEPTION, "readArray",
 			strerror( errno ) );
 		return -1;
 	}
-
 	body = (*env)->GetByteArrayElements( env, jbarray, 0 );
-	for( i = 0; i < bytes; i++ ) body[ i + offset ] = buffer[ i ];
+	memcpy(body, buffer + offset,bytes);
 	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
 	free( buffer );
 	return (bytes ? bytes : -1);
@@ -1024,7 +999,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 	 *      reads there will be no chance to try again.
 	 *      This may make sense if the program does not want to 
 	 *      be notified of data available or errors.
-		printf("native dataAvailable = %i\n",dataAvailable);
+		fprintf(stderr,"native dataAvailable = %i\n",dataAvailable);
 		if ( dataAvailable )  
 		{
 			ret=ioctl(fd,TIOCMIWAIT);
@@ -1204,7 +1179,7 @@ JNIEXPORT jboolean  JNICALL Java_gnu_io_RXTXCommDriver_IsDeviceGood(JNIEnv *env,
 		)
 	{
 #ifdef DEBUG
-		printf("DEBUG: Ignoring Port %s\*\n",name);
+		fprintf(stderr,"DEBUG: Ignoring Port %s\*\n",name);
 #endif
 		return(JNI_FALSE);
 	}
@@ -1218,7 +1193,7 @@ JNIEXPORT jboolean  JNICALL Java_gnu_io_RXTXCommDriver_IsDeviceGood(JNIEnv *env,
 		)
 	{
 #ifdef DEBUG
-		printf("DEBUG: Ignoring Port %s*\n",name);
+		fprintf(stderr,"DEBUG: Ignoring Port %s*\n",name);
 #endif
 		return(JNI_FALSE);
 	}
@@ -1235,7 +1210,7 @@ JNIEXPORT jboolean  JNICALL Java_gnu_io_RXTXCommDriver_IsDeviceGood(JNIEnv *env,
 		)
 	{
 #ifdef DEBUG
-		printf("DEBUG: Ignoring Port %s\*\n",name);
+		fprintf(stderr,"DEBUG: Ignoring Port %s\*\n",name);
 #endif
 		return(JNI_FALSE);
 	}
@@ -1269,26 +1244,26 @@ JNIEXPORT jboolean  JNICALL Java_gnu_io_RXTXCommDriver_IsDeviceGood(JNIEnv *env,
 JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setInputBufferSize(JNIEnv *env, jobject jobj,  jint size )
 {
 #ifdef DEBUG
-	printf("setInputBufferSize is not implemented\n");
+	fprintf(stderr,"setInputBufferSize is not implemented\n");
 #endif
 }
 JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_getInputBufferSize(JNIEnv *env, jobject jobj)
 {
 #ifdef DEBUG
-	printf("getInputBufferSize is not implemented\n");
+	fprintf(stderr,"getInputBufferSize is not implemented\n");
 #endif
 	return(1);
 }
 JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setOutputBufferSize(JNIEnv *env, jobject jobj, jint size )
 {
 #ifdef DEBUG
-	printf("setOutputBufferSize is not implemented\n");
+	fprintf(stderr,"setOutputBufferSize is not implemented\n");
 #endif
 }
 JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_getOutputBufferSize(JNIEnv *env, jobject jobj)
 {
 #ifdef DEBUG
-	printf("getOutputBufferSize is not implemented\n");
+	fprintf(stderr,"getOutputBufferSize is not implemented\n");
 #endif
 	return(1);
 }
@@ -1297,13 +1272,13 @@ void dump_termios(char *foo,struct termios *ttyset)
 {
 	int i;
 
-	printf("%s %o\n",foo,ttyset->c_iflag);
-	printf("%s %o\n",foo,ttyset->c_lflag);
-	printf("%s %o\n",foo,ttyset->c_oflag);
-	printf("%s %o\n",foo,ttyset->c_cflag);
+	fprintf(stderr,"%s %o\n",foo,ttyset->c_iflag);
+	fprintf(stderr,"%s %o\n",foo,ttyset->c_lflag);
+	fprintf(stderr,"%s %o\n",foo,ttyset->c_oflag);
+	fprintf(stderr,"%s %o\n",foo,ttyset->c_cflag);
 	for(i=0;i<NCCS;i++)
 	{
-		printf("%s %o ",foo,ttyset->c_cc[i]);
+		fprintf(stderr,"%s %o ",foo,ttyset->c_cc[i]);
 	}
-	printf("\n");
+	fprintf(stderr,"\n");
 }
