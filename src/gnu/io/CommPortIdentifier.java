@@ -18,12 +18,8 @@
 --------------------------------------------------------------------------*/
 package  javax.comm;
 
-import  gnu.io.*;
 import  java.io.*;
 import  java.util.*;
-import  javax.comm.*;
-
-
 
 /*------------------------------------------------------------------------------
 Lots of stubs here.  Taken from the javadoc material produced from Sun's
@@ -34,8 +30,8 @@ public class CommPortIdentifier
 {
 	public static final int PORT_SERIAL   = 1;  // rs232 Port
 	public static final int PORT_PARALLEL = 2;  // Parallel Port
-	public static final int I2C_PORT      = 3;  // i2c Port
-	public static final int RS485_PORT    = 4;  // rs485 Port
+	public static final int PORT_I2C      = 3;  // i2c Port
+	public static final int PORT_RS485    = 4;  // rs485 Port
 	private String PortName;
 	private boolean Available;    
 	private String Owner;    
@@ -66,12 +62,12 @@ public class CommPortIdentifier
 		Properties=System.getProperty("java.home")+"//lib//javax.com.properties";
 		try 
 		{
-			CommDriver RXTXDriver = (CommDriver) Class.forName("gnu.io.RXTXCommDriver").newInstance();
+			CommDriver RXTXDriver = (CommDriver) Class.forName("javax.comm.RXTXCommDriver").newInstance();
 			RXTXDriver.initialize();
 		} 
 		catch (Throwable e) 
 		{
-			System.err.println(e + "thrown while loading " + "gnu.io.RXTXCommDriver");
+			System.err.println(e + "thrown while loading " + "javax.comm.RXTXCommDriver");
 		}
 	}
 	CommPortIdentifier ( String pn, CommPort cp, int pt, CommDriver driver) 
@@ -93,18 +89,15 @@ public class CommPortIdentifier
 	exceptions:     none.
 	comments:
 ------------------------------------------------------------------------------*/
-	public static void addPortName(String s, int type, RXTXCommDriver c) 
+	public static void addPortName(String s, int type, CommDriver c) 
 	{ 
 
-		if(debug) System.out.println("CommPortIdentifier:addPortName(" + s + ")");
-		if(debug) System.out.println("getting Security Manager");
+		if(debug) System.out.println("CommPortIdentifier:addPortName("+s+")");
 		SecurityManager MySecurity = System.getSecurityManager();
 		if (MySecurity != null) 
 		{
-			if(debug) System.out.println("Got Security Manager");
 			MySecurity.checkRead(Properties);
 		}
-		if(debug) System.out.println("Adding to List");
 		AddIdentifierToList(new CommPortIdentifier(s, null, type, c));
 	}
 /*------------------------------------------------------------------------------
@@ -188,7 +181,10 @@ public class CommPortIdentifier
 		if(debug) System.out.println("CommPortIdentifier:getPortIdentifier(" + s +")");
 		System.out.println("configure --enable-RXTXIDENT is for developers only");
 		SecurityManager MySecurity = System.getSecurityManager();
-		if (MySecurity != null) { MySecurity.checkRead(Properties); }
+		if (MySecurity != null) 
+		{ 
+			MySecurity.checkRead(Properties); 
+		}
 		CommPortIdentifier index = CommPortIndex;
 
 		synchronized (Sync) 
@@ -268,7 +264,7 @@ public class CommPortIdentifier
 ------------------------------------------------------------------------------*/
 	public CommPort open(FileDescriptor f) throws UnsupportedCommOperationException 
 	{ 
-		if(debug) System.out.println("CommPortIdentifier:open()");
+		if(debug) System.out.println("CommPortIdentifier:open(FileDescriptor)");
 		throw new UnsupportedCommOperationException();
 	}
 /*------------------------------------------------------------------------------
@@ -285,7 +281,7 @@ public class CommPortIdentifier
 	public synchronized CommPort open(String TheOwner, int i) throws PortInUseException 
 	{ 
 		commport = RXTXDriver.getCommPort(PortName,PortType);
-		if(debug) System.out.println("CommPortIdentifier:open()");
+		if(debug) System.out.println("CommPortIdentifier:open("+TheOwner + ", " +i+")");
 		if(Available)
 		{
 			Available = false;
@@ -315,9 +311,8 @@ public class CommPortIdentifier
 }
 
 class CommPortEnumerator implements Enumeration {
-	private static boolean debug=true;
 	private CommPortIdentifier CPI;
-
+	private boolean debug=true;
 /*------------------------------------------------------------------------------
         nextElement()
         accept:

@@ -63,7 +63,7 @@ abstract class I2CPort extends CommPort {
 	public abstract boolean isRI();
 	public abstract boolean isRTS();
 	public abstract void sendBreak( int duration );
-	public abstract void addEventListener( I2CPortEventListener lsnr ) throws UnsupportedCommOperationException;
+	public abstract void addEventListener( I2CPortEventListener lsnr ) throws TooManyListenersException;
 	public abstract void removeEventListener();
 	public abstract void notifyOnDataAvailable( boolean enable );
 	public abstract void notifyOnOutputEmpty( boolean enable );

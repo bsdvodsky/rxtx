@@ -23,5 +23,5 @@ import java.util.*;
 
 public interface I2CPortEventListener extends EventListener
 {
-	public abstract void serialEvent( I2CPortEvent ev );
+	public abstract void I2CEvent( I2CPortEvent ev );
 }

@@ -21,8 +21,8 @@ import java.util.*;
 
 public class ParallelPortEvent extends EventObject
 {
-	public int  PAR_EV_ERROR   =1;
-	public int  PAR_EV_BUFFER  =2;
+	static public final int  PAR_EV_ERROR   =1;
+	static public final int  PAR_EV_BUFFER  =2;
 
 
 	private boolean OldValue;

@@ -24,7 +24,7 @@ import java.util.*;
 /**
   * SerialPort
   */
-abstract class SerialPort extends CommPort {
+public abstract class SerialPort extends CommPort {
 	public static final int  DATABITS_5             =5;
 	public static final int  DATABITS_6             =6;
 	public static final int  DATABITS_7             =7;

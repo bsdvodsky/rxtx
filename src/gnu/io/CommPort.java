@@ -22,10 +22,11 @@ import java.io.*;
 import java.util.*;
 
 /**
-  * SerialPort
+  * CommPort
   */
 public abstract class CommPort extends Object {
 	protected String name;
+	private static boolean debug = true;
 
 	public abstract void enableReceiveFraming( int f ) throws UnsupportedCommOperationException;
 	public abstract void disableReceiveFraming();
@@ -50,10 +51,12 @@ public abstract class CommPort extends Object {
 
 	public String getName()
 	{
+		if (debug) System.out.println("CommPort:getName()");
 		return( name );
 	}
 	public String toString()
 	{
+		if (debug) System.out.println("CommPort:toString()");
 		return( name );
 	}
 }
