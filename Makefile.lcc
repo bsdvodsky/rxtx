@@ -41,23 +41,23 @@ JAVA_HOME=D:\jdk
 lib: $(OBJS)
 	lcclnk -dll $(OBJS) wsock32.lib -o Serial.dll
 
-init.obj:  comm.jar
+init.obj:  jcl.jar
 	$(CC) $(CFLAGS) init.c
 
-SerialImp.obj: comm.jar config.h
+SerialImp.obj: jcl.jar config.h
 	$(CC) $(CFLAGS) SerialImp.c
          
-termios.obj: comm.jar
+termios.obj: jcl.jar
 	$(CC) $(CFLAGS) termios.c
 
-comm.jar:
+jcl.jar:
 	javac -d . -O *.java
-	jar -cf comm.jar javax
-	javah -jni javax.comm.RXTXPort javax.comm.RXTXCommDriver
+	jar -cf jcl.jar gnu
+	javah -jni gnu.io.RXTXPort gnu.io.RXTXCommDriver
 
 config.h:
 	echo please read how to create config.h in the Makefile
 
 install:
 	copy Serial.dll $(JAVA_HOME)\jre\bin
-	copy comm.jar   $(JAVA_HOME)\jre\lib\ext
+	copy jcl.jar   $(JAVA_HOME)\jre\lib\ext

@@ -65,7 +65,7 @@ LIBS=$(MINGLIBS) -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmingw32 -lm
 #  End of user defined variables
 ######################
 
-CLASSES = $(patsubst $(SRC)/%.java,javax/comm/%.class,$(wildcard $(SRC)/*.java))
+CLASSES = $(patsubst $(SRC)/%.java,gnu/io/%.class,$(wildcard $(SRC)/*.java))
 javafiles = $(wildcard $(SRC)/*.java)
 javahfiles = $(patsubst $(SRC)/%.java,%,$(wildcard $(SRC)/*.java))
 cfiles=$(wildcard $(SRC)/*.c)
@@ -74,7 +74,7 @@ OBJECTS=termios.o SerialImp.o fixup.o init.o
 
 all:  Serial.dll
 
-Serial.dll:  comm.jar  $(cfiles) config.h
+Serial.dll:  jcl.jar  $(cfiles) config.h
 	$(CC) $(CFLAGS) -c $(SRC)/SerialImp.c -o SerialImp.o
 	$(CC) $(CFLAGS) -c $(SRC)/termios.c -o termios.o
 	$(CC) $(CFLAGS) -c $(SRC)/fixup.c -o fixup.o
@@ -92,12 +92,12 @@ Serial.dll:  comm.jar  $(cfiles) config.h
 # nm shows no symbols in the dll produced.  The old stuff above works ok.
 #	$(DLLWRAP) --output-def Serial.def --output-exp Serial.exp --add-stdcall-alias --driver-name gcc -mwindows --target=i386-mingw32 -o Serial.dll $(OBJECTS) $(LIBS) -s -mno-cygwin
 
-comm.jar: $(javafiles) 
+jcl.jar: $(javafiles) 
 	$(JAVAC) -d . $(javafiles) 
-	$(JAR) -cf comm.jar javax
+	$(JAR) -cf jcl.jar gnu
 	$(JAVAH) $(JAVAHFLAGS) `(for i in $(javahfiles);do \
 		if grep -q native.*\( $(SRC)/$$i.java; then \
-			echo javax.comm.$$i; \
+			echo gnu.io.$$i; \
 		fi; \
 	done)`
 
@@ -106,5 +106,5 @@ config.h:
 
 
 install: all
-	cp comm.jar $(JREHOME)/lib/ext
+	cp jcl.jar $(JREHOME)/lib/ext
 	cp Serial.dll $(JREHOME)/bin
