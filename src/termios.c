@@ -1111,7 +1111,7 @@ int serial_write( int fd, char *Str, int length )
 		I think what we really want to wait for is the other process's
 		read thread.
 	*/
-	Sleep( 50 );
+	Sleep( 500 );
 end:
 	LEAVE( "serial_write" );
 	return nBytes;
