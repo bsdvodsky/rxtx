@@ -80,7 +80,7 @@ CFLAGS= -O2 $(INCLUDE) -mno-cygwin -DWIN32 -D __int64="long long" -mno-fp-ret-in
 #CFLAGS= -O2 $(INCLUDE) -mno-cygwin -DWIN32 -D __int64="long long" -mno-fp-ret-in-387 -Wall -D TRENT_IS_HERE_DEBUGGING_ENUMERATION -DTRENT_IS_HERE_DEBUGGING_THREADS
 INCLUDE= -I c:\matlab6p5/extern/include/ -I . -I $(JDKINCLUDE) -I $(JDKINCLUDE)/win32 -I $(SRC) -I include -I $(MINGINCLUDE)
 JAVAHFLAGS= -jni -d include
-LIBS=-L . -L $(LIBDIR) -LC:/tmp/rxtx5/build -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmoldname -lcrtdll
+LIBS=-L . -L $(LIBDIR) -LC:/tmp/rxtx-devel/build -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmoldname -lcrtdll
 # -lmex
 
 # path to the java native interface headers (directory with jni.h)
@@ -90,7 +90,7 @@ JAVAFILES = $(wildcard $(SRC)/*.java)
 CFILES=$(wildcard $(SRC)/*.c) $(wildcard $(SRC)/*.cc)
 TARGETLIBS= rxtxSerial.dll rxtxParallel.dll
 #TARGETLIBS= rxtxSerial.dll rxtxParallel.dll rxtxZystem.dll
-DLLOBJECTS= fixup.o SerialImp.o termios.o init.o fuserImp.o
+DLLOBJECTS= fixup.o SerialImp.o termios.o init.o
 PARALLELOBJECTS= ParallelImp.o termios.o init.o
 
 all:  $(TARGETLIBS) # rebuild  rebuild will force everything to be built.
@@ -123,9 +123,6 @@ fixup.o:
 
 SerialImp.o:  include/config.h
 	$(CC) $(CFLAGS) -c $(SRC)/SerialImp.c -o SerialImp.o
-
-fuserImp.o:
-	$(CC) $(CFLAGS) -c $(SRC)/fuserImp.c -o fuserImp.o
 
 termios.o:
 	$(CC) $(CFLAGS) -c $(SRC)/$*.c -o termios.o
