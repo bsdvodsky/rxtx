@@ -53,9 +53,54 @@
 #endif
 
 extern int errno;
-
 #include "SerialImp.h"
 /* #define DEBUG_TIMEOUT  */
+
+
+JNIEnv *g_env;
+
+void signal_handler_IO(int status) {
+#ifdef ASYNC_INPUT
+	jclass jclazz;
+	jobject g_jobj;
+	jmethodID method;
+
+	jclazz = (*g_env)->GetObjectClass( g_env, g_jobj );
+	method = (*g_env)->GetMethodID( g_env, jclazz, "sendEvent", "(IZ)V" );
+	if (!method) {
+		fprintf(stderr, "sendEvent not found\n");
+		return;
+	}
+	(*g_env)->ExceptionClear(g_env);
+	(*g_env)->CallVoidMethod( g_env, g_jobj,
+		method, (jint)SPE_DATA_AVAILABLE, JNI_TRUE );
+	if((*g_env)->ExceptionOccurred(g_env)) {
+		fprintf(stderr, "error sending event\n");
+		(*g_env)->ExceptionDescribe(g_env);
+		(*g_env)->ExceptionClear(g_env);
+	}
+#endif /* ASYNC_INPUT */
+}
+
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_initAsyncInput
+  (JNIEnv *env, jobject jobj, jboolean enable)
+{
+	struct sigaction saio;
+	jclass jclazz;
+	jmethodID method;
+	int fd = get_java_fd(env, jobj);
+	g_env = env;
+
+	saio.sa_handler = signal_handler_IO;
+	sigemptyset(&saio.sa_mask);
+	saio.sa_flags = 0;
+#if defined(__linux__)
+	saio.sa_restorer = NULL;
+#endif /* __linux__ */
+	sigaction(SIGIO, &saio, NULL);
+	fcntl(fd, F_SETOWN, getpid());
+	fcntl(fd, F_SETFL, FASYNC);
+}
 
 /*----------------------------------------------------------
 RXTXPort.Initialize
@@ -77,27 +122,25 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_Initialize(
 	   threads, because it slows things down.  Go figure. */
 
 	/* POSIX signal handling functions */
-#if !defined(__FreeBSD___)
+#if !defined(__FreeBSD___) && !defined(ASYNC_INPUT) 
 	struct sigaction handler;
 	sigaction( SIGIO, NULL, &handler );
 	if( !handler.sa_handler ) signal( SIGIO, SIG_IGN );
-#endif /* __FreeBSD__ */
+#endif /* !__FreeBSD__ && !ASYNC_INPUT */
 #if defined(__linux__) 
 	/* Lets let people who upgraded kernels know they may have problems */
 	if (uname (&name) == -1)
 	{
- 		printf("RXTX WARNING:  cannot get system name\n");
+		fprintf(stderr,"RXTX WARNING:  cannot get system name\n");
 		return;
 	}
 	if(strcmp(name.release,UTS_RELEASE)!=0)
 	{
-		printf("\n\n\nRXTX WARNING:  This library was compiled to run with OS release %s and you are currently running OS release %s.  In some cases this can be a problem.  Try recompiling RXTX if you notice strange behavior.  If you just compiled RXTX make sure /usr/include/linux is a symbolic link to the include files that came with the kernel source and not an older copy.\n\n\npress enter to continue\n",UTS_RELEASE,name.release);
+		fprintf(stderr, "\n\n\nRXTX WARNING:  This library was compiled to run with OS release %s and you are currently running OS release %s.  In some cases this can be a problem.  Try recompiling RXTX if you notice strange behavior.  If you just compiled RXTX make sure /usr/include/linux is a symbolic link to the include files that came with the kernel source and not an older copy.\n\n\npress enter to continue\n",UTS_RELEASE,name.release);
 		getchar();
 	}
 #endif /* __linux__ */
 #endif /* WIN32 */
-	
-
 }
 
 
@@ -425,16 +468,20 @@ RXTXPort.drain
    exceptions:  IOException
    comments:    java.io.OutputStream.flush() is equivalent to tcdrain,
                 not tcflush, which throws away unsent bytes
+
+                count logic added to avoid infinite loops when EINTR is
+                true...  Thread.yeild() was suggested.
 ----------------------------------------------------------*/
 JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_drain( JNIEnv *env,
 	jobject jobj )
 {
 	int fd = get_java_fd( env, jobj );
-	int result;
+	int result, count=0; 
 
 	do {
 		result=tcdrain (fd);
-	}  while (result && errno==EINTR);
+		count++;
+	}  while (result && errno==EINTR && count <5);
 
 	if( result ) throw_java_exception( env, IO_EXCEPTION, "drain",
 		strerror( errno ) );
@@ -946,6 +993,34 @@ RXTXPort.eventLoop
                 Basically one needs to go through the bsd kernel structs
                 for serial events and implemnt the same as has been done
                 for linux.
+----
+Alejandro Revilla <apr@cs.com.uy>  writes..
+
+"I think" that although you do not send a java event more than
+once for the same character received if the higher level java
+program does not read the character inmediately your eventloop
+starts to HOG CPU.
+
+I've added 
+
+                do {
+                        ret=select( fd + 1, &rfds, NULL, NULL, &sleep);
+                        printf ("eventLoop: %d/%d\n", ret, errno);
+                }  while (ret < 0 && errno==EINTR);
+
+to event loop for debugging purposes and also
+
+                interrupted = (*env)->CallStaticBooleanMethod( env, jthread, interrupt );
+                printf ("interrupted=%d\n", interrupted);
+
+and after one character appear on the serial port, although I get
+just one event my JVM goes down and stdout shows:
+
+eventLoop: 1/0
+interrupted=0
+eventLoop: 1/0
+interrupted=0
+eventLoop: 1/0
 ----------------------------------------------------------*/ 
 JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 	jobject jobj )
@@ -990,15 +1065,19 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 		do {
 			ret=select( fd + 1, &rfds, NULL, NULL, &sleep );
 		}  while (ret < 0 && errno==EINTR);
-		if( ret < 0 ) break;
+		if( ret < 0 ) break; /*?*/
 #if defined(__linux__)
 		if( ioctl( fd, TIOCGICOUNT, &sis ) ) break;
 #endif
 		if( ioctl( fd, TIOCMGET, &mflags ) ) break;
 #if defined(__linux__)
 #if defined(FULL_EVENT)
-		if( sis.rx != osis.rx ) (*env)->CallVoidMethod( env, jobj, method,
-			(jint)SPE_DATA_AVAILABLE, JNI_TRUE );
+#if !defined ASYNC_INPUT
+		if( sis.rx != osis.rx ) 
+		{
+			(*env)->CallVoidMethod( env, jobj, method, (jint)SPE_DATA_AVAILABLE, JNI_TRUE );
+		}
+#endif /* ! ASYNC_INPUT */
 		while( sis.frame != osis.frame ) {
 			(*env)->CallVoidMethod( env, jobj, method, (jint)SPE_FE, JNI_TRUE );
 			osis.frame++;
@@ -1016,9 +1095,11 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 			osis.brk++;
 		}
 #else
+#if !defined ASYNC_INPUT 
 		if( ioctl( fd, FIONREAD, &change ) ) break;
 		if( change ) (*env)->CallVoidMethod( env, jobj, method,
 			(jint)SPE_DATA_AVAILABLE, JNI_TRUE );
+#endif  /* ! ASYNC_INPUT */
 #endif /* FULL_EVENT */
 		change = sis.cts - osis.cts;
 		if( change ) send_modem_events( env, jobj, method, SPE_CTS, abs(change),
