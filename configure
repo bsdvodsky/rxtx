@@ -2586,7 +2586,7 @@ Linux)
 	case $JAVA_VERSION in
 	1.2*) 
 		JCLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:$CLASSPATH"
-		JAVA_H_CLASSPATH="-classpath .:`find $JPATH/ -name comm.jar`"
+		JAVA_H_CLASSPATH="-classpath .:`find $JPATH/ -name comm.jar |head -n1`"
 		RXTX_PATH="\$(prefix)/lib"
 		JCL_PATH="\$(JPATH)/lib"
 		case $OS_NAME in

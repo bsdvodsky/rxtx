@@ -31,11 +31,11 @@ public class RXTXCommDriver implements CommDriver {
         static 
 	{ 
 		OS = System.getProperty("os.name");
-		if(!OS.compare("Linux"))
+		if(OS.equals("Linux"))
 		{
 			System.loadLibrary( "Serial" ); 
 		}
-		if(!OS.compare("Win95"))
+		if(OS.equals("Win95"))
 		{
 			System.loadLibrary("SerialW95");
 		}
