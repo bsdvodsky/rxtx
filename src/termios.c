@@ -24,7 +24,7 @@
 --------------------------------------------------------------------------*/
 #include <windows.h>
 #include <stdio.h>
-#include "termios.h"
+#include "win32termios.h"
 #include "malloc.h"
 
 #define READ_SIZE 2048
