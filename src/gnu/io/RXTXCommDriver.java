@@ -36,7 +36,7 @@ import java.util.StringTokenizer;
 public class RXTXCommDriver implements CommDriver
 {
 
-	private static boolean debug = false;
+	private static boolean debug = true;
 
 	static
 	{
@@ -217,17 +217,48 @@ public class RXTXCommDriver implements CommDriver
 	}
 
    /*
-    * Register ports specified by the gnu.io.rxtx.SerialPorts and
-    * gnu.io.rxtx.ParallelPorts system properties.
+    * Register ports specified in the file "gnu.io.rxtx.properties"
+    * Key system properties:
+    *                   gnu.io.rxtx.SerialPorts
+    * 			gnu.io.rxtx.ParallelPorts 
+    *
+    * Tested only with sun jdk1.3
+    * The file gnu.io.rxtx.properties must reside in the java extension dir
+    *
+    * Example: /usr/local/java/jre/lib/ext/gnu.io.rxtx.properties
+    *
+    * The file contains the following key properties:
+    * 
+    *  gnu.io.rxtx.SerialPorts=/dev/ttyS0:/dev/ttyS1:
+    *  gnu.io.rxtx.ParallelPorts=/dev/lp0:
+    *
     */
-	private boolean registerSpecifiedPorts(int PortType)
+	private boolean registerSpecifiedPorts(int PortType) 
 	{
 		String val = null;
-		/* FIXME */
+				
+		try
+		    {
+		     
+		     String ext_dir=System.getProperty("java.ext.dirs")+System.getProperty("file.separator");
+		     FileInputStream rxtx_prop=new FileInputStream(ext_dir+"gnu.io.rxtx.properties");
+		     Properties p=new Properties(System.getProperties());
+		     p.load(rxtx_prop);
+		     System.setProperties(p); 
+		    }catch(Exception e){
+			if (debug){
+			    System.out.println("The file: gnu.io.rxtx.properties doesn't exists.");
+			    System.out.println(e.toString());
+			    }//end if
+			}//end catch
+			
+	
 		if (debug)
 			System.out.println("checking for system-known ports of type "+PortType);
 		if (debug)
 			System.out.println("checking registry for ports of type "+PortType);
+		
+		
 		switch (PortType) {
 			case CommPortIdentifier.PORT_SERIAL:
 				if ((val = System.getProperty("gnu.io.rxtx.SerialPorts")) == null)
@@ -291,11 +322,11 @@ public class RXTXCommDriver implements CommDriver
 					};
 					CandidatePortPrefixes=Temp;
 				}
+				else if(osName.equals("Linux-all-ports"))
+				{
 				/* if you want to enumerate all ports ~5000
 				   possible, then replace the above with this
 				*/
-				else if(osName.equals("Linux-all-ports"))
-				{
 					String[] Temp = {
 					"comx",      // linux COMMX synchronous serial card
 					"holter",    // custom card for heart monitoring
