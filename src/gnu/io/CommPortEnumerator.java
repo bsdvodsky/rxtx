@@ -23,6 +23,10 @@ import java.util.*;
 class CommPortEnumerator implements Enumeration {
 	private CommPortIdentifier CPI;
 	private boolean debug=true;
+	static 
+	{
+		System.out.println("CommPortEnumerator:{}");
+	}
 /*------------------------------------------------------------------------------
         nextElement()
         accept:
@@ -34,7 +38,12 @@ class CommPortEnumerator implements Enumeration {
 	public Object nextElement() 
 	{ 
 		if(debug) System.out.println("CommPortEnumerator:nextElement()");
-		return(CPI);
+		synchronized (CommPortIdentifier.Sync)
+		{
+			if(CPI != null) CPI = CPI.next;
+			else CPI=CommPortIdentifier.CommPortIndex;
+			return(CPI);
+		}
 	}
 /*------------------------------------------------------------------------------
         hasMoreElements()
@@ -47,6 +56,12 @@ class CommPortEnumerator implements Enumeration {
 	public boolean hasMoreElements() 
 	{ 
 		if(debug) System.out.println("CommPortEnumerator:hasMoreElements");
-		return(false); 
+		synchronized (CommPortIdentifier.Sync)
+		{
+			if(CPI != null) return CPI == null ? false : true;
+			else return CommPortIdentifier.CommPortIndex == null ? 
+				false : true;
+		}
+			
 	}
 }

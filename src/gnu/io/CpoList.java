@@ -24,78 +24,131 @@ package javax.comm;
 class CpoList 
 {
 	static boolean debug = true;
+	CpoListEntry CpoListIndex;
 /*------------------------------------------------------------------------------
         add()
-        accept:
-        perform:
-        return:
-        exceptions:
+        accept:       The Listener to be added
+        perform:      Add the Listener to the list
+        return:       None
+        exceptions:   None
         comments:
 ------------------------------------------------------------------------------*/
 	synchronized void add(CommPortOwnershipListener c) 
 	{ 
 		if(debug) System.out.println("CpoList:add()");
+		CpoListEntry index = CpoListIndex;
+		// Do we already have this List Entry?
+		while (index != null && index.CpoListener != c)
+			index = index.next;
+		// no? then create it.
+		if (CpoListIndex == null)
+		{
+			CpoListEntry temp = new CpoListEntry(c);
+			temp.next = index;
+			CpoListIndex = temp;
+		}
 	}
 /*------------------------------------------------------------------------------
         remove()
-        accept:
-        perform:
-        return:
-        exceptions:
+        accept:      the listener to delete
+        perform:     delete the listener from the linked list
+        return:      None
+        exceptions:  None
         comments:
 ------------------------------------------------------------------------------*/
 	synchronized void remove(CommPortOwnershipListener c) 
 	{ 
+		CpoListEntry index = CpoListIndex;
+		CpoListEntry last = null;
+
 		if(debug) System.out.println("CpoList:remove()");
+		// Do we already have this List Entry?
+		while (index != null && index.CpoListener != c)
+		{
+			last = index;
+			index = index.next;
+		}
+		// If we got it, delete it
+		if (index != null)
+		{
+			if (last == null) CpoListIndex = index.next;
+			else last.next = index.next;
+		}
 	}
 /*------------------------------------------------------------------------------
         clonelist()
-        accept:
-        perform:
-        return:
-        exceptions:
+        accept:      None
+        perform:     make a copy of the linked list
+        return:      reference to the cloned list
+        exceptions:  None
         comments:
 ------------------------------------------------------------------------------*/
 	synchronized CpoList clonelist() 
 	{ 
 		if(debug) System.out.println("CpoList:clonelist()");
-		return(this); 
+		CpoListEntry index = CpoListIndex;
+		CpoListEntry Newindex = null;
+		CpoListEntry temp = null;
+
+		while ( index != null )
+		{
+			temp = new CpoListEntry(index.CpoListener);
+			temp.next = Newindex;
+			Newindex = temp;
+			index = index.next;
+		}
+		CpoList clone = new CpoList();
+		clone.CpoListIndex = Newindex;
+		return(clone); 
 	}
 /*------------------------------------------------------------------------------
         isEmpty()
-        accept:
-        perform:
-        return:
-        exceptions:
-        comments:
+        accept:       None
+        perform:      check if the list is empty
+        return:       true if the list is empty else false
+        exceptions:   None
+        comments:    
 ------------------------------------------------------------------------------*/
 	synchronized boolean isEmpty() 
 	{  
 		if(debug) System.out.println("CpoList:isEmpty()");
-		return(false);
+		return(CpoListIndex == null);
 	}
 /*------------------------------------------------------------------------------
         fireOwnershipEvent()
-        accept:
-        perform:
-        return:
-        exceptions:
+        accept:      the event type
+        perform:     Send the event to all the listeners
+        return:      None
+        exceptions:  None
         comments:
 ------------------------------------------------------------------------------*/
 	synchronized void fireOwnershipEvent(int i) 
 	{ 
 		if(debug) System.out.println("CpoList:fireOwnershipEvent()");
+		CpoListEntry index = CpoListIndex;
+		while ( index != null )
+		{
+			index.CpoListener.ownershipChange(i);
+			index=index.next;
+		}
 	}
 /*------------------------------------------------------------------------------
         dump()
-        accept:
-        perform:
-        return:
-        exceptions:
+        accept:      None
+        perform:     print out the entire list.
+        return:      None
+        exceptions:  None
         comments:
 ------------------------------------------------------------------------------*/
 	synchronized void dump() 
 	{ 
 		if(debug) System.out.println("CpoList:dump()");
+		CpoListEntry index = CpoListIndex;
+		while( index !=null )
+		{
+			System.out.println(index.CpoListener.toString());
+			index = index.next;
+		}
 	}
 }
+

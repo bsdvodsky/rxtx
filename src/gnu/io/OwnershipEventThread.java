@@ -29,26 +29,32 @@ class OwnershipEventThread extends Thread
 
 /*------------------------------------------------------------------------------
         OwnershipEventThread()
-        accept:
-        perform:
-        return:
-        exceptions:
+        accept:      the ComPortIdentifier
+        perform:     set the CommPortIdentifier
+        return:      None
+        exceptions:  None
         comments:
 ------------------------------------------------------------------------------*/
 	OwnershipEventThread(CommPortIdentifier c) 
 	{ 
+		cpi=c;
 		if(debug) System.out.println("OwnershipEventThread:OwnershipEventThread()");
 	}
 /*------------------------------------------------------------------------------
         run()
-        accept:
-        perform:
-        return:
-        exceptions:
+        accept:       None
+        perform:      Spawn a thread waiter;
+        return:       None
+        exceptions:   None
         comments:
 ------------------------------------------------------------------------------*/
 	public void run() 
 	{ 
 		if(debug) System.out.println("OwnershipEventThread:run()");
+		while (!cpi.cpoList.isEmpty())
+		{
+			cpi.ownershipThreadWaiter();
+		}
+		cpi.oeThread = null;
 	}
 }

@@ -21,16 +21,20 @@ package javax.comm;
 class CpoListEntry 
 {
 	static boolean debug = true;
+	CommPortOwnershipListener CpoListener;
+	CpoListEntry next;
 /*------------------------------------------------------------------------------
         CpoListEntry()
-        accept:
-        perform:
-        return:
-        exceptions:
+        accept:       The CommPortOwnershipListener 
+        perform:      create a new Entry with the Listener
+        return:       None
+        exceptions:   None
         comments:
 ------------------------------------------------------------------------------*/
 	CpoListEntry(CommPortOwnershipListener c) 
 	{ 
 		if(debug) System.out.println("CpoListEntry:CpoListEntry()");
+		CpoListener = c;
+		next = null;
 	}
 }
