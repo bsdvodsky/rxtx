@@ -43,7 +43,7 @@ CLEANFILES = $(TOP)/*.class $(TOP)/$(CLASSDEST)/*.class $(TOP)/$(JARTARGET)
 #  compile src/SerialImp.c and simular files into libraries.
 $(target_alias)/lib%.la: $(SPATH)/%Imp.@EXTENSION@ $(CLASSES)
 	@( \
-	$(LIBTOOL_FIX) \
+	$(LIBTOOL_FIX); \
 	cd $(DEST); \
 	$(LIBTOOLC) ../$(SPATH)/$*Imp.@EXTENSION@ -o $(TOP)/$(DEST)/$*Imp.lo; \
 	$(LINK) -o lib$*.la -rpath $(RXTX_PATH) $(TOP)/$(DEST)/$*Imp.lo)

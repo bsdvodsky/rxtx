@@ -445,10 +445,10 @@ if [ test -d $JPATH/share/kaffe/ ]
 	then fix_comm_jar $JPATH/share/kaffe/comm.jar
 elif [ test -d $JPATH/jre/lib/ext ]
 	then fix_comm_jar $JPATH/jre/lib/ext/comm.jar
-elif [ test -d $JPATH/lib ] 
-	then fix_comm_jar $JPATH/lib/comm.jar
 elif [ test -d $JPATH/lib/ext ]
 	then fix_comm_jar $JPATH/lib/ext/comm.jar
+elif [ test -d $JPATH/lib ] 
+	then fix_comm_jar $JPATH/lib/comm.jar
 fi
 
 #  http://www.tolstoy.com/samizdat/sysprops.html
@@ -652,7 +652,7 @@ Mac\ OS\ X)
 	CLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:\$(JPATH)/lib/ext/comm.jar:$CLASSPATH"
 #  sigh auto*/libtool only like one library extension and mac os x likes a few
 #  email trentjarvi@yahoo.com if you know a nicer fix.
-	LIBTOOL_FIX="sed s/dynlib/jnilib/g libtool > tmp;mv tmp;libtool"
+ 	LIBTOOL_FIX="sed s/dynlib/jnilib/g libtool > tmp; mv tmp libtool; chmod +x libtool"
 ;;
 
 Solaris*)
