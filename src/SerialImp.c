@@ -953,7 +953,12 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 	unsigned int mflags;
 #if defined(TIOCGICOUNT)
 	struct serial_icounter_struct sis, osis;
+	/* JK00: flag if this can be used on this port */
+	int has_tiocgicount = 1;
 #endif /* TIOCGICOUNT */
+#if defined(TIOCSERGETLSR)
+	int has_tiocsergetlsr = 1;
+#endif
 	unsigned int omflags;
 
 	jmethodID method, interrupt;
@@ -966,14 +971,24 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 	interrupt = (*env)->GetStaticMethodID( env, jthread, "interrupted", "()Z" );
 
 	/* Some multiport serial cards do not implement TIOCGICOUNT ... */
+	/* So use the 'dumb' mode to enable using them after all! JK00 */
 #if defined(TIOCGICOUNT)
 	if( ioctl( fd, TIOCGICOUNT, &osis ) < 0 ) {
 		fprintf( stderr, "Port does not support TIOCGICOUNT events\n" );
-		return; 
+		has_tiocgicount = 0;
+		/* return;  */
 	}
 #else
 	fprintf( stderr, "Port does not support all Hardware events\n" );
 #endif /*  TIOCGICOUNT */
+	/* JK00: work around for multiport cards without TIOCSERGETLSR */
+	/* Cyclades is one of those :-(				       */
+#if defined(TIOCSERGETLSR)
+	if( ioctl( fd, TIOCSERGETLSR, &change ) ) {
+		fprintf( stderr, "Port does not support TIOCSERGETLSR\n" );
+			has_tiocsergetlsr = 0;
+	}
+#endif
 
 	if( ioctl( fd, TIOCMGET, &omflags) <0 ) {
 		fprintf( stderr, "Port does not support events\n" );
@@ -995,13 +1010,17 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 		}
 
 #if defined TIOCSERGETLSR
-		if( ioctl( fd, TIOCSERGETLSR, &change ) ) {
-			fprintf( stderr, "TIOCSERGETLSR Failed\n" );
-			break;
-		}
-		else if( change ) {
-			(*env)->CallVoidMethod( env, jobj, method,
-				(jint)SPE_OUTPUT_BUFFER_EMPTY, JNI_TRUE );
+		/* JK00: work around for Multi IO cards without TIOCSERGETLSR */
+		if( has_tiocsergetlsr ) {
+			if( ioctl( fd, TIOCSERGETLSR, &change ) ) {
+				fprintf( stderr, "TIOCSERGETLSR Failed\n" );
+				break;
+			}
+			else if( change ) {
+				(*env)->CallVoidMethod( env, jobj, method,
+					(jint)SPE_OUTPUT_BUFFER_EMPTY, 
+					JNI_TRUE );
+			}
 		}
 #endif /* TIOCSERGETLSR */
 #if defined(TIOCGICOUNT)
@@ -1012,33 +1031,41 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 	 *      be notified of data available or errors.
 	 *	ret=ioctl(fd,TIOCMIWAIT);
 	 */
-		if( ioctl( fd, TIOCGICOUNT, &sis ) ) {
-			fprintf( stderr, "TIOCGICOUNT Failed\n" );
-			break; 
+		/* JK00: only use it if supported by this port */
+		if (has_tiocgicount) {
+			if( ioctl( fd, TIOCGICOUNT, &sis ) ) {
+				fprintf( stderr, "TIOCGICOUNT Failed\n" );
+				break; 
+			}
+			while( sis.frame != osis.frame ) {
+				(*env)->CallVoidMethod( env, jobj, method, 
+					(jint)SPE_FE, JNI_TRUE );
+				osis.frame++;
+			}
+			while( sis.overrun != osis.overrun ) {
+				(*env)->CallVoidMethod( env, jobj, method, 
+					(jint)SPE_OE, JNI_TRUE );
+				osis.overrun++;
+			}
+			while( sis.parity != osis.parity ) {
+				(*env)->CallVoidMethod( env, jobj, method, 
+					(jint)SPE_PE, JNI_TRUE );
+				osis.parity++;
+			}
+			while( sis.brk != osis.brk ) {
+				(*env)->CallVoidMethod( env, jobj, method, 
+					(jint)SPE_BI, JNI_TRUE );
+				osis.brk++;
+			}
+			osis = sis;
 		}
-		while( sis.frame != osis.frame ) {
-			(*env)->CallVoidMethod( env, jobj, method, (jint)SPE_FE, JNI_TRUE );
-			osis.frame++;
-		}
-		while( sis.overrun != osis.overrun ) {
-			(*env)->CallVoidMethod( env, jobj, method, (jint)SPE_OE, JNI_TRUE );
-			osis.overrun++;
-		}
-		while( sis.parity != osis.parity ) {
-			(*env)->CallVoidMethod( env, jobj, method, (jint)SPE_PE, JNI_TRUE );
-			osis.parity++;
-		}
-		while( sis.brk != osis.brk ) {
-			(*env)->CallVoidMethod( env, jobj, method, (jint)SPE_BI, JNI_TRUE );
-			osis.brk++;
-		}
-		osis = sis;
 #endif /*  TIOCGICOUNT */
 		if( ioctl( fd, TIOCMGET, &mflags ) ) {
 			fprintf( stderr, "TIOCMGET Failed\n" );
 			break; 
 		}
-		interrupted = (*env)->CallStaticBooleanMethod( env, jthread, interrupt );
+		interrupted = (*env)->CallStaticBooleanMethod( env, jthread, 
+			interrupt );
 	       /* A Portable implementation */
 		change = (mflags&TIOCM_CTS) - (omflags&TIOCM_CTS);
 		if( change ) {
