@@ -1,8 +1,14 @@
-1.4-1  Jun  6, 2000   hpux build fixes (still a messed up compile flag I think)
+1.4-2  Jun 13, 2000   Documentation changes Bryce Nesbitt <bryce@nextbus.com>
+1.4-1  Jun  6, 2000   HP-UX build fixes (still a messed up compile flag I think)
+		      "Peter Pastrnak" <praktfp1@hpbbm.bbn.hp.com>
+		      if you get hp-ux working please let peter know.
                       redo of RXTXPort's read()
+		      "Bertrand Renuart" <bertrand.renuart@itma.lu>
 		      Many println's replaced with appropriate exceptions
+		      "Bertrand Renuart" <bertrand.renuart@itma.lu>
 		      Suse build fixes.
-                      jdk-1.3 build fix
+		      Jean-Francois Fels <Jean-Francois.Fels@cnes.fr>
+                      jdk-1.3 build fix (lost the email that pointed this out) 
 		      took out extra code from 1.5 developement to simplify 
 		      the package.
 1.3-13 Mar 26, 2000   patches for Cyclades support and other multi-port cards
