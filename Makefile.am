@@ -17,6 +17,7 @@
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #-------------------------------------------------------------------------
 srcdir = @srcdir@
+abs_srcdir=@abs_srcdir@
 VPATH = @srcdir@
 
 AUTOMAKE_OPTIONS = foreign
@@ -30,7 +31,7 @@ CLASSDEST=gnu/io
 LIBTOOLC=$(TOP)/libtool --mode=compile $(CC) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(VERBOSE_IOEXCEPTIONS) -c
 LIBTOOL_INST=$(TOP)/libtool --mode=install $(INSTALL_PROGRAM)
 ####################### dirs
-SPATH = $(TOP)/src
+SPATH = $(abs_srcdir)/src
 DEST=$(target_triplet)
 ####################### rules
 CLASSES = $(patsubst $(SPATH)/%.java,$(TOP)/$(CLASSDEST)/%.class,$(wildcard $(SPATH)/*.java))
@@ -101,7 +102,7 @@ $(DEST)/rxtxSerial.dll: $(CLASSES) $(TOP)/Makefile
 	ld --base-file $(DEST)/Serial.base --dll -o $(DEST)/rxtxSerial.dll $(DEST)/termios.o $(DEST)/SerialImp.o $(DEST)/fixup.o $(DEST)/init.o -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmingw32 -lmoldname -lcrtdll -e _dll_entry@12 --base-file $(DEST)/Serial.base
 	 echo EXPORTS >$(DEST)/Serial.def;for i in `nm i386-mingw32/rxtxSerial.dll | grep "T _Java"|cut -b 13-`;do echo -n $$i|sed s#@.*##;echo "="$$i;done >> $(DEST)/Serial.def
 	dlltool -b$(DEST) --as=as --dllname $(DEST)/rxtxSerial.dll --def $(DEST)/Serial.def --base-file $(DEST)/Serial.base --output-exp $(DEST)/Serial.exp
-	ld --base-file $(DEST)/Serial.base $(DEST)/Serial.exp -dll -o $(target_alias)/rxtxSerial.dll $(DEST)/termios.o $(DEST)/SerialImp.o $(DEST)/fixup.o $(DEST)/init.o -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmingw32 -lmoldname -lcrtdll -e _dll_entry@12 --base-file $(target_alias)/Serial.base
+	ld --base-file $(DEST)/Serial.base $(DEST)/Serial.exp -dll -o $(target_triplet)/rxtxSerial.dll $(DEST)/termios.o $(DEST)/SerialImp.o $(DEST)/fixup.o $(DEST)/init.o -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmingw32 -lmoldname -lcrtdll -e _dll_entry@12 --base-file $(target_triplet)/Serial.base
 		dlltool -b$(DEST) --as=as --dllname $(DEST)/rxtxSerial.dll --def $(DEST)/Serial.def --base-file $(DEST)/Serial.base --output-exp $(DEST)/Serial.exp
 		ld $(DEST)/Serial.exp -dll -o $(DEST)/rxtxSerial.dll $(DEST)/termios.o $(DEST)/SerialImp.o $(DEST)/fixup.o $(DEST)/init.o -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmingw32 -lmoldname -lcrtdll -e _dll_entry@12 --base-file $(DEST)/Serial.base
 
