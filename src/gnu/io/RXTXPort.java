@@ -98,22 +98,15 @@ final class RXTXPort extends SerialPort {
 	/** Flow control */
 	private int flowmode = SerialPort.FLOWCONTROL_NONE;
 	public void setFlowControlMode( int flowcontrol ) {
-		try {
-			if( flowcontrol == SerialPort.FLOWCONTROL_RTSCTS_IN ||
-			    flowcontrol == SerialPort.FLOWCONTROL_RTSCTS_OUT  )
-				setHWFC( true );
-			else
-				setHWFC( false );
-		}
+		try { setflowcontrol( flowcontrol ); }
 		catch( IOException e ) {
 			e.printStackTrace();
 			return;
 		}
-		flowmode = flowcontrol;
+		flowmode=flowcontrol;
 	}
-	
 	public int getFlowControlMode() { return flowmode; }
-   native void setHWFC( boolean state ) throws IOException;
+	native void setflowcontrol( int flowcontrol ) throws IOException;
 
 
 	/** Receive framing control */
