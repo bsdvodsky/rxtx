@@ -732,7 +732,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_readArray( JNIEnv *env,
 	timeout = (int)( (*env)->GetIntField( env, jobj, jfield ) );
 
 	if( length == 0 ) return 0;
-	if( length > SSIZE_MAX || length < 1 ) {
+	if( length > SSIZE_MAX || length < 0 ) {
 		throw_java_exception( env, ARRAY_INDEX_OUT_OF_BOUNDS,
 			"readArray", "Invalid length" );
 		return -1;
