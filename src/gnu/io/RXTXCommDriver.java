@@ -46,6 +46,26 @@ public class RXTXCommDriver implements CommDriver {
 		return PortString2;
 	}
 
+	private void RegisterValidPorts(
+		String devs[],
+		String Prefix[],
+		int PortType
+	) {
+		for( int i = 0; i < devs.length; i++ ) {
+			for( int p = 0; p < Prefix.length; p++ ) {
+				if( devs[ i ].startsWith( Prefix[ p ] ) ) {
+					String portName = "/dev/" + devs[ i ];
+					File port = new File( portName );
+					if( port.canRead() && port.canWrite() ) 
+						CommPortIdentifier.addPortName( 
+							portName,
+							PortType,
+							this 
+						);
+				}
+			}
+		}
+	}
 
    /*
     * initialize() will be called by the CommPortIdentifier's static
@@ -55,6 +75,12 @@ public class RXTXCommDriver implements CommDriver {
     * 3) Register the port names with the CommPortIdentifier.
 	 * 
 	 * <p>From the NullDriver.java CommAPI sample.
+         *
+         * added printerport stuff
+         * Holger Lehmann
+         * July 12, 1999
+         * IBM
+
     */
 	public void initialize() {
 		File dev = new File( "/dev" );
@@ -70,34 +96,24 @@ public class RXTXCommDriver implements CommDriver {
 			"ttyq", // irix pseudo ttys
 			"ttyd"  // irix serial ports
 		};
+	/** Get the Parallel port prefixes for the running os
+	* Holger Lehmann
+	* July 12, 1999
+	* IBM
+	*/
 		String[] AllKnownParallelPorts={
 			"lp"    // linux printer port
 		};
-		String[] SerialportPrefix = getPortPrefixes(AllKnownSerialPorts);
-		String[] ParallelportPrefix = getPortPrefixes(AllKnownParallelPorts);
-		for( int i = 0; i < devs.length; i++ ) {
-			for( int p = 0; p < SerialportPrefix.length; p++ ) {
-				if( devs[ i ].startsWith( SerialportPrefix[ p ] ) ) {
-					String portName = "/dev/" + devs[ i ];
-					File port = new File( portName );
-					if( port.canRead() && port.canWrite() ) 
-						CommPortIdentifier.addPortName( portName,
-							CommPortIdentifier.PORT_SERIAL, this );
-				}
-			}
-		}
-		for( int i = 0; i < devs.length; i++ ) {
-			for( int p = 0; p < ParallelportPrefix.length; p++ ) {
-				if( devs[ i ].startsWith( ParallelportPrefix[ p ] ) ) {
-					String portName = "/dev/" + devs[ i ];
-					File port = new File( portName );
-					if( port.canRead() && port.canWrite() ) {
-						CommPortIdentifier.addPortName( portName,
-							CommPortIdentifier.PORT_PARALLEL, this );
-					}
-				}
-			}
-		}
+		RegisterValidPorts(
+			devs,
+			getPortPrefixes(AllKnownSerialPorts),
+			CommPortIdentifier.PORT_SERIAL
+		);
+		RegisterValidPorts(
+			devs,
+			getPortPrefixes(AllKnownParallelPorts),
+			CommPortIdentifier.PORT_PARALLEL
+		);
 	}
 
 

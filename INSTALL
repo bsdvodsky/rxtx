@@ -24,9 +24,9 @@ For the methodical:
     The following packages are used on the test system:
 
     autoconf-2.13
-    automake-1.4
-    libtool-1.2b
-    make-3.76.1
+    automake-1.4a
+    libtool-1.2f
+    make-3.77
     jdk 1.2 or 1.1.7
 	Preferably the native threads version of jdk. 
     CommAPI from sun. (unix version not Win32)

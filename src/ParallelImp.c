@@ -495,6 +495,7 @@ JNIEXPORT void JNICALL Java_gnu_io_LPRPort_eventLoop( JNIEnv *env,
 		sleep.tv_usec = 0;
 		do { 
 			ret = select( fd + 1, &rfds, NULL, NULL, &sleep );
+		}
 		while (ret < 0 && errno == EINTR);
 		if( ret < 0 ) break;
 		if( ioctl( fd, LPGETSTATUS, &pflags ) ) break;

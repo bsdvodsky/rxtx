@@ -1,3 +1,8 @@
+1.3-4   Jul 26, 1999  Printer port fixes Holger Lehmann <holle@almaden.ibm.com>
+                      minor build fixes
+                      intelligent port identification
+                      merg of many small changes from cvs.
+                      moved to automake-1.4a libtool-1.2f make-3.77
 1.3-3   Apr 29, 1999  flow Control corrections Neil Darlow and Chris Kakris
                       software flow control implementation Neil Darlow
                       close fixes and exception cleanup Douglas Lau

@@ -163,7 +163,7 @@ JAVAINCLUDE="\$(JPATH)/include"
 Linux)
 	case $JAVA_VERSION in
 	1.2*) 
-		JCLASSPATH="-classpath \$(TOP):\$(TOP)/src:.:$CLASSPATH"
+		JCLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:$CLASSPATH"
 		JAVA_H_CLASSPATH="-classpath .:`find $JPATH/ -name comm.jar`"
 		RXTX_PATH="\$(prefix)/lib"
 		JCL_PATH="\$(JPATH)/lib"
@@ -205,7 +205,7 @@ Linux)
 		esac
 	;;
 	1.*) 
-	JCLASSPATH="-classpath \$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:.:$CLASSPATH"
+	JCLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:$CLASSPATH"
 	JAVA_H_CLASSPATH="\$(JCLASSPATH)"
 		case $OS_NAME in
 		Linux)
@@ -232,13 +232,13 @@ irix*)
 	JCL_PATH="lib"
 	CFLAGS="$CFLAGS -D_NO_POSIX=1 -D_NO_XOPEN4=1"
 	JAVANATINC="\$(JPATH)/`cd $JPATH; find ./include -name jni_md.h|sed s#jni_md\\\\.h##|sed s#\\\\.\\\\/##`"
-	JCLASSPATH="-classpath \$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:.:$CLASSPATH"
+	JCLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:$CLASSPATH"
 ;;
 *)
 	JCL_PATH="lib"
 	CFLAGS="$CFLAGS -D_NO_POSIX=1 -D_NO_XOPEN4=1"
 	JAVANATINC="\$(JPATH)/`cd $JPATH; find ./include -name jni_md.h|sed s#jni_md\\\\.h##|sed s#\\\\.\\\\/##`"
-	JCLASSPATH="-classpath \$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:.:$CLASSPATH"
+	JCLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:$CLASSPATH"
 ;;
 esac ]
 AC_OUTPUT(Makefile)
