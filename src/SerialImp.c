@@ -20,7 +20,7 @@
 #include "RXTXPort.h" /* dima */
 #else  /* dima */
 #include "config.h"
-#include "javax_comm_RXTXPort.h"
+#include "gnu_io_RXTXPort.h"
 #endif /* dima */
 #ifndef __LCC__
 #   include <unistd.h>
@@ -116,8 +116,8 @@ notes:
 /* this is so diff will not generate noise when merging 1.4 and 1.5 changes
  * It will eventually be removed.
  * */
-#define RXTXPort(foo) Java_javax_comm_RXTXPort_ ## foo
-#define RXTXCommDriver(foo) Java_javax_comm_RXTXCommDriver_ ## foo
+#define RXTXPort(foo) Java_gnu_io_RXTXPort_ ## foo
+#define RXTXCommDriver(foo) Java_gnu_io_RXTXCommDriver_ ## foo
 
 #if defined(__sun__)
 /*----------------------------------------------------------
