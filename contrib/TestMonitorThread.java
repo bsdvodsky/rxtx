@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
-|   Copyright 1997-2001 by Trent Jarvi trentjarvi@yahoo.com
+|   Copyright 1997-2002 by Trent Jarvi taj@parcelfarce.linux.theplanet.co.uk
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Library General Public
@@ -41,6 +41,7 @@ public class TestMonitorThread implements SerialPortEventListener
     		Enumeration ports;
 		SerialPort port = null;
 		Date d = new Date();
+		long result, t1 = d.getTime(), t2 = d.getTime();
 
 		ports = CommPortIdentifier.getPortIdentifiers();
 		while ( ports.hasMoreElements() )
@@ -57,21 +58,25 @@ public class TestMonitorThread implements SerialPortEventListener
 				}
 			} 
 		} 
-		for( int i=0;;i++ )
+		for( int i=0;i<30;i++ )
 		{
 			try {
 				port.addEventListener(this);
 			} catch (TooManyListenersException e ) {
 				e.printStackTrace();
 			}
-			port.notifyOnDataAvailable( true );
+			t2 =  new Date().getTime();
 			port.removeEventListener();
+			System.out.println( t2 - t1 );
+			t1 = t2;
 		}
-		//port.close();
+		port.close();
 	}
 	public static void main( String[] args )
 	{
+		System.out.println(">my TestMonitorThread");
 		TestMonitorThread thisTestMonitorThread = new TestMonitorThread();
+		System.out.println("<my TestMonitorThread");
 	}
 	public void serialEvent(SerialPortEvent event)
 	{
