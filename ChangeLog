@@ -1,9 +1,11 @@
-1.3-10 Jan  7, 2000   Tracked down threshold bugs and Linux configure fixes.  
+1.3-10 Jan 16, 2000   Tracked down threshold bugs and Linux configure fixes.  
                       Brent J. Nordquist <bhn@visi.com>
-		      Moxa Driver Support <bencom@bencom.co.nz>
+		      Moxa Driver Support read/write examples libc5 build fixes.
+		      Peter Bennett <bencom@bencom.co.nz>
 		      FreeBSD configure and compile fixes 
 		      Soren Dayton <dayton@overx.com>
-		      I know I'm forgetting someone.
+		      Tracked down racing event loops.
+		      Alejandro P. Revilla <apr@cs.com.uy>
 1.3-9	Dec  1, 1999  Japanese install instructions  Thanks to Masayuki "Tencho"
                       Yamashita <tencho@venus.kanazawa-it.ac.jp>
                       IBM JDK support.  Thanks for bug reports from Herber Carl
