@@ -161,7 +161,7 @@ using the standard protocol there (/usr/spool/uucp/LCK..tty?A).
 The parallel I/O part of this implementation has not been tested at all 
 on any Caldera UNIX platforms.
 
-RXTX is available under the GNU Library General Public License (LGPL).
+RXTX is available under the GNU Lesser General Public License (LGPL).
 Because this is still just an beta level implementation, the ported
 source code for RXTX is not included with this distribution.  Once this
 implementation is final, source code will be included.  If you would
