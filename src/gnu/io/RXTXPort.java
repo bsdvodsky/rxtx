@@ -298,7 +298,8 @@ final public class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println(System.currentTimeMillis() + ": " + "RXTXPort:disableReceiveTimeout()");
-		enableReceiveTimeout(0);
+			timeout = -1;
+			NativeEnableReceiveTimeoutThreshold( timeout , threshold, InputBuffer );
 	}
 	/** 
 	*  @param time
@@ -306,12 +307,12 @@ final public class RXTXPort extends SerialPort
 	public void enableReceiveTimeout( int time )
 	{
 		if (debug)
-			System.out.println(System.currentTimeMillis() + ": " + "RXTXPort:enableReceiveTimeout( " + time + ")");
+			System.out.println(System.currentTimeMillis() + ": " + "RXTXPort:enableReceiveTimeout()");
+
 		if( time >= 0 )
 		{
 			timeout = time;
-			NativeEnableReceiveTimeoutThreshold( time , threshold,
-				InputBuffer );
+			NativeEnableReceiveTimeoutThreshold( time , threshold, InputBuffer );
 		}
 		else
 		{
@@ -337,6 +338,7 @@ final public class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println(System.currentTimeMillis() + ": " + "RXTXPort:getReceiveTimeout()");
+			
 		return(NativegetReceiveTimeout( ));
 	}
 
