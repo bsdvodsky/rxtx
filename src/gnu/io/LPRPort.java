@@ -158,14 +158,12 @@ final class LPRPort extends ParallelPort {
 	native void eventLoop();
 	void sendEvent( int event, boolean state ) {
 		switch( event ) {
-			/*
-			case ParallelPortEvent.DATA_AVAILABLE:
-				if( monData ) break;
+			case ParallelPortEvent.PAR_EV_BUFFER:
+				if( monBuffer ) break;
 				return;
-			case ParallelPortEvent.OUTPUT_BUFFER_EMPTY:
-				if( monOutput ) break;
+			case ParallelPortEvent.PAR_EV_ERROR:
+				if( monError ) break;
 				return;
-			*/
 			default:
 		}
 		ParallelPortEvent e = new ParallelPortEvent(this, event, !state, state );

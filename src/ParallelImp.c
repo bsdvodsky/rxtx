@@ -49,6 +49,21 @@ extern int errno;
 #include "ParallelImp.h"
 
 /*----------------------------------------------------------
+LPRPort.getOutputBufferFree
+   accept:    none  
+   perform:     
+   return:    number of bytes available in buffer.  
+   exceptions: none 
+   comments:  have not seen how to do this in the kernel yet.  
+----------------------------------------------------------*/ 
+JNIEXPORT jint JNICALL Java_gnu_io_LPRPort_getOutputBufferFree(JNIEnv *env,
+        jclass jclazz) {
+
+	return(0);
+
+}
+/*----------------------------------------------------------
+/*----------------------------------------------------------
 LPRPort.setLPRMode
    accept:      
    perform:     
@@ -78,7 +93,7 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isPaperOut(JNIEnv *env,
 	return( status & LP_POUTPA ? JNI_TRUE : JNI_FALSE );
 }
 /*----------------------------------------------------------
-LPRPort.isPaperBusy
+LPRPort.isPrinterBusy
    accept:      none   
    perform:     Check to see if the printer is printing.   
    return:      JNI_TRUE if the printer is Busy, JNI_FALSE if its idle   
@@ -146,6 +161,7 @@ LPRPort.Initialize
    accept:      none
    perform:     Initialize the native library
    return:      none
+   comments:    lots of reading to do here. 
 ----------------------------------------------------------*/ 
 JNIEXPORT void JNICALL Java_gnu_io_LPRPort_Initialize( JNIEnv *env,
 	jclass jclazz )
@@ -204,15 +220,6 @@ JNIEXPORT void JNICALL Java_gnu_io_LPRPort_close( JNIEnv *env,
 	return;
 }
 
-/*----------------------------------------------------------
- translate_data_bits
-
-   accept:     javax.comm.SerialPort.DATABITS_* constant
-   perform:    set proper termios c_cflag bits
-   return:     1 if successful
-					0 if an exception is thrown
-   exceptions: UnsupportedCommOperationException
-----------------------------------------------------------*/ 
 /*----------------------------------------------------------
 LPRPort.writeByte
 
@@ -426,9 +433,10 @@ JNIEXPORT void JNICALL Java_gnu_io_LPRPort_setHWFC( JNIEnv *env,
 LPRPort.eventLoop
 
    accept:      none
-   perform:     periodically check for SerialPortEvents
+   perform:     periodically check for ParallelPortEvents
    return:      none
    exceptions:  none
+   comments:    lots of work needed here
 ----------------------------------------------------------*/ 
 JNIEXPORT void JNICALL Java_gnu_io_LPRPort_eventLoop( JNIEnv *env,
 	jobject jobj )
@@ -437,9 +445,6 @@ JNIEXPORT void JNICALL Java_gnu_io_LPRPort_eventLoop( JNIEnv *env,
 	unsigned int mflags;
 	fd_set rfds;
 	struct timeval sleep;
-/*	struct serial_icounter_struct sis, osis;
-	serial specific
-*/
 	jfieldID jfield;
 	jmethodID method, interrupt;
 	jboolean interrupted = 0;
@@ -451,7 +456,6 @@ JNIEXPORT void JNICALL Java_gnu_io_LPRPort_eventLoop( JNIEnv *env,
 	jthread = (*env)->FindClass( env, "java/lang/Thread" );
 	interrupt = (*env)->GetStaticMethodID( env, jthread, "interrupted", "()Z" );
 
-	/* Some multiport serial cards do not implement TIOCGICOUNT ... */
 	FD_ZERO( &rfds );
 	while( !interrupted ) {
 		FD_SET( fd, &rfds );
@@ -470,20 +474,20 @@ JNIEXPORT void JNICALL Java_gnu_io_LPRPort_eventLoop( JNIEnv *env,
 
 
 /*----------------------------------------------------------
- send_modem_events
+ send_printer_events
 
-   accept:      int    event     SerialPortEvent constant
+   accept:      int    event     ParallelPortEvent constant
                 int    change    Number of times this event happened
                 int    state     current state: 0 is false, nonzero is true
    perform:     Send the necessary events
    return:      none
    exceptions:  none
    comments:    Since the interrupt counters tell us how many times the
-                state has changed, we can send a SerialPortEvent for each
+                state has changed, we can send a ParallelPortEvent for each
                 interrupt (change) that has occured.  If we don't do this,
                 we'll miss a whole bunch of events.
 ----------------------------------------------------------*/ 
-void send_modem_events( JNIEnv *env, jobject jobj, jmethodID method,
+void send_printer_events( JNIEnv *env, jobject jobj, jmethodID method,
 	int event, int change, int state )
 {
 	int i, s;

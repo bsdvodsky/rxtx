@@ -18,6 +18,7 @@
 --------------------------------------------------------------------------*/
 
 /* javax.comm.ParallelPort constants */
+/*  this appears to be handled in /usr/src/linux/misc/parport_pc.c */
 #define LPT_MODE_ANY
 #define LPT_MODE_ECP
 #define LPT_MODE_EPP
@@ -29,63 +30,11 @@
 #define PAR_EV_BUFFER
 #define PAR_EV_ERROR
 
-/* javax.comm.SerialPortEvent constants */
-#define SPE_DATA_AVAILABLE       1
-#define SPE_OUTPUT_BUFFER_EMPTY  2
-#define SPE_CTS                  3
-#define SPE_DSR                  4
-#define SPE_RI                   5
-#define SPE_CD                   6
-#define SPE_OE                   7
-#define SPE_PE                   8
-#define SPE_FE                   9
-#define SPE_BI                  10
-
-/* javax.comm.SerialPort constants */
-#define DATABITS_5	5
-#define DATABITS_6	6
-#define DATABITS_7	7
-#define DATABITS_8	8
-#define STOPBITS_1	1
-#define STOPBITS_2	2
-#define PARITY_NONE	0
-#define PARITY_ODD	1
-#define PARITY_EVEN	2
-#define PARITY_MARK	3
-#define PARITY_SPACE	4
-
 /*
 Flow Control defines inspired by reading how mgetty by Gert Doering does it
 */
 
-#ifdef CRTSCTS
-#define HARDWARE_FLOW_CONTROL CRTSCTS
-#else
-#	ifdef CCTS_OFLOW
-#	define HARDWARE_FLOW_CONTROL CCTS_OFLOW|CRST_IFLOW
-#	else
-#		ifdef RTSFLOW
-#		define HARDWARE_FLOW_CONTROL RTSFLOW|CTSFLOW
-#		else
-#			ifdef CRTSFL
-#			define HARDWARE_FLOW_CONTROL CRTSFL
-#			else
-#				ifdef CTSCD
-#				define HARDWARE_FLOW_CONTROL CTSCD
-#				else
-#					define HARDWARE_FLOW_CONTROL 0
-#				endif
-#			endif
-#		endif
-#	endif
-#endif
-
-
 /* PROTOTYPES */
-int translate_speed( JNIEnv* env, jint speed );
-int translate_data_bits( JNIEnv *env, int *cflag, jint dataBits );
-int translate_stop_bits( JNIEnv *env, int *cflag, jint stopBits );
-int translate_parity( JNIEnv *env, int *cflag, jint parity );
 int read_byte_array( int fd, unsigned char *buffer, int length, int threshold,
    int timeout );
 int get_java_fd( JNIEnv *env, jobject jobj );
