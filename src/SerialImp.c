@@ -1171,13 +1171,11 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(JNIEnv *env,
 			goto END;
 		}
 
-#ifndef WIN32
 		/* save, restore later */
 		if ((saved_flags = fcntl(fd, F_GETFL)) < 0) {
 			ret = JNI_FALSE;
 			goto END;
 		}
-#endif /* WIN32 */
 
 		memcpy(&saved_termios, &ttyset, sizeof(struct termios));
 
@@ -1208,9 +1206,7 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(JNIEnv *env,
 
 		/* dont walk over unlocked open devices */
 		tcsetattr(fd, TCSANOW, &saved_termios);
-#ifndef WIN32
 		fcntl(fd, F_SETFL, saved_flags);
-#endif /* WIN32 */
 	}
 END:
 	(*env)->ReleaseStringUTFChars(env, tty_name, name);
