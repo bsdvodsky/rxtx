@@ -315,6 +315,14 @@ public class RXTXCommDriver implements CommDriver
 			AllKnownSerialPorts=Temp;
 		}
 
+		else if (osName.equals("Compaq's Digital UNIX"))
+		{
+			String[] Temp = {
+				"tty0"  //  Digital Unix serial ports
+			};
+			AllKnownSerialPorts=Temp;
+		}
+
 		else if(osName.equals("BeOS"))
 		{
 			String[] Temp = {
@@ -351,6 +359,7 @@ public class RXTXCommDriver implements CommDriver
 			|| osName.equals("HP-UX")  FIXME
 			|| osName.equals("Irix")   FIXME
 			|| osName.equals("BeOS")   FIXME
+			|| osName.equals("Compaq's Digital UNIX")   FIXME
 */
 			)
 		{

@@ -85,6 +85,10 @@
 #	define DEVICEDIR "/dev/"
 #	define LOCKDIR "/usr/spool/uucp"
 #endif /* __hpux__ */
+#if defined(__osf__)  /* Digital Unix */
+#	define DEVICEDIR "/dev/"
+#	define LOCKDIR ""
+#endif /* __osf__ */
 #if defined(__BEOS__)
 #	define DEVICEDIR "/dev/ports/"
 #	define LOCKDIR ""
