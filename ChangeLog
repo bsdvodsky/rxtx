@@ -1,3 +1,15 @@
+1.3-2   Mar 27, 1999  When throwing exceptions, include the method name in the 
+                      message string.  Douglas Lau
+                      fixes for close() drop DSR and DTR call super.close()
+                      Wayne Roberts and Douglas Lau
+                      fixes fo readArray() used IndexArrayOutOfBoundsException
+                      return 0 on readArray(0);  Douglas Lau and Will Kassebaum                       <wrk@kassebaum.net>
+                      fix for drain().  retry on EINTR Daniel Lintjens 
+                      <lintjens@cme.nist.gov>
+                      fixes for configure.in/Makefile.am  using 
+                      System.getProperty
+                      ParallelImp.c implementation of isPaperOut,isPrinterBusy,
+                      isPrinterError,isPrinterSelected,isPrinterTimedOut,
 1.3-1   Mar 20, 1999  added Stubs for Printer Support and CommPortIdentifiers.
                       Several minor Makefile Modifications for the above and
                       some quirks that showed up in 1.1.7 javah.
