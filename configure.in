@@ -29,6 +29,7 @@ AC_CHECK_HEADERS(sys/file.h)
 AC_CHECK_HEADERS(sys/signal.h)
 AC_CHECK_HEADERS(termios.h)
 AC_PROG_GCC_TRADITIONAL
+AC_SUBST(WINDOWS_JAVA_INCLUDE)
 AC_SUBST(JAVAINCLUDE)
 AC_SUBST(JAVANATINC)
 AC_SUBST(JCLASSPATH)
@@ -329,7 +330,7 @@ Linux)
 		JCLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:$CLASSPATH"
 		JAVA_H_CLASSPATH="\$(JCLASSPATH)"
 		RXTX_PATH="\$(prefix)/lib/"
-		JAVAH_FIX="if [ ! \$(THREADS_FLAG) ] && [ ! -d com ]; then if [ ! -f \$(JPATH)/lib/comm.jar ]; then echo \"Please install comm.jar from CommAPI in \$(JPATH)/java/lib/ 1>&2\"; else \$(JAR) -xf \$(JPATH)/lib/comm.jar;  fi; fi;"
+		JAVAH_FIX="if [ ! \$(THREADS_FLAG) ] && [ ! -d com ]; then if [ ! -f \$(JPATH)/lib/comm.jar ]; then echo \"Please install comm.jar from CommAPI in \$(JPATH)/java/lib/ 1>&2\"; else mkdir -p com/sun/comm;\$(JAR) -xf \$(JPATH)/lib/comm.jar;  fi; fi;"
 		JCL_PATH="lib"
 		case $OS_VERSION in
 		2.2.*|2.3.*)
@@ -372,6 +373,17 @@ irix*)
 	JCLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:$CLASSPATH"
 ;;
 esac ]
+# blah
+if test "$target_alias" = i386-mingw32;then
+	echo "We need to know what directory the windows java include files"
+	echo "are located in.  Please enter the directory now."
+	echo
+	echo "example /home/jarvi/win32java/include"
+	echo
+	read REPLY
+	WINDOWS_JAVA_INCLUDE="$REPLY"
+fi;
+
 AC_OUTPUT(Makefile)
 
 

@@ -57,14 +57,14 @@ around this feature of java.
 
  /usr/lib/libstdc++-libc6.0-1.so.2 -> libstdc++.so.2.8.0
 
-Known 'Features'.
+Known 'Features.'
 
 
 1.  There is no parallel support in rxtx.  Good project for a interested 
     programmer.  It should not be too hard.  Some initial support has been
     added
 
-2.  This release has only been tested on linux.
+2.  This release has only been tested on linux and freebsd.
 
 3.  The library does not handle SIGINT and clean up.
 

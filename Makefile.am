@@ -16,7 +16,7 @@
 #   License along with this library; if not, write to the Free
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #-------------------------------------------------------------------------
-
+WJI= -I @WINDOWS_JAVA_INCLUDE@ -I @WINDOWS_JAVA_INCLUDE@/win32 
 AUTOMAKE_OPTIONS = foreign
 TOP=@TOP@
 JPATH=@JPATH@
@@ -110,11 +110,21 @@ $(SERIAL_HEADER) $(PARALLEL_HEADER): $(TOP)/gnu/io/RXTXPort.class
 	$(JAVAH) gnu.io.`echo $(@F) | sed s#\.h##|sed s#gnu_io_##`
 	touch $(TOP)/$(target_alias)/$(@F)
 
+borg: $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class $(TOP)/gnu/io/LPRPort.class $(SERIAL_HEADER)
+	gcc -DWIN32 -D  __int64="long long"  -mno-fp-ret-in-387 -b$(target_alias) -I $(TOP) -I $(TOP)/$(target_alias) -I . $(WJI) -I ../src/ -Wall -c ../src/SerialImp.c -o  $(TOP)/$(target_alias)/SerialImp.o
+	gcc -DWIN32 -D  __int64="long long"  -mno-fp-ret-in-387 -b$(target_alias) -I $(TOP) -I $(TOP)/$(target_alias) -I . $(WJI) -I ../src/ -Wall -c ../src/termios.c -o  $(TOP)/$(target_alias)/termios.o
+	gcc -DWIN32 -D  __int64="long long"  -mno-fp-ret-in-387 -b$(target_alias) -I $(TOP) -I $(TOP)/$(target_alias) -I . $(WJI) -I ../src/ -Wall -c ../src/fixup.c -o  $(TOP)/$(target_alias)/fixup.o
+	gcc -DWIN32 -D  __int64="long long"  -mno-fp-ret-in-387 -b$(target_alias) -I $(TOP) -I $(TOP)/$(target_alias) -I . $(WJI) -I ../src/ -Wall -c ../src/init.cc -o  $(TOP)/$(target_alias)/init.o
+	ld --base-file $(target_alias)/Serial.base  --dll -o  $(target_alias)/Serial.dll $(target_alias)/termios.o $(target_alias)/SerialImp.o $(target_alias)/fixup.o $(target_alias)/init.o  -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmingw32 -lmoldname -lcrtdll -e _dll_entry@12 --base-file $(target_alias)/Serial.base
+	dlltool  -b$(target_alias) --as=as --dllname $(target_alias)/Serial.dll  --def ../src/Serial.def --base-file $(target_alias)/Serial.base --output-exp $(target_alias)/Serial.exp
+	ld --base-file $(target_alias)/Serial.base $(target_alias)/Serial.exp -dll -o  $(target_alias)/Serial.dll $(target_alias)/termios.o $(target_alias)/SerialImp.o $(target_alias)/fixup.o $(target_alias)/init.o  -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmingw32 -lmoldname -lcrtdll -e _dll_entry@12 --base-file $(target_alias)/Serial.base
+	dlltool   -b$(target_alias) --as=as --dllname $(target_alias)/Serial.dll  --def ../src/Serial.def --base-file $(target_alias)/Serial.base --output-exp $(target_alias)/Serial.exp
+	ld $(target_alias)/Serial.exp -dll -o  $(target_alias)/Serial.dll $(target_alias)/termios.o $(target_alias)/SerialImp.o $(target_alias)/fixup.o $(target_alias)/init.o  -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmingw32 -lmoldname -lcrtdll -e _dll_entry@12 --base-file $(target_alias)/Serial.base
+
 docs:
 	mkdir gnu;
 	cd gnu;ln -s $(srcdir)/src io
 	cd ..
-	$(JAVADOC)  -d doc gnu.io
 	rm -rf gnu
 
 # END
