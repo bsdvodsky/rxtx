@@ -2701,13 +2701,12 @@ fi
  case $OS_NAME in 
 Linux)
 	check_kernel_headers
-	fix_parameters $JPATH/jre/lib/javax.comm.properties
-	fix_comm_jar $JPATH/jre/lib/ext/comm.jar
 	case $JAVA_VERSION in
 	1.2*) 
+		fix_parameters $JPATH/jre/lib/javax.comm.properties
+		fix_comm_jar $JPATH/jre/lib/ext/comm.jar
 		JCLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:$CLASSPATH"
 		JAVA_H_CLASSPATH="-classpath .:`find $JPATH/ -name comm.jar |head -n1`"
-		#JAVA_H_CLASSPATH="-classpath .:"
 		JCL_PATH="\$(JPATH)/lib"
 		JCL_PATH="jre/lib/ext"
 
@@ -2729,6 +2728,8 @@ Linux)
 		esac
 	;;
 	1.*) 
+		fix_parameters $JPATH/lib/javax.comm.properties
+		fix_comm_jar $JPATH/lib/comm.jar
 		check_prefix
 		JCLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:$CLASSPATH"
 		JAVA_H_CLASSPATH="\$(JCLASSPATH)"
