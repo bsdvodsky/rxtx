@@ -95,6 +95,57 @@
 #	define LOCKFILEPREFIX "LK."
 #	define UUCP
 #endif /* __NetBSD__ */
+#if defined(__unixware__)
+#	define DEVICEDIR "/dev/"
+/* really this only fully works for OpenServer */
+#	define LOCKDIR "/var/spool/uucp/"
+#	define LOCKFILEPREFIX "LK."
+/* 
+this needs work....
+
+Jonathan Schilling <jls@caldera.com> writes:
+
+This is complicated because as I said in my previous mail, there are
+two kinds of SCO operating systems.
+
+The one that most people want javax.comm for, including the guy who
+asked the mailing list about SCO support a few days ago, is Open Server
+(a/k/a "SCO UNIX"), which is SVR3-based.  This uses old-style uucp locks, 
+of the form LCK..tty0a.  That's what I implemented in the RXTX port I did,
+and it works correctly.
+
+The other SCO/Caldera OS, UnixWare/Open UNIX, uses the new-style
+SVR4 locks, of the form LK.123.123.123.  These OSes are a lot like
+Solaris (UnixWare/Open UNIX come from AT&T SVR4 which had a joint
+
+The other SCO/Caldera OS, UnixWare/Open UNIX, uses the new-style
+SVR4 locks, of the form LK.123.123.123.  These OSes are a lot like
+Solaris (UnixWare/Open UNIX come from AT&T SVR4 which had a joint
+heritage with Sun way back when).  I saw that you added support
+for this form of lock by RXTX 1.4-10 ... but it gets messy because,
+as I said before, we use the same binary javax.comm files for both
+UnixWare/Open UNIX and OpenServer.  Thus we can't #ifdef one or the
+other; it would have to be a runtime test.  Your code and your macros
+aren't set up for doing this (understandably!).  So I didn't implement
+these; the javax.comm locks won't fully work on UnixWare/Open UNIX
+as a result, which I mentioned in the Release Notes.
+
+
+What I would suggest is that you merge in the old-style LCK..tty0a lock
+code that I used, since this will satisfy 90% of the SCO users.  Then
+I'll work on some way of getting UnixWare/Open UNIX locking to work
+correctly, and give you those changes at a later date.
+
+Jonathan
+
+FIXME  The lock type could be passed with -DOLDUUCP or -DUUCP based on
+os.name in configure.in or perhaps system defines could determine the lock
+type.
+
+Trent
+*/
+#	define OLDUUCP
+#endif
 #if defined(__hpux__)
 /* modif cath */
 #	define DEVICEDIR "/dev/"
@@ -148,6 +199,9 @@
 #ifdef UUCP
 #	define LOCK uucp_lock
 #	define UNLOCK uucp_unlock
+#elif defined(OLDUUCP)
+#	define LOCK old_uucp_lock
+#	define UNLOCK old_uucp_unlock
 #elif defined(FHS)
 #	define LOCK fhs_lock
 #	define UNLOCK fhs_unlock
