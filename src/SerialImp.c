@@ -17,7 +17,7 @@
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
 #include "config.h"
-#include "gnu_io_NativePort.h"
+#include "gnu_io_RXTXPort.h"
 #include <time.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -55,7 +55,7 @@ NativePort.Initialize
    perform:     Initialize the native library
    return:      none
 ----------------------------------------------------------*/ 
-JNIEXPORT void JNICALL Java_gnu_io_NativePort_Initialize( JNIEnv *env,
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_Initialize( JNIEnv *env,
 	jclass jclazz )
 {
 	/* This bit of code checks to see if there is a signal handler installed
@@ -80,7 +80,7 @@ NativePort.open
                 this function and it turns out to be permissions on the 
                 device file or bios has the device disabled.
 ----------------------------------------------------------*/ 
-JNIEXPORT jint JNICALL Java_gnu_io_NativePort_open( JNIEnv *env, jobject jobj,
+JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_open( JNIEnv *env, jobject jobj,
 	jstring jstr )
 {
 	struct termios ttyset;
@@ -123,7 +123,7 @@ NativePort.close
    return:      none
    exceptions:  none
 ----------------------------------------------------------*/ 
-JNIEXPORT void JNICALL Java_gnu_io_NativePort_close( JNIEnv *env,
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_close( JNIEnv *env,
 	jobject jobj )
 {
 	int fd = get_java_fd( env, jobj );
@@ -141,7 +141,7 @@ JNIEXPORT void JNICALL Java_gnu_io_NativePort_close( JNIEnv *env,
    return:     void
    exceptions: UnsupportedCommOperationException
 ----------------------------------------------------------*/ 
-JNIEXPORT void JNICALL Java_gnu_io_NativePort_nativeSetSerialPortParams(
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_nativeSetSerialPortParams(
 	JNIEnv *env, jobject jobj, jint speed, jint dataBits, jint stopBits,
 	jint parity )
 {
@@ -320,7 +320,7 @@ NativePort.writeByte
    return:      none
    exceptions:  IOException
 ----------------------------------------------------------*/ 
-JNIEXPORT void JNICALL Java_gnu_io_NativePort_writeByte( JNIEnv *env,
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeByte( JNIEnv *env,
 	jobject jobj, jint ji ) 
 {
 	unsigned char byte = (unsigned char)ji;
@@ -341,7 +341,7 @@ NativePort.writeArray
    return:      none
    exceptions:  IOException
 ----------------------------------------------------------*/ 
-JNIEXPORT void JNICALL Java_gnu_io_NativePort_writeArray( JNIEnv *env,
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeArray( JNIEnv *env,
 	jobject jobj, jbyteArray jbarray, jint offset, jint count )
 {
 	int fd = get_java_fd( env, jobj );
@@ -366,7 +366,7 @@ NativePort.drain
    comments:    java.io.OutputStream.flush() is equivalent to tcdrain,
                 not tcflush, which throws away unsent bytes
 ----------------------------------------------------------*/
-JNIEXPORT void JNICALL Java_gnu_io_NativePort_drain( JNIEnv *env,
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_drain( JNIEnv *env,
 	jobject jobj )
 {
 	int fd = get_java_fd( env, jobj );
@@ -383,7 +383,7 @@ NativePort.sendBreak
    exceptions: none
    comments:   not very precise
 ----------------------------------------------------------*/ 
-JNIEXPORT void JNICALL Java_gnu_io_NativePort_sendBreak( JNIEnv *env,
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_sendBreak( JNIEnv *env,
 	jobject jobj, jint duration )
 {
 	int fd = get_java_fd( env, jobj );
@@ -401,7 +401,7 @@ NativePort.isDSR
    exceptions:  none
    comments:    DSR stands for Data Set Ready
 ----------------------------------------------------------*/
-JNIEXPORT jboolean JNICALL Java_gnu_io_NativePort_isDSR( JNIEnv *env,
+JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isDSR( JNIEnv *env,
 	jobject jobj ) 
 {
 	unsigned int result = 0;
@@ -423,7 +423,7 @@ NativePort.isCD
    exceptions:  none
    comments:    CD stands for Carrier Detect
 ----------------------------------------------------------*/
-JNIEXPORT jboolean JNICALL Java_gnu_io_NativePort_isCD( JNIEnv *env,
+JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isCD( JNIEnv *env,
 	jobject jobj )
 {
 	unsigned int result = 0;
@@ -445,7 +445,7 @@ NativePort.isCTS
    exceptions:  none
    comments:    CTS stands for Clear To Send.
 ----------------------------------------------------------*/
-JNIEXPORT jboolean JNICALL Java_gnu_io_NativePort_isCTS( JNIEnv *env,
+JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isCTS( JNIEnv *env,
 	jobject jobj ) 
 {
 	unsigned int result = 0;
@@ -467,7 +467,7 @@ NativePort.isRI
    exceptions:  none
    comments:    RI stands for Ring Indicator
 ----------------------------------------------------------*/
-JNIEXPORT jboolean JNICALL Java_gnu_io_NativePort_isRI( JNIEnv *env,
+JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isRI( JNIEnv *env,
 	jobject jobj )
 {
 	unsigned int result = 0;
@@ -489,7 +489,7 @@ NativePort.isRTS
    exceptions:  none
    comments:    tcgetattr with c_cflag CRTS_IFLOW
 ----------------------------------------------------------*/
-JNIEXPORT jboolean JNICALL Java_gnu_io_NativePort_isRTS( JNIEnv *env,
+JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isRTS( JNIEnv *env,
 	jobject jobj )
 {
 	unsigned int result = 0;
@@ -512,7 +512,7 @@ NativePort.setRTS
    exceptions:  none
    comments:    tcsetattr with c_cflag CRTS_IFLOW
 ----------------------------------------------------------*/
-JNIEXPORT void JNICALL Java_gnu_io_NativePort_setRTS( JNIEnv *env,
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setRTS( JNIEnv *env,
 	jobject jobj, jboolean state ) 
 {
 	unsigned int result = 0;
@@ -536,7 +536,7 @@ NativePort.isDTR
    exceptions:  none
    comments:    DTR stands for Data Terminal Ready
 ----------------------------------------------------------*/
-JNIEXPORT jboolean JNICALL Java_gnu_io_NativePort_isDTR( JNIEnv *env,
+JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isDTR( JNIEnv *env,
 	jobject jobj )
 {
 	unsigned int result = 0;
@@ -558,7 +558,7 @@ NativePort.setDTR
    exceptions:  none
    comments:    DTR stands for Data Terminal Ready
 ----------------------------------------------------------*/
-JNIEXPORT void JNICALL Java_gnu_io_NativePort_setDTR( JNIEnv *env,
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setDTR( JNIEnv *env,
 	jobject jobj, jboolean state )
 {
 	unsigned int result = 0;
@@ -629,7 +629,7 @@ NativePort.readByte
    return:      The byte read
    exceptions:  IOException
 ----------------------------------------------------------*/ 
-JNIEXPORT jint JNICALL Java_gnu_io_NativePort_readByte( JNIEnv *env,
+JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_readByte( JNIEnv *env,
 	jobject jobj )
 { 
 	int bytes, fd, timeout;
@@ -660,7 +660,7 @@ NativePort.readArray
    exceptions:   IOException
    comments:     throws IOException if asked to read > SSIZE_MAX
 ----------------------------------------------------------*/ 
-JNIEXPORT jint JNICALL Java_gnu_io_NativePort_readArray( JNIEnv *env,
+JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_readArray( JNIEnv *env,
 	jobject jobj, jbyteArray jbarray, jint offset, jint length )
 {  
 	int bytes, i, fd, threshold, timeout;
@@ -710,7 +710,7 @@ NativePort.nativeavailable
                 -1 on error
    exceptions:  none
 ----------------------------------------------------------*/ 
-JNIEXPORT jint JNICALL Java_gnu_io_NativePort_nativeavailable( JNIEnv *env,
+JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_nativeavailable( JNIEnv *env,
 	jobject jobj )
 {
 	int fd = get_java_fd( env, jobj );
@@ -729,7 +729,7 @@ NativePort.setHWFC
    return:      none
    exceptions:  IOException
 ----------------------------------------------------------*/
-JNIEXPORT void JNICALL Java_gnu_io_NativePort_setHWFC( JNIEnv *env,
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setHWFC( JNIEnv *env,
 	jobject jobj, jboolean state )
 {
 	struct termios ttyset;
@@ -754,7 +754,7 @@ NativePort.eventLoop
    return:      none
    exceptions:  none
 ----------------------------------------------------------*/ 
-JNIEXPORT void JNICALL Java_gnu_io_NativePort_eventLoop( JNIEnv *env,
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 	jobject jobj )
 {
 	int fd, ret, change;

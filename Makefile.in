@@ -131,7 +131,7 @@ JAR = $(JPATH)/bin/jar cf
 JAVADOC = $(JPATH)/bin/javadoc $(JCLASSPATH)
 LIBTOOL = $(SHELL) $(TOP)/libtool
 LINK = $(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) -version-info 1:0:1
-HEADER = $(TOP)/$(target_alias)/gnu_io_NativePort.h
+HEADER = $(TOP)/$(target_alias)/gnu_io_RXTXPort.h
 CLEANFILES = .deps/* $(TOP)/*.class $(TOP)/gnu/io/*.class               $(TOP)/*/.libs/* $(TOP)/stamp-h
 
 SUFFIXES = .class .h
@@ -344,15 +344,13 @@ all: $(TOP)/$(target_alias)/@TARGETLIB@
 	@echo "configure or editing the Makefile."
 	@echo ""
 
-jcl:  $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/NativePort.class \
-		$(TOP)/gnu/io/RXTXPort.class
+jcl:  $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class
 	$(JAR) jcl.jar gnu/io/*
 
 $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class \
-		$(TOP)/gnu/io/NativePort.class: $(srcdir)/src/RXTXCommDriver.java \
-		$(srcdir)/src/RXTXPort.java $(srcdir)/src/NativePort.java
-	$(JAVAC) $(srcdir)/src/RXTXPort.java $(srcdir)/src/NativePort.java \
-		$(srcdir)/src/RXTXCommDriver.java
+		: $(srcdir)/src/RXTXCommDriver.java \
+		$(srcdir)/src/RXTXPort.java 
+	$(JAVAC) $(srcdir)/src/RXTXPort.java $(srcdir)/src/RXTXCommDriver.java
 
 $(TOP)/$(target_alias)/libSerial.la: $(TOP)/$(target_alias)/SerialImp.lo
 	( cd $(TOP)/$(target_alias); \
@@ -361,7 +359,6 @@ $(TOP)/$(target_alias)/libSerial.la: $(TOP)/$(target_alias)/SerialImp.lo
 
 $(TOP)/$(target_alias)/SerialImp.lo: $(srcdir)/src/SerialImp.c \
                                   $(HEADER) \
-											 $(TOP)/gnu/io/NativePort.class \
 				  $(TOP)/Makefile
 	(cd $(TOP)/$(target_alias); \
 	$(LIBTOOL) --mode=compile $(CC) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) @VERBOSE_IOEXCEPTIONS@ -c ../$< )
@@ -369,7 +366,7 @@ $(TOP)/$(target_alias)/SerialImp.lo: $(srcdir)/src/SerialImp.c \
 $(TOP)/%.class $(TOP)/gnu/io/%.class: $(srcdir)/src/%.java 
 	$(JAVAC) $< 
 
-$(TOP)/$(target_alias)/%.h: $(TOP)/gnu/io/NativePort.class
+$(TOP)/$(target_alias)/%.h: $(TOP)/gnu/io/RXTXPort.class
 	$(JAVAH) gnu.io.`echo $(@F) | sed s#\.h##|sed s#gnu_io_##`
 	touch $(TOP)/$(target_alias)/$(@F)
 
