@@ -9,6 +9,9 @@ you downloaded.
 		      Dmitry Markman <dmarkman@mac.com>
 		      Asynch write fixes
 		      setParityErrorChar() and setEndOfInputChar() added 
+		      getParityErrorChar() and getEndOfInputChar() added 
+		      Lots of tickles a few wacks more error debug fixes by
+		      the bucket.
 1.5-6  Oct 14, 2001   Mac OS X port to Code Warrier
 		      Documentation of the above
 		      possible double deletion fix
