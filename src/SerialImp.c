@@ -17,11 +17,14 @@
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
 #include "config.h"
+/* work around for linux libc5 */
+/*#include <typedefs_md.h>*/
 #include "gnu_io_RXTXPort.h"
 #include <time.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <errno.h>
 #ifndef WIN32
 #include <sys/ioctl.h>
@@ -35,7 +38,6 @@
 #endif
 #else
 #	include <win32termios.h>
-#	include <stdlib.h>
 #endif
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -130,7 +132,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_open(
 	ttyset.c_lflag = 0;
 	ttyset.c_oflag = 0;
 	ttyset.c_cflag = CREAD | CS8 | CLOCAL;
-	ttyset.c_cc[ VMIN ] = 1;
+	ttyset.c_cc[ VMIN ] = 0;
 	ttyset.c_cc[ VTIME ] = 0;
 
 #ifdef __FreeBSD__
@@ -139,7 +141,20 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_open(
 	if( cfsetispeed( &ttyset, B9600 ) < 0 ) goto fail;
 	if( cfsetospeed( &ttyset, B9600 ) < 0 ) goto fail;
 #endif
-	if( tcsetattr( fd, TCSAFLUSH, &ttyset ) < 0 ) goto fail;
+/*
+	5751 
+	 200 CREAD
+	 400 PARENB
+	1000 PARODD
+	 100 CSTOPB
+	4000 CLOCAL
+	  40 C7
+	  11 1200 baud
+	---
+	5751
+	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
+	dump_termios("open",*ttyset); 
+*/
 
 #ifndef WIN32
 	fcntl( fd, F_SETOWN, getpid() );
@@ -165,7 +180,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_nativeClose( JNIEnv *env,
 	jobject jobj )
 {
 	int result;
-	int fd = get_java_fd( env, jobj );
+	int fd = get_java_var( env, jobj,"fd","I" );
 
 	do {
 		result=close (fd);
@@ -186,7 +201,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_nativeSetSerialPortParams(
 	jint parity )
 {
 	struct termios ttyset;
-	int fd = get_java_fd( env, jobj );
+	int fd = get_java_var( env, jobj,"fd","I" );
 	int cspeed = translate_speed( env, speed );
 	if( !cspeed ) return;
 	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
@@ -200,6 +215,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_nativeSetSerialPortParams(
 	if( cfsetospeed( &ttyset, cspeed ) < 0 ) goto fail;
 #endif
 	if( tcsetattr( fd, TCSAFLUSH, &ttyset ) < 0 ) goto fail;
+	/* dump_termios("set",*ttyset); */
 	return;
 
 fail:
@@ -367,7 +383,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeByte( JNIEnv *env,
 	jobject jobj, jint ji ) 
 {
 	unsigned char byte = (unsigned char)ji;
-	int fd = get_java_fd( env, jobj );
+	int fd = get_java_var( env, jobj,"fd","I" );
 	int result;
 
 	do {
@@ -393,7 +409,7 @@ RXTXPort.writeArray
 JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeArray( JNIEnv *env,
 	jobject jobj, jbyteArray jbarray, jint offset, jint count )
 {
-	int fd = get_java_fd( env, jobj );
+	int fd = get_java_var( env, jobj,"fd","I" );
 	int result=0,total=0,i;
 
 	unsigned char *bytes = (unsigned char *)malloc( count );
@@ -429,7 +445,7 @@ RXTXPort.drain
 JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_drain( JNIEnv *env,
 	jobject jobj )
 {
-	int fd = get_java_fd( env, jobj );
+	int fd = get_java_var( env, jobj,"fd","I" );
 	int result, count=0; 
 
 	do {
@@ -452,34 +468,10 @@ RXTXPort.sendBreak
 JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_sendBreak( JNIEnv *env,
 	jobject jobj, jint duration )
 {
-	int fd = get_java_fd( env, jobj );
+	int fd = get_java_var( env, jobj,"fd","I" );
 	tcsendbreak( fd, (int)( duration / 250 ) );
 }
 
-/*----------------------------------------------------------
-RXTXPort.NativeenableReceiveTimeout
-
-   accept:  vtime termios.c_cc[VTIME]
-   perform: change termios.c_cc[VTIME] to vtime    
-   return:  void    
-----------------------------------------------------------*/ 
-JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_NativeenableReceiveTimeout( 
-	JNIEnv *env, 
-	jobject jobj, 
-	jint vtime 
-	) 
-{
-	int fd = get_java_fd( env, jobj );
-	struct termios ttyset;
-
-	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
-	ttyset.c_cc[ VTIME ] = vtime/100;
-	if( tcsetattr( fd, TCSAFLUSH, &ttyset ) < 0 ) goto fail;
-	return;
-fail:
-	throw_java_exception( env, IO_EXCEPTION, "enableReceiveTimeout", strerror( errno ) );
-	return;
-}
 
 /*----------------------------------------------------------
 RXTXPort.NativegetReceiveTimeout
@@ -487,13 +479,14 @@ RXTXPort.NativegetReceiveTimeout
    accept:     none 
    perform:    get termios.c_cc[VTIME] 
    return:     VTIME 
+   comments:   see  NativeEnableReceiveTimeoutThreshold
 ----------------------------------------------------------*/ 
 JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_NativegetReceiveTimeout(
 	JNIEnv *env, 
 	jobject jobj
 	)
 {
-	int fd = get_java_fd( env, jobj );
+	int fd = get_java_var( env, jobj,"fd","I" );
 	struct termios ttyset;
 
 	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
@@ -509,13 +502,14 @@ RXTXPort.NativeisReceiveTimeoutEnabled
    accept:     none 
    perform:    determine if VTIME is none 0 
    return:     JNI_TRUE if VTIME > 0 else JNI_FALSE 
+   comments:   see  NativeEnableReceiveTimeoutThreshold
 ----------------------------------------------------------*/ 
 JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_NativeisReceiveTimeoutEnabled(
 	JNIEnv *env, 
 	jobject jobj
 	)
 {
-	int fd = get_java_fd( env, jobj );
+	int fd = get_java_var( env, jobj,"fd","I" );
 	struct termios ttyset;
 
 	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
@@ -539,7 +533,7 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isDSR( JNIEnv *env,
 	jobject jobj ) 
 {
 	unsigned int result = 0;
-	int fd = get_java_fd( env, jobj );
+	int fd = get_java_var( env, jobj,"fd","I" );
 
 	ioctl( fd, TIOCMGET, &result );
 	if( result & TIOCM_DSR ) return JNI_TRUE;
@@ -564,7 +558,7 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isCD( JNIEnv *env,
 	jobject jobj )
 {
 	unsigned int result = 0;
-	int fd = get_java_fd( env, jobj );
+	int fd = get_java_var( env, jobj,"fd","I" );
 
 	ioctl( fd, TIOCMGET, &result );
 	if( result & TIOCM_CD ) return JNI_TRUE;
@@ -585,7 +579,7 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isCTS( JNIEnv *env,
 	jobject jobj ) 
 {
 	unsigned int result = 0;
-	int fd = get_java_fd( env, jobj );
+	int fd = get_java_var( env, jobj,"fd","I" );
 
 	ioctl( fd, TIOCMGET, &result );
 	if( result & TIOCM_CTS ) return JNI_TRUE;
@@ -606,7 +600,7 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isRI( JNIEnv *env,
 	jobject jobj )
 {
 	unsigned int result = 0;
-	int fd = get_java_fd( env, jobj );
+	int fd = get_java_var( env, jobj,"fd","I" );
 
 	ioctl( fd, TIOCMGET, &result );
 	if( result & TIOCM_RI ) return JNI_TRUE;
@@ -627,7 +621,7 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isRTS( JNIEnv *env,
 	jobject jobj )
 {
 	unsigned int result = 0;
-	int fd = get_java_fd( env, jobj );
+	int fd = get_java_var( env, jobj,"fd","I" );
 
 	ioctl( fd, TIOCMGET, &result );
 	if( result & TIOCM_RTS ) return JNI_TRUE;
@@ -649,7 +643,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setRTS( JNIEnv *env,
 	jobject jobj, jboolean state ) 
 {
 	unsigned int result = 0;
-	int fd = get_java_fd( env, jobj );
+	int fd = get_java_var( env, jobj,"fd","I" );
 
 	ioctl( fd, TIOCMGET, &result );
 	if( state == JNI_TRUE ) result |= TIOCM_RTS;
@@ -673,7 +667,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setDSR( JNIEnv *env,
 	jobject jobj, jboolean state ) 
 {
 	unsigned int result = 0;
-	int fd = get_java_fd( env, jobj );
+	int fd = get_java_var( env, jobj,"fd","I" );
 
 	ioctl( fd, TIOCMGET, &result );
 	if( state == JNI_TRUE ) result |= TIOCM_DSR;
@@ -696,7 +690,7 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isDTR( JNIEnv *env,
 	jobject jobj )
 {
 	unsigned int result = 0;
-	int fd = get_java_fd( env, jobj );
+	int fd = get_java_var( env, jobj,"fd","I" );
 
 	ioctl( fd, TIOCMGET, &result );
 	if( result & TIOCM_DTR ) return JNI_TRUE;
@@ -717,7 +711,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setDTR( JNIEnv *env,
 	jobject jobj, jboolean state )
 {
 	unsigned int result = 0;
-	int fd = get_java_fd( env, jobj );
+	int fd = get_java_var( env, jobj,"fd","I" );
 
 	ioctl( fd, TIOCMGET, &result );
 	if( state == JNI_TRUE ) result |= TIOCM_DTR;
@@ -732,7 +726,6 @@ read_byte_array
    accept:      int                fd   file descriptor to read from
                 unsigned char *buffer   buffer to read data into
                 int            length   number of bytes to read
-                int           timeout   milliseconds to wait before returning
    perform:     read bytes from the port into a buffer
    return:      status of read
                 -1 fail (IOException)
@@ -740,61 +733,43 @@ read_byte_array
                 >0 number of bytes read
    comments:    According to the Communications API spec, a receive threshold
                 of 1 is the same as having the threshold disabled.
+		
+		The nuts and bolts are documented in
+		NativeEnableReceiveTimeoutThreshold()
 ----------------------------------------------------------*/ 
-int read_byte_array( int fd, unsigned char *buffer, int length, int timeout )
+int read_byte_array( int fd, unsigned char *buffer, int length )
 {
-	int ret, left, bytes = 0;
-	fd_set rfds;
-	struct timeval sleep;
+	int ret;
 
-	FD_ZERO( &rfds );
-	FD_SET( fd, &rfds );
-	sleep.tv_sec = timeout / 1000;
-	sleep.tv_usec = 1000 * ( timeout % 1000 );
-	left = length;
-
-	while( bytes < length ) {
-#ifdef DEBUG_TIMEOUT
-		printf(">bytes= %i,length=%i,timeout=%i\n",bytes,length,timeout);
-#endif /* DEBUG_TIMEOUT */
-		if( timeout > 0 ) {
-         /* FIXME: In Linux, select updates the timeout automatically, so
-            other OSes will need to update it manually if they want to have
-            the same behavior.  For those OSes, timeouts will occur after no
-            data AT ALL is received for the timeout duration.  No big deal. */
-			do {
-				ret=select( fd + 1, &rfds, NULL, NULL, &sleep );
-			}  while (ret < 0 && errno==EINTR);
-			if( ret == 0 ) break;
-			if( ret < 0 ) {
-#ifdef DEBUG_TIMEOUT
-				printf("read_byte_array() select() reports %s\n", strerror(errno)); 
-#endif /* DEBUG_TIMEOUT */
-				return -1;
-			}
-		}
-#ifdef DEBUG_TIMEOUT
-		printf(">starting read()\n");
-#endif /* DEBUG_TIMEOUT */
-		ret = read( fd, buffer + bytes, left );
-#ifdef DEBUG_TIMEOUT
-		printf("<read returned %i (%x) %c\n",ret,*(buffer + bytes), *(buffer+bytes));
-#endif /* DEBUG_TIMEOUT */
-		if( ret == 0 ) break;
-		if( ret < 0 ) return -1;
-		bytes += ret;
-		left -= ret;
-	}
-	return bytes;
+	/*
+	printf("read_byte_array() length = %i \n",length );
+	*/
+	ret = read( fd, buffer, length );
+	if( ret < 0 ) return -1;
+	return ret;
 }		
 /*----------------------------------------------------------
-NativeEnableRecieveThreshold
-   accept:      int  threshold 
-   perform:     Set c_cc->VMIN to threshold
+NativeEnableReceiveTimeoutThreshold
+   accept:      int  threshold, int vtime
+   perform:     Set c_cc->VMIN to threshold and c_cc=>VTIME to vtime
    return:      void
    exceptions:  IOException
-   comments:    Probably dont need to mess with VTIME
+   comments:    
 
+From libc.info-26
+
+* Both TIME and MIN are nonzero.
+
+In this case, TIME specifies how long to wait after each input
+character to see if more input arrives.  After the first character
+received, `read' keeps waiting until either MIN bytes have arrived
+in all, or TIME elapses with no further input.
+
+`read' always blocks until the first character arrives, even if
+TIME elapses first.  `read' can return more than MIN characters if
+more than MIN happen to be in the queue.
+
+	
 * Both MIN and TIME are zero.
 
 In this case, `read' always returns immediately with as many
@@ -819,21 +794,33 @@ are available, up to the number requested.  `read' can return more
 than MIN characters if more than MIN happen to be in the queue.
 ----------------------------------------------------------*/ 
  
-JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_NativeEnableRecieveThreshold(JNIEnv *env, jobject jobj, jint threshold, jint vtime)
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_NativeEnableReceiveTimeoutThreshold(JNIEnv *env, jobject jobj, jint vtime, jint threshold)
 {
-	jclass jclazz = (*env)->GetObjectClass( env, jobj );
-	jfieldID jfield = (*env)->GetFieldID( env, jclazz, "fd", "I" );
-	int fd = (int)( (*env)->GetIntField( env, jobj, jfield ) );
+	int fd = get_java_var( env, jobj,"fd","I" );
 	struct termios ttyset;
 
 	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
+/*
+	The MIN slot is only meaningful in noncanonical input mode; it
+	specifies the minimum number of bytes that must be available in the
+	input queue in order for `read' to return.
+*/
 	ttyset.c_cc[ VMIN ] = threshold;
-	ttyset.c_cc[ VTIME ] = vtime;
+/*
+	The TIME slot is only meaningful in noncanonical input mode; it
+	specifies how long to wait for input before returning, in units of
+	0.1 seconds.
+*/
+/*
+	Javacomm passes the number of miliseconds 
+*/
+	ttyset.c_cc[ VTIME ] = vtime/100;
 	if( tcsetattr( fd, TCSAFLUSH, &ttyset ) < 0 ) goto fail;
 
 	return;
 fail:
-	throw_java_exception( env, IO_EXCEPTION, "Threshold", strerror( errno ) );
+	throw_java_exception( env, IO_EXCEPTION, "TimeoutThreshold", strerror( errno ) );
+	return;
 }
 
 /*----------------------------------------------------------
@@ -847,16 +834,11 @@ RXTXPort.readByte
 JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_readByte( JNIEnv *env,
 	jobject jobj )
 { 
-	int bytes, fd, timeout;
+	int bytes;
 	unsigned char buffer[ 1 ];
-	jfieldID jfield;
-	jclass jclazz = (*env)->GetObjectClass( env, jobj );
-	jfield = (*env)->GetFieldID( env, jclazz, "fd", "I" );
-	fd = (int)( (*env)->GetIntField( env, jobj, jfield ) );
-	jfield = (*env)->GetFieldID( env, jclazz, "timeout", "I" );
-	timeout = (int)( (*env)->GetIntField( env, jobj, jfield ) );
+	int fd = get_java_var( env, jobj,"fd","I" );
 
-	bytes = read_byte_array( fd, buffer, 1, timeout );
+	bytes = read_byte_array( fd, buffer, 1 );
 	if( bytes < 0 ) {
 		throw_java_exception( env, IO_EXCEPTION, "readByte",
 			strerror( errno ) );
@@ -879,15 +861,10 @@ RXTXPort.readArray
 JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_readArray( JNIEnv *env,
 	jobject jobj, jbyteArray jbarray, jint offset, jint length )
 {  
-	int bytes, i, fd, timeout;
+	int bytes, i;
 	jbyte *body;
 	unsigned char *buffer;
-	jfieldID jfield;
-	jclass jclazz = (*env)->GetObjectClass( env, jobj );
-	jfield = (*env)->GetFieldID( env, jclazz, "fd", "I" );
-	fd = (int)( (*env)->GetIntField( env, jobj, jfield ) );
-	jfield = (*env)->GetFieldID( env, jclazz, "timeout", "I" );
-	timeout = (int)( (*env)->GetIntField( env, jobj, jfield ) );
+	int fd = get_java_var( env, jobj, "fd", "I" );
 
 	if( length == 0 ) return 0;
 	if( length > SSIZE_MAX || length < 0 ) {
@@ -903,7 +880,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_readArray( JNIEnv *env,
 		return -1;
 	}
 
-	bytes = read_byte_array( fd, buffer, length, timeout );
+	bytes = read_byte_array( fd, buffer, length );
 	if( bytes < 0 ) {
 		free( buffer );
 		throw_java_exception( env, IO_EXCEPTION, "readArray",
@@ -930,11 +907,16 @@ RXTXPort.nativeavailable
 JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_nativeavailable( JNIEnv *env,
 	jobject jobj )
 {
-	int fd = get_java_fd( env, jobj );
+	int fd = get_java_var( env, jobj,"fd","I" );
 	int result;
 
-	if( ioctl( fd, FIONREAD, &result ) ) return -1;
+	if( ioctl( fd, FIONREAD, &result ) ) 
+	{
+		throw_java_exception( env, IO_EXCEPTION, "nativeavailable", strerror( errno ) );
+		return -1;
+	}
 	else return (jint)result;
+
 }
 
 /*----------------------------------------------------------
@@ -956,9 +938,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setflowcontrol( JNIEnv *env,
 	jobject jobj, jint flowmode )
 {
 	struct termios ttyset;
-	jfieldID jfield;
-	int fd = get_java_fd( env, jobj );
-	jint flags=0;
+	int fd = get_java_var( env, jobj,"fd","I" );
 
 	if( tcgetattr( fd, &ttyset ) ) goto fail;
 	
@@ -995,52 +975,25 @@ RXTXPort.eventLoop
                 Basically one needs to go through the bsd kernel structs
                 for serial events and implemnt the same as has been done
                 for linux.
-----
-Alejandro Revilla <apr@cs.com.uy>  writes..
-
-"I think" that although you do not send a java event more than
-once for the same character received if the higher level java
-program does not read the character inmediately your eventloop
-starts to HOG CPU.
-
-I've added 
-
-                do {
-                        ret=select( fd + 1, &rfds, NULL, NULL, &sleep);
-                        printf ("eventLoop: %d/%d\n", ret, errno);
-                }  while (ret < 0 && errno==EINTR);
-
-to event loop for debugging purposes and also
-
-                interrupted = (*env)->CallStaticBooleanMethod( env, jthread, interrupt );
-                printf ("interrupted=%d\n", interrupted);
-
-and after one character appear on the serial port, although I get
-just one event my JVM goes down and stdout shows:
-
-eventLoop: 1/0
-interrupted=0
-eventLoop: 1/0
-interrupted=0
-eventLoop: 1/0
 ----------------------------------------------------------*/ 
 JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 	jobject jobj )
 {
-	int fd, ret, change;
+	int fd, ret, change, dataAvailable;
 	fd_set rfds;
-	struct timeval sleep;
-	unsigned int mflags,omflags;
+	struct timeval tv_sleep;
+	unsigned int mflags;
 #if defined(__linux__)
 	struct serial_icounter_struct sis, osis;
+#else
+	unsigned int omflags;
 #endif
-	jfieldID jfield;
+
 	jmethodID method, interrupt;
 	jboolean interrupted = 0;
 	jclass jclazz, jthread;
 	jclazz = (*env)->GetObjectClass( env, jobj );
-	jfield = (*env)->GetFieldID( env, jclazz, "fd", "I" );
-	fd = (int)( (*env)->GetIntField( env, jobj, jfield ) );
+	fd = fd = get_java_var(env, jobj, "fd", "I");
 	method = (*env)->GetMethodID( env, jclazz, "sendEvent", "(IZ)V" );
 	jthread = (*env)->FindClass( env, "java/lang/Thread" );
 	interrupt = (*env)->GetStaticMethodID( env, jthread, "interrupted", "()Z" );
@@ -1062,17 +1015,28 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 	FD_ZERO( &rfds );
 	while( !interrupted ) {
 		FD_SET( fd, &rfds );
-		sleep.tv_sec = 1; /* Check every 1 second, or on receive data */
-		sleep.tv_usec = 0;
+		/* Check every 1 second, or on receive data */
+		tv_sleep.tv_sec = 1; 
+		tv_sleep.tv_usec = 0;
+		dataAvailable = get_java_var(env, jobj, "dataAvailable", "I");
+		if(dataAvailable) usleep(1000); /* select wont block */
 		do {
-			ret=select( fd + 1, &rfds, NULL, NULL, &sleep );
+			ret=select( fd + 1, &rfds, NULL, NULL, &tv_sleep );
 		}  while (ret < 0 && errno==EINTR);
 		if( ret < 0 ) break; 
 #if defined(__linux__)
+	/*	wait for RNG, DSR, CD or CTS  but not DataAvailable*/
+	/*      The drawback here is it never times out so if someone
+	 *      reads there will be no chance to try again.
+	 *      This may make sense if the program does not want to 
+	 *      be notified of data available or errors.
+		printf("native dataAvailable = %i\n",dataAvailable);
+		if ( dataAvailable )  
+		{
+			ret=ioctl(fd,TIOCMIWAIT);
+		}
+	*/
 		if( ioctl( fd, TIOCGICOUNT, &sis ) ) break;
-#endif
-		if( ioctl( fd, TIOCMGET, &mflags ) ) break;
-#if defined(__linux__)
 #if defined(FULL_EVENT)
 		if( sis.rx != osis.rx ) 
 		{
@@ -1099,6 +1063,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 		if( change ) (*env)->CallVoidMethod( env, jobj, method,
 			(jint)SPE_DATA_AVAILABLE, JNI_TRUE );
 #endif /* FULL_EVENT */
+		if( ioctl( fd, TIOCMGET, &mflags ) ) break;
 		change = sis.cts - osis.cts;
 		if( change ) send_modem_events( env, jobj, method, SPE_CTS, abs(change),
 			mflags & TIOCM_CTS );
@@ -1188,10 +1153,10 @@ get_java_fd
    exceptions:  none
    comments:
 ----------------------------------------------------------*/ 
-int get_java_fd( JNIEnv *env, jobject jobj )
+int get_java_var( JNIEnv *env, jobject jobj, char *id, char *type )
 {
 	jclass jclazz = (*env)->GetObjectClass( env, jobj );
-	jfieldID jfd = (*env)->GetFieldID( env, jclazz, "fd", "I" );
+	jfieldID jfd = (*env)->GetFieldID( env, jclazz, id, type );
 	if( !jfd ) {
 		(*env)->ExceptionDescribe( env );
 		(*env)->ExceptionClear( env );
@@ -1306,7 +1271,6 @@ JNIEXPORT jboolean  JNICALL Java_gnu_io_RXTXCommDriver_IsDeviceGood(JNIEnv *env,
 	}
 	(*env)->ReleaseStringUTFChars(env, tty_name, name);
 	return(result);
-	
 }
 JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setInputBufferSize(JNIEnv *env, jobject jobj,  jint size )
 {
@@ -1335,3 +1299,17 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_getOutputBufferSize(JNIEnv *env, job
 	return(1);
 }
 
+void dump_termios(char *foo,struct termios *ttyset)
+{
+	int i;
+
+	printf("%s %o\n",foo,ttyset->c_iflag);
+	printf("%s %o\n",foo,ttyset->c_lflag);
+	printf("%s %o\n",foo,ttyset->c_oflag);
+	printf("%s %o\n",foo,ttyset->c_cflag);
+	for(i=0;i<NCCS;i++)
+	{
+		printf("%s %o ",foo,ttyset->c_cc[i]);
+	}
+	printf("\n");
+}

@@ -73,6 +73,7 @@ final class RXTXPort extends SerialPort {
 		dataBits = d;
 		stopBits = s;
 		parity = p;
+		System.out.println("Parity= "+ parity);
 	}
 
 	/** Set the native serial port parameters */
@@ -131,18 +132,17 @@ final class RXTXPort extends SerialPort {
 
 	public native int NativegetReceiveTimeout();
 	public native boolean NativeisReceiveTimeoutEnabled();
-	public native void NativeenableReceiveTimeout(int t);
+	public native void NativeEnableReceiveTimeoutThreshold(int time, int threshold);
 	public void disableReceiveTimeout(){
-		NativeenableReceiveTimeout(0);
-		timeout = 0;
+		enableReceiveTimeout(0);
 	}
-	public void enableReceiveTimeout( int t ){
-		if( t > 0 )  {
-			timeout = t;
-			NativeenableReceiveTimeout( t );
+	public void enableReceiveTimeout( int time ){
+		if( time >= 0 )  {
+			timeout = time;
+			NativeEnableReceiveTimeoutThreshold( time , threshold );
 		}
 		else {
-			NativeenableReceiveTimeout( 0 );
+			System.out.println("Invalid timeout");
 		}
 	}
 	public boolean isReceiveTimeoutEnabled(){
@@ -156,9 +156,16 @@ final class RXTXPort extends SerialPort {
 	
 	private int threshold = 0;
 	
-	public void enableReceiveThreshold( int t ){
-		threshold=t;
-		NativeEnableRecieveThreshold(threshold,timeout);
+	public void enableReceiveThreshold( int thresh ){
+		if(thresh >=0)
+		{
+			threshold=thresh;
+			NativeEnableReceiveTimeoutThreshold(timeout, threshold);
+		}
+		else /* invalid thresh */
+		{
+			System.out.println("Invalid Threshold");
+		}
 	}
 	public void disableReceiveThreshold() { 
 		enableReceiveThreshold(0);
@@ -169,7 +176,6 @@ final class RXTXPort extends SerialPort {
 	public boolean isReceiveThresholdEnabled(){
 		return(threshold>0);
 	}
-	private native void NativeEnableRecieveThreshold(int threshold,int timeout);
 
 	/** Input/output buffers */
 	/** FIXME I think this refers to 
@@ -232,9 +238,11 @@ final class RXTXPort extends SerialPort {
 
 	/** Process SerialPortEvents */
 	native void eventLoop();
+	private int dataAvailable=0;
 	public void sendEvent( int event, boolean state ) {
 		switch( event ) {
 			case SerialPortEvent.DATA_AVAILABLE:
+				dataAvailable=1;
 				if( monThread.Data ) break;
 				return;
 			case SerialPortEvent.OUTPUT_BUFFER_EMPTY:
@@ -340,43 +348,45 @@ final class RXTXPort extends SerialPort {
 	/** Inner class for SerialInputStream */
 	class SerialInputStream extends InputStream {
 		public int read() throws IOException {
+			dataAvailable=0;
 			return readByte();
 		}
-		public int read( byte b[] ) throws IOException {
-			if(InputBuffer>0 && threshold > 0)
-			{
-				return readArray( b, 0, (Math.min(threshold,InputBuffer)));
-			}
-			else if(threshold>0)
-			{
-				return readArray( b, 0, threshold);
-			}
-			else if(InputBuffer>0)
-			{
-				return readArray( b, 0, InputBuffer);
-			}
-			else 
-			{
-				return readArray( b, 0, Math.min(available(),b.length));
-			}
+		public int read( byte b[] ) throws IOException 
+		{
+			return read ( b, 0, b.length);
 		}
-		public int read( byte b[], int off, int len ) throws IOException {
-			if(InputBuffer>0 && threshold >0)
+		public int read( byte b[], int off, int len ) throws IOException 
+		{
+			dataAvailable=0;
+			int i=0, Minimum=0;
+			int intArray[] = 
 			{
-				return readArray( b, off, Math.min(Math.min(threshold,len),InputBuffer));
-			}
-			else if(threshold>0)
+				InputBuffer, 
+				len,
+				b.length,
+			};
+		/*
+			find the lowest nonzero value
+			timeout and threshold are handled on the native side
+			see  NativeEnableReceiveTimeoutThreshold in
+			SerialImp.c
+		*/
+			while(intArray[i]==0 && i < intArray.length) i++;
+			Minimum=intArray[i];
+			while( i < intArray.length )
 			{
-				return readArray( b, off, Math.min(threshold,len));
+				if(intArray[i] > 0 )
+				{
+					Minimum=Math.min(Minimum,intArray[i]);
+				}
+				i++;
 			}
-			else if(InputBuffer>0)
-			{
-				return readArray( b, off, Math.min(InputBuffer,len));
-			}
-			else 
-			{
-				return readArray( b, off, Math.min(( available() - off ),b.length));
-			}
+			//return(readArray( b, off, Minimum));
+			int Available=available();
+			int Ret = readArray( b, off, Minimum);
+			//System.out.println( "InputBuffer = " + InputBuffer + "  len  = " + len + " b.length = " + b.length );
+			//System.out.println( "available = " + Available + "  try  = " + Minimum + " got = " + Ret + " left = " + available());
+			return Ret;
 		}
 		public int available() throws IOException {
 			return nativeavailable();

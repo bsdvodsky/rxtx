@@ -33,6 +33,8 @@
 */
 
 #include "config.h"
+/* work around for libc5 */
+/*#include <typedefs_md.h>*/
 #include "gnu_io_LPRPort.h"
 #include <time.h>
 #include <unistd.h>
@@ -84,7 +86,6 @@ JNIEXPORT jint JNICALL Java_gnu_io_LPRPort_getOutputBufferFree(JNIEnv *env,
 	return(0);
 
 }
-/*----------------------------------------------------------
 /*----------------------------------------------------------
 LPRPort.setLPRMode
    accept:     mode 

@@ -85,12 +85,12 @@ Flow Control defines inspired by reading how mgetty by Gert Doering does it
 
 
 /* PROTOTYPES */
-int translate_speed( JNIEnv* env, jint speed );
-int translate_data_bits( JNIEnv *env, int *cflag, jint dataBits );
-int translate_stop_bits( JNIEnv *env, int *cflag, jint stopBits );
-int translate_parity( JNIEnv *env, int *cflag, jint parity );
-int read_byte_array( int fd, unsigned char *buffer, int length,int timeout );
-int get_java_fd( JNIEnv *env, jobject jobj );
-void send_modem_events( JNIEnv *env, jobject jobj, jmethodID method,
-   int event, int change, int state );
-void throw_java_exception( JNIEnv *env, char *exc, char *foo, char *msg );
+int translate_speed( JNIEnv*, jint  );
+int translate_data_bits( JNIEnv *, int *, jint );
+int translate_stop_bits( JNIEnv *, int *, jint );
+int translate_parity( JNIEnv *, int *, jint );
+int read_byte_array( int, unsigned char *, int );
+int get_java_var( JNIEnv *, jobject, char *, char * );
+int get_java_fd( JNIEnv *, jobject );
+void send_modem_events( JNIEnv *, jobject, jmethodID, int, int, int );
+void throw_java_exception( JNIEnv *, char *, char *, char * );
