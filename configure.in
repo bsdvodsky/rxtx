@@ -28,6 +28,7 @@ AC_CHECK_HEADERS(fcntl.h)
 AC_CHECK_HEADERS(sys/fcntl.h)
 AC_CHECK_HEADERS(sys/file.h)
 AC_CHECK_HEADERS(sys/signal.h)
+AC_CHECK_HEADERS(signal.h)
 AC_CHECK_HEADERS(termios.h)
 AC_PROG_GCC_TRADITIONAL
 AC_SUBST(WINDOWS_JAVA_INCLUDE)
@@ -82,8 +83,16 @@ AC_ARG_ENABLE(PRINTER,
 	else
 		TARGETLIB="\$(target_alias)/libSerial.la"
 	fi
+
+AC_ARG_ENABLE(lockfiles,
+	[  --enable-lockfiles      enable lock files (experimental) [default=no]],
+	if test x$enable_lockfiles = xyes; then 
+		CFLAGS="$CFLAGS -DLOCKFILES"
+	fi
+)
+
 AC_ARG_ENABLE(DEBUG,
-	[  --enable-DEBUG          Print debugging info from SerialImp.c],
+	[  --enable-DEBUG          Print debugging info from SerialImp.c [default=no]],
 	if test x$enable_DEBUG = xyes; then 
 		CFLAGS="$CFLAGS -DDEBUG"
 	fi
@@ -180,8 +189,6 @@ check_prefix()
 		echo "          Unless /usr/local/lib or the specified prefix is in"  1>&2
 		echo "          the linkers path this will cause problems later on." 1>&2
 		echo 1>&2
-		echo "          Press enter to continue."
-		read  REPLY
 	fi
 }
 # an attempt to compile on libc5 linux machines
@@ -463,6 +470,22 @@ Linux)
 		fi
 	;;
 	esac 
+
+	# Cross Compilers
+	case $target_os in 
+	linux*)
+	;;
+	beos*)
+		TARGETLIB="\$(target_alias)/libSerial.la"
+		EXTENSION="cpp"
+		LDFLAGS="-ldevice"
+		echo ----------------------------
+		echo $target_os
+		echo ----------------------------
+	;;
+	freebsd*)
+	;;
+	esac
 ;;
 *BSD)
 	RXTX_PATH="\$(prefix)/lib"
@@ -492,14 +515,20 @@ irix*)
 	TARGETLIB="\$(target_alias)/libSerial.la"
 ;;
 HP-UX)
-	echo I\'m In $OS_NAME
 	TARGETLIB="\$(target_alias)/libSerial.la"
-	CFLAGS="-g -O2  -D__hpux__ -D_HPUX_SOURCE -D_NO_POSIX=1 -D_NO_XOPEN4=1"
+	CFLAGS="-g -Aa +e -D__hpux__ -D_HPUX_SOURCE -D_NO_POSIX=1 -D_NO_XOPEN4=1"
 	RXTX_PATH="\$(JPATH)/jre/lib/\$(OS_ARCH)"
 	TARGETLIB="\$(target_alias)/libSerial.la"
 	case $JAVA_VERSION in
-		HP-UX\ Java\ C.01.18*) 
-			echo I\'m in $JAVA_VERSION
+		HP-UX\ Java\ C.01.2*) 
+			fix_parameters $JPATH/jre/lib/javax.comm.properties
+			fix_comm_jar $JPATH/jre/lib/ext/comm.jar
+			JHOME=$JPATH"/jre/lib/ext"
+			CLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/jre/lib/ext/comm.jar:$CLASSPATH"
+			RXTX_PATH="\$(JPATH)/jre/lib/\$(OS_ARCH)"
+			echo WARNING $JAVA_VERSION is untested please email this message to TrentJarvi@yahoo.com and let me know if it works.
+		;;
+		HP-UX\ Java\ C.01.1*) 
 			fix_parameters $JPATH/lib/javax.comm.properties
 			fix_comm_jar $JPATH/lib/comm.jar
 			JHOME=$JPATH/"lib"
@@ -509,7 +538,7 @@ HP-UX)
 		*)
 			fix_parameters $JPATH/lib/javax.comm.properties
 			fix_comm_jar $JPATH/lib/comm.jar
-			JHOME=$JPATH/"lib"
+			JHOME=$JPATH"/lib"
 			CLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:$CLASSPATH"
 			RXTX_PATH="\$(prefix)/lib/"
 			echo WARNING $JAVA_VERSION is untested please email this message to TrentJarvi@yahoo.com and let me know if it works.
@@ -517,26 +546,20 @@ HP-UX)
 	esac
 	case $OS_ARCH in
 		PA-RISC)
-			echo I\'m in $OS_ARCH
 		;;
 		*)
-			echo WARNING:  $OS_ARCH is untested please email this message to TrentJarvi@yahoo.com and let me know if it works.
 		;;
 	esac
 	case $OS_VERSION in
 		B.10.20)
-			echo I\'m in $OS_VERSION
 		;;
 		*)
-			echo WARNING:  $OS_VERSION is untested please email this message to TrentJarvi@yahoo.com and let me know if it works.
 		;;
 	esac
 	case $JAVA_VENDOR in
         	Hewlett\ Packard\ Co\.)
-			echo I\'m in $JAVA_VENDOR
 		;;
 		*)
-			echo WARNING $JAVA_VENDOR is untested please email this message to TrentJarvi@yahoo.com and let me know if it works.
 		;;
 	esac
 ;;

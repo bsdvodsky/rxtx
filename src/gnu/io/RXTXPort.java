@@ -45,12 +45,23 @@ final class RXTXPort extends SerialPort
 
 
 	/** Open the named port */
-	public RXTXPort( String name )
+	public RXTXPort( String name ) throws PortInUseException
 	{
-		try {
+	/* 
+	   commapi/javadocs/API_users_guide.html specifies that whenever
+	   an application tries to open a port in use by another application
+	   the PortInUseException will be thrown
+
+	   I know some didnt like it this way but I'm not sure how to avoid
+	   it.  We will just be writing to a bogus fd if we catch the 
+	   exeption
+
+	   Trent
+	*/
+	//	try {
 			fd = open( name );
 			this.name = name;
-		} catch ( PortInUseException e ){}
+	//	} catch ( PortInUseException e ){}
 	}
 	private native synchronized int open( String name )
 		throws PortInUseException;
@@ -436,13 +447,13 @@ final class RXTXPort extends SerialPort
 
 
 	/** Close the port */
-	private native void nativeClose();
+	private native void nativeClose(String name);
 	public synchronized void close()
 	{
 		if ( fd <= 0 ) return;
 		setDTR(false);
 		setDSR(false);
-		nativeClose();
+		nativeClose( this.name );
 		super.close();
 
 		removeEventListener();

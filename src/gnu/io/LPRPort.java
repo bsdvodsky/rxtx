@@ -37,11 +37,12 @@ final class LPRPort extends ParallelPort
 	private native static void Initialize();
 
 	/** Open the named port */
-	public LPRPort( String name ) throws IOException
+	public LPRPort( String name ) throws PortInUseException
 	{
-		try {
+//		try {
 			fd = open( name );
-		} catch ( PortInUseException e ){}
+			this.name = name;
+//		} catch ( PortInUseException e ){}
 	}
 	private synchronized native int open( String name )
 		throws PortInUseException;

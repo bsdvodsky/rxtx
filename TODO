@@ -36,6 +36,9 @@ whats going wrong.
 
 Irix SerialPort support
 	I've heard it works.  I didnt get an exact diff back but it should work.
+
+HP-UX   I've heard it works.  The fix was distructive to other ports by hard
+        coding the device files.  An attempt was made to add what was required.
 	
 *BSD SerialPort support
 	freebsd serial works.

@@ -16,7 +16,7 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
-This is the INSTALL file for RXTX.  Oct 11 2000
+This is the INSTALL file for RXTX.  Oct 29 2000
 
 If, while following the instructions, you find this file unclear or incorrect 
 please make a note and email the details to trentjarvi@yahoo.com.  
@@ -58,6 +58,9 @@ please make a note and email the details to trentjarvi@yahoo.com.
 	Q.  It Did Not Work! 
 	R.  Which jdk should be used? 
 	S.  How does rxtx detect ports?  Can I override it?
+	T.  How can I use Lock Files with rxtx?
+	U.  How can I tell which version of rxtx is installed?
+	V.  What Type of Latency can I expect with RXTX
 
 -------------------------------------------------------------------------------
 1.  INSTALL INSTRUCTIONS IN OTHER LANGUAGES
@@ -571,6 +574,81 @@ example
 will look kind of like Solaris, if you have created the appropriate
 device nodes.
 
+T.  How can I use Lock Files with rxtx?
+
+Lock files are used to prevent more than one program accessing a port at a
+time.  Rxtx intentionally avoids defaulting to lock files at this point because
+the code has not been well tested and requires a bit of sysadmin most people
+do not want to deal with.
+
+Rxtx has preliminary support for lock files on Linux.  It may work on other
+platforms but read the source before blindly trying it.  In order to use lock 
+files you will need to configure rxtx with --enable-lockfiles.
+ie  ./configure --enable-lockfiles
+
+Before you use lock files you need to do one of two things:
+
+	1.  Be the root or uucp user on your machine whenever you use rxtx
+	2.  add the specific user that needs to use rxtx to the group uucp.
+	    (preferred)
+
+To add a user to the uucp group edit /etc/group as root and change the 
+following:
+	uucp::14:uucp
+to something like:
+	uucp::14:uucp,jarvi
+In this case jarvi is the login name for the user that needs to use lock files.
+Do not change the number (14).  Whatever is in your group file is correct.
+
+User jarvi in this case can now use rxtx with lock files.
+
+Be careful.  The lock file code does not support kermit style lock files or
+lock files in /var/spool.  Its sure to fail if your using subdirectories in
+/dev or do not have /dev.
+
+U.  How can I tell which version of rxtx is installed?
+
+Version information is not documented in Sun's CommAPI so this is probably
+unique to RXTX.
+
+As of rxtx-1.5-4 and rxtx-1.4-6 a class has been added to allow developers to 
+check which version of rxtx is installed.  The class is RXTXVersion.  
+
+The static method: System.out.println(RXTXVersion.getVersion());
+
+will print the rxtx version as a String in the following format:
+
+        "RXTX-MAJOR.MINOR-PATCH".
+
+an example would be:
+
+        "RXTX-1.5-4"
+
+A change in the MAJOR version would suggest your in trouble.
+
+Odd MINOR version are reserved for development.  Even MINOR versions are
+reserved for 'stable' releases.
+
+PATCH is used to differentiate incremental releases of the MINOR releases.
+
+CommPortIdentifier is expected to support getVersion() in the RXTX-1.5 series.
+
+V.  What Type of Latency can I expect with RXTX
+
+	frantz <fcapiez@club-internet.fr> put RXTX under a scope and found
+	the following:
+
+	RXTX currently has a latency of 150-200ms on a PII at 450mhz.
+	The latency can be reduced to 70-80ms by reducing the usleep()
+	value in SerialImp.c:eventLoop() to usleep(5000)).
+
+	Much lower latencies should be possible but the maintainer does not
+	have equipment to test changes.
+
+	He is going to look at this further.  He needs 20 ms or less latency.
+	
+
+-------------------------------------------------------------------------------
 You made it this far.. what is one more line.
 
 Sun, Solaris and Java are registered trademarks of Sun Microsystems, Inc.

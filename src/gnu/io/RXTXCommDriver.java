@@ -59,9 +59,35 @@ public class RXTXCommDriver implements CommDriver
 
 
    /*
-    * Check whether we can do r/w io on the specified filename.
+    * A primitive test of whether a specified device is available or
+    * not.
+    *
+    * FIXME: This is actually a pretty poor test.  These Java calls
+    * map in the 1.2.2 Unix JDK into calls to access(2), which checks
+    * the permission bits on the file.  There are at least two
+    * problems with this, however.
+    *
+    * Firstly, in Linux 2.2 it will fail with EROFS for a device node
+    * on a read-only device, even though you're allowed to write to
+    * them.  This is fixed in Linux 2.4, but may exist on other
+    * systems as well.
+    *
+    * Secondly and more importantly, simply being permittedq to access
+    * the device doesn't mean that it physically exists, and therefore
+    * that an attempt to use it will succeed.
+    *
+    * One alternative approach would be to try to actually open the
+    * device for read/write, but that's not a good idea because
+    * opening a device can affect the control pins, etc.
+    *
+    * Even better might be to return all possible devices for this
+    * operating system or hardware without trying to check that
+    * they're usable, and then letting the application cope with ones
+    * that actually turn out not to work.
+    *
+    * @author Martin Pool
     */
-	private boolean isUsable(String portName)
+	private boolean accessReadWrite(String portName)
 	{
 		final File port = new File(portName);
 		return port.canRead() && port.canWrite();
@@ -77,7 +103,7 @@ public class RXTXCommDriver implements CommDriver
 			for( int p = 0; p < Prefix.length; p++ ) {
 				if( devs[ i ].startsWith( Prefix[ p ] ) ) {
 					String portName = "/dev/" + devs[ i ];
-					if (isUsable(portName))
+					if (accessReadWrite(portName))
 						CommPortIdentifier.addPortName(
 							portName,
 							PortType,
@@ -87,6 +113,8 @@ public class RXTXCommDriver implements CommDriver
 			}
 		}
 	}
+
+	String osName=System.getProperty("os.name");
 
    /*
     * initialize() will be called by the CommPortIdentifier's static
@@ -132,7 +160,7 @@ public class RXTXCommDriver implements CommDriver
 		{
 			String portName = tok.nextToken();
 
-			if (isUsable(portName))
+			if (accessReadWrite(portName))
 				CommPortIdentifier.addPortName(portName,
 					type, this);
 		}
@@ -177,7 +205,10 @@ public class RXTXCommDriver implements CommDriver
 	{
 		File dev = new File( "/dev" );
 		String[] devs = dev.list();
-		String[] AllKnownSerialPorts={
+		String[] AllKnownSerialPorts;
+		if(osName.equals("Linux"))
+		{
+			String[] Temp = {
 			"comx",      // linux COMMX synchronous serial card
 			"holter",    // custom card for heart monitoring
 			"modem",     // linux symbolic link to modem.
@@ -206,7 +237,13 @@ public class RXTXCommDriver implements CommDriver
 			"ttyV", // linux Comtrol VS-1000 serial controller
 			"ttyW", // linux specialix cards
 			"ttyX", // linux SpecialX serial card
+			};
+			AllKnownSerialPorts=Temp;
+		}
 
+		else if(osName.equals("irix")) // FIXME this is probably wrong
+		{
+			String[] Temp = {
 			"ttyc", // irix raw character devices
 			"ttyd", // irix basic serial ports
 			"ttyf", // irix serial ports with hardware flow
@@ -215,27 +252,76 @@ public class RXTXCommDriver implements CommDriver
 			"tty4d",// irix RS422
 			"tty4f",// irix RS422 with HSKo/HSki
 			"midi", // irix serial midi
-			"us",   // irix mapped interface
+			"us"    // irix mapped interface
+			};
+			AllKnownSerialPorts=Temp;
+		}
 
-			"cuaa", // FreeBSD Serial Ports
+		else if(osName.equals("FreeBSD")) //FIXME this is probably wrong
+		{
+			String[] Temp = {
+			"cuaa"  // FreeBSD Serial Ports
+			};
+			AllKnownSerialPorts=Temp;
+		}
 
-			"tty0", // netbsd serial ports
+		else if(osName.equals("NetBSD")) // FIXME this is probably wrong
+		{
+			String[] Temp = {
+			"tty0"  // netbsd serial ports
+			};
+			AllKnownSerialPorts=Temp;
+		}
 
+		else if(osName.equals("HP-UX"))
+		{
+			String[] Temp = {
 			"tty0p",// HP-UX serial ports
-			"tty1p",// HP-UX serial ports
+			"tty1p" // HP-UX serial ports
+			};
+			AllKnownSerialPorts=Temp;
+		}
 
-			"serial",// BeOS serial ports
+		else if(osName.equals("BeOS"))
+		{
+			String[] Temp = {
+			"serial" // BeOS serial ports
+			};
+			AllKnownSerialPorts=Temp;
+		}
 
+		else if(osName.equals("WIN32")) // FIXME this is probably wrong
+		{
+			String[] Temp = {
 			"COM"    // win32 serial ports
-		};
+			};
+			AllKnownSerialPorts=Temp;
+		}
+
+		else
+		{
+			System.out.println(osName + " ports have not been entered in RXTXCommDriver.java.  This may just be a typo in the method initialize().");
+			AllKnownSerialPorts=null;
+		}
+
 	/** Get the Parallel port prefixes for the running os
 	* Holger Lehmann
 	* July 12, 1999
 	* IBM
 	*/
-		String[] AllKnownParallelPorts={
-			"lp"    // linux printer port
-		};
+		String[] AllKnownParallelPorts;
+		if(osName.equals("Linux"))
+		{
+			String[] temp={
+				"lp"    // linux printer port
+			};
+			AllKnownParallelPorts=temp;
+		}
+		else  /* printer support is green */
+		{
+			AllKnownParallelPorts=null;
+		}
+
 		RegisterValidPorts(
 			devs,
 			getPortPrefixes(AllKnownSerialPorts),
@@ -268,8 +354,9 @@ public class RXTXCommDriver implements CommDriver
 			{
 				return new LPRPort( portName );
 			}
-		} catch( IOException e ) {
-			e.printStackTrace();
+		} catch( PortInUseException e ) {
+			System.out.println(
+				"Port in use by another application");
 		}
 		return null;
 	}
