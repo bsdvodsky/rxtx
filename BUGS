@@ -11,7 +11,7 @@ Users need to be able to read and write with serial communication...
 
 chmod 666 /dev/ttyS? 
 
-should fix the problem.
+should fix the problem.  Be sure to check the file CommAPI for common mistakes.
 
 If you run into a problem building the rxtx package please report the following
 with the bug report.
@@ -138,3 +138,5 @@ In otherwords start with a fresh build directory, rebuild, and reinstall to
 avoid the problem.
 
 7.  Older Linux Systems (libc5) should upgrade to a glibc system with libpthread-0.7 or newer.  We have run into many problems with older libraries.  SIGSEGV was the most common symptom.  Reported by  Peter Bennett <bencom@bencom.co.nz>
+
+8. DSR behavior may not be correct.  See contrib/DSR-workaround.java for details.

@@ -1,4 +1,4 @@
-1/
+
 The system crashes with a NullPointException if you enable notifications
 before your register a listener.
  
@@ -9,13 +9,13 @@ Example:
 It is ok if you first register the listener, then enable notifications
 (which is probably the best thing to do anyway).
 
+DSR does not work reliably for some people.  contrib/DSR-workaround.java
+contains a workaround the Ken Eisner contributed.  If you are able to reproduce
+the problem and find a fix for RXTX please let the maintainer know.
 
-There appears to be an off by one read()/dataavailable error when switching 
-timeouts/thresholds.  a read() fires up and waits without timeout/x bytes.  After the first read everything is ok.
-
-Buffer Size is just a var.  No memory is allocated.  This was done to duplicate the
-behavior in the behaviour table in javax.comm.CommPort.html.  Its not clear to me 
-if the buffers are just mallocs or modem buffers.  Any experts there?
+Buffer Size is just a var.  No memory is allocated.  This was done to duplicate
+the behavior in the behaviour table in javax.comm.CommPort.html.  Its not clear
+to me if the buffers are just mallocs or modem buffers.  Any experts there?
 
 While looking through the blackdown mail list, it was obvious that some people
 really want printer support.  Here is a chance to put it in themselves.
@@ -43,32 +43,69 @@ RXTXPort.java
 	look for FIXME
 
 ParallelPort support.  Needs some code.
-	./configure --enable-PRINTER will create a Makefile that uses it.
-	The SerialPort code should help one get up to speed on implementing
 	files:
-		ParallelImp.c stubs + a copy of SerialImp.c
+		ParallelImp.c stubs 
                       A  large fraction of the stubs are filled in now.
 		ParallelImp.h
 		LPRPort.java simular to RXTXPort.java + stubs.
 	Printer support was working earlier.  Recent kernel changes have 
 	probably broken the printer support.  More comments in ParallelImp.c
 
+RS485 Support
+	The basic layout is in place with no native implementation.
+	devices are not coded into RXTXDriver.java see /dev/ttyS0 and gang
+	for examples.
+	Nothing is carved in stone.  Changes will probably be needed in
+	several of the files.
+
+	files:
+		RS485.java
+		RS485Port.java
+		RS485PortEvent.java
+		RS485PortEventListener.java
+I2C Support
+	The basic layout is in place with no native implementation.
+	devices are not coded into RXTXDriver.java see /dev/ttyS0 and gang
+	for examples.
+	Nothing is carved in stone.  Changes will probably be needed in
+	several of the files.
+
+	files:
+		I2C.java
+		I2CPort.java
+		I2CPortEvent.java 
+		I2CPortEventListener.java
+
 CommPortIdentifier support. Needs some code.
+
+	This has actually expanded to a complete comm.jar implementation.
+	Contact the maintainer if you have interest in working on this.
+	Some code is withheld from the distro to maintain traditional jcl
+	functionality during the transition.
+
 	./configure --enable-RXTXIDENT will create a Makefile that uses it.
 	Plenty of example code can be found in commapi/samples/porting
 	Please dont send in Sun's code.  
 
-	Only reason I can think of for implementing CommPortIdentifier is
-	to get rid of the "Port In Use By Unknown Solaris Application"
-	message.
-
 	files:
-		CommPortEnumerator.java  All stubs.
-		CommPortIdentifier.java     "
-		CpoList.java                "
-		CpoListEntry.java           "
-		LPRPort.java                "
-		OwnershipEventThread.java   "
+		CommDriver.java
+		CommPort.java
+		CommPortEnumerator.java
+		CommPortIdentifier.java
+		CommPortOwnershipListener.java
+		CpoList.java
+		CpoListEntry.java
+		OwnershipEventThread.java
+		SerialPort.java
+		SerialPortEvent.java
+		SerialPortEventListener.java
+		UnsupportedCommOperationException.java
+		NoSuchPortException.java
+		OwnershipEventThread.java
+		ParallelPort.java
+		ParallelPortEvent.java
+		ParallelPortEventListener.java
+		PortInUseException.java
 	
 ------------------
 backwards compatibility for older linux systems.
