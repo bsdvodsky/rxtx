@@ -230,6 +230,11 @@ Trent
 
 
 /*  That should be all you need to look at in this file for porting */
+#ifdef DISABLE_LOCKFILES
+#undef UUCP
+#undef FHS
+#undef OLDUUCP
+#endif /* DISABLE_LOCKFILES */
 #ifdef UUCP
 #	define LOCK uucp_lock
 #	define UNLOCK uucp_unlock
