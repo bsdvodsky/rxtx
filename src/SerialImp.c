@@ -320,14 +320,16 @@ JNIEXPORT void JNICALL RXTXPort(nativeClose)( JNIEnv *env,
 	jclass jclazz = (*env)->GetObjectClass( env, jobj );
 	jfieldID jfid = (*env)->GetFieldID( env, jclazz, "pid", "I" );
 
+	pid = (int)( (*env)->GetIntField( env, jobj, jfid ) );
+
 	if( !pid ) {
 		(*env)->ExceptionDescribe( env );
 		(*env)->ExceptionClear( env );
 		(*env)->DeleteLocalRef( env, jclazz );
+		report("Close not detecting thread pid");
 		return;
 	}
 
-	pid = (int)( (*env)->GetIntField( env, jobj, jfid ) );
 
 	/* 
 		UNLOCK is one of three functions defined in SerialImp.h
@@ -2664,15 +2666,12 @@ void fhs_unlock( const char *filename, int openpid )
 void uucp_unlock( const char *filename, int openpid )
 {
 	struct stat buf;
-	char file[80],*p, message[80];
-	int i;
+	char file[80], message[80];
 	/* FIXME */
 
 	sprintf( message, "uucp_unlock( %s );\n", filename );
 	report( message );
-	i = strlen(filename);
-	p = (char *) filename+i;
-	while( *(p-1) != '/' && i-- != 0) p--;
+
 	if ( stat( filename, &buf ) != 0 ) 
 	{
 		/* hmm the file is not there? */
