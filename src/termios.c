@@ -24,15 +24,16 @@
 #include <stdio.h>
 #include <errno.h>
 #include "win32termios.h"
+
 /*
  * odd malloc.h error with lcc compiler
  * winsock has FIONREAD with lcc
  */
 
 #ifdef __LCC__
-#   include <winsock.h>
+#	include <winsock.h>
 #else
-#   include <malloc.h>
+#	include <malloc.h>
 #endif
 
 
@@ -47,7 +48,7 @@ struct termios_list {
 struct termios_list *tl[SIZE];
 
 void set_errno(int error) {
-  my_errno = error;
+	my_errno = error;
 }
 
 void usleep(unsigned long usec)
