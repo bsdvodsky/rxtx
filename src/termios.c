@@ -642,8 +642,7 @@ BOOL init_termios(struct termios *ttyset )
 	if ( !ttyset )
 		return FALSE;
 	memset( ttyset, 0, sizeof( struct termios ) );
-	//cfsetospeed( ttyset, B9600 );
-	cfsetospeed( ttyset, 14400 );
+	cfsetospeed( ttyset, B9600 );
 	cfmakeraw( ttyset );
 	ttyset->c_cc[VINTR] = 0x03;	/* 0: C-c */
 	ttyset->c_cc[VQUIT] = 0x1c;	/* 1: C-\ */
@@ -986,7 +985,7 @@ serial_open()
    comments:    
 ----------------------------------------------------------*/
 
-int serial_open( const char *filename, int flags )
+int serial_open( const char *filename, int flags, ... )
 {
 	struct termios_list *port;
 

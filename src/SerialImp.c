@@ -72,6 +72,28 @@
 #if defined(__sun__)
 #	include <sys/filio.h>
 #	include <sys/mkdev.h>
+
+/*----------------------------------------------------------
+cfmakeraw
+
+   accept:      termios to be set to raw
+   perform:     initializes the termios structure.
+   return:      int 0 on success
+   exceptions:  none
+   comments:    this is how linux cfmakeraw works.
+		termios(3) manpage
+----------------------------------------------------------*/
+
+int cfmakeraw ( struct termios *term )
+{
+	term->c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
+	term->c_oflag &= ~OPOST;
+	term->c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
+	term->c_cflag &= ~(CSIZE|PARENB);
+	term->c_cflag |= CS8;
+	return( 0 );
+}
+
 #endif /* __sun__ */
 #if defined(__hpux__)
 #	include <sys/modem.h>
@@ -128,8 +150,14 @@ JNIEXPORT void JNICALL RXTXPort(Initialize)(
 
 	/* POSIX signal handling functions */
 #if !defined(WIN32)
-	struct sigaction handler;
+	struct sigaction handler, ignorer;
+
+	ignorer.sa_handler = SIG_IGN;
+
 	sigaction( SIGIO, NULL, &handler );
+	sigaction( SIGINT, NULL, NULL );
+	signal( SIGIO, SIG_IGN );
+
 	if( !handler.sa_handler ) signal( SIGIO, SIG_IGN );
 #endif /* !WIN32 */
 #if defined(DEBUG) && defined(__linux__)
@@ -170,12 +198,26 @@ JNIEXPORT jint JNICALL RXTXPort(open)(
 	struct termios ttyset;
 	int fd;
 	const char *filename = (*env)->GetStringUTFChars( env, jstr, 0 );
+	char message[80];
 
-	if (!fhs_lock(filename))
+	/* 
+		LOCK is one of three functions defined in SerialImp.h
+
+			uucp_lock		Solaris
+			fhs_lock		Linux
+			system_does_not_lock	Win32
+	*/
+			
+	if ( LOCK( filename) )
 	{
 		(*env)->ReleaseStringUTFChars( env, jstr, filename );
-		printf("locking has failed\n");
+		fprintf( stderr, "locking has failed for %s\n", filename );
 		goto fail;
+	}
+	else
+	{
+		sprintf( message, "locking worked for %s\n", filename );
+		report( message );
 	}
 
 	do {
@@ -206,6 +248,8 @@ JNIEXPORT jint JNICALL RXTXPort(open)(
 	fcntl( fd, F_SETFL, FASYNC );
 #endif /* FASYNC */
 
+	sprintf( message, "fd returned is %i\n", fd );
+	report( message );
 	return (jint)fd;
 
 fail:
@@ -230,12 +274,20 @@ JNIEXPORT void JNICALL RXTXPort(nativeClose)( JNIEnv *env,
 	int fd = get_java_var( env, jobj,"fd","I" );
 	const char *filename = (*env)->GetStringUTFChars( env, jstr, 0 );
 
+	/* 
+		UNLOCK is one of three functions defined in SerialImp.h
+
+			uucp_unlock		Solaris
+			fhs_unlock		Linux
+			system_does_not_unlock	Win32
+	*/
+
 	if (fd > 0)
 	{
 		do {
 			result=close (fd);
 		}  while (result < 0 && errno==EINTR);
-		fhs_unlock(filename);
+		UNLOCK(filename);
 	}
 	(*env)->ReleaseStringUTFChars( env, jstr, filename );
 	return;
@@ -566,10 +618,15 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 {
 	int fd = get_java_var( env, jobj,"fd","I" );
 	int result=0,total=0,i;
-
 	unsigned char *bytes = (unsigned char *)malloc( count );
-
 	jbyte *body = (*env)->GetByteArrayElements( env, jbarray, 0 );
+#if defined ( __sun__ )
+	struct timespec retspec, tspec;
+
+	retspec.tv_sec = 0;
+	retspec.tv_nsec = 50000;
+#endif /* __sun */
+
 	for( i = 0; i < count; i++ ) bytes[ i ] = body[ i + offset ];
 	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
 	do {
@@ -579,10 +636,29 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 		}
 	}  while ((total<count)||(result < 0 && errno==EINTR));
 	free( bytes );
+	/*
+		50 ms sleep to make sure read can get in
+
+		what I think is happening here is the data writen is causing
+		signals, the event loop can't select with data available
+
+		I think things like BlackBox with 2 ports open are getting
+		signals for both the reciever and transmitter since they
+		are the same PID.
+
+		Things just start spinning out of control after that.
+	*/
+#if defined (__sun__ )
+	//do {
+	//	tspec = retspec;
+		nanosleep( &tspec, &retspec );
+	//} while( tspec.tv_nsec != 0 );
+#else
+	usleep(50000);
+#endif /* __sun__ */
 	if( result < 0 ) throw_java_exception( env, IO_EXCEPTION,
 		"writeArray", strerror( errno ) );
 }
-
 
 /*----------------------------------------------------------
 RXTXPort.drain
@@ -1113,7 +1189,6 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 {
 	int fd, ret, change;
 	fd_set rfds;
-	struct timeval tv_sleep;
 	unsigned int mflags, omflags;
 	jboolean interrupted = 0;
 #if defined TIOCSERGETLSR
@@ -1129,6 +1204,12 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 #if defined(TIOCSERGETLSR)
 	int has_tiocsergetlsr = 1;
 #endif /* TIOCSERGETLSR */
+	struct timeval tv_sleep;
+#if defined (__sun__)
+	struct timespec retspec, tspec;
+	retspec.tv_sec = 0;
+	retspec.tv_nsec = 100000000;
+#endif  /* __sun__ */
 
 	fd = get_java_var(env, jobj, "fd", "I");
 
@@ -1210,7 +1291,7 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 			osis = sis;
 		}
 #endif /*  TIOCGICOUNT */
-	       /* A Portable implementation */
+		/* A Portable implementation */
 
 		if( ioctl( fd, TIOCMGET, &mflags ) ) break;
 
@@ -1229,11 +1310,31 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 		omflags = mflags;
 
 		ioctl( fd, FIONREAD, &change );
+	/*
+		50 ms sleep to make sure read can get in
+
+		what I think is happening here is the data writen is causing
+		signals, the event loop can't select with data available
+
+		I think things like BlackBox with 2 ports open are getting
+		signals for both the reciever and transmitter since they
+		are the same PID.
+
+		Things just start spinning out of control after that.
+	*/
 		if( change )
 		{
 			if(!send_event( env, jobj, SPE_DATA_AVAILABLE, 1 ))
 			{
-				usleep(100000); /* select wont block */
+				/* select wont block */
+#if defined (__sun__ )
+			//	do {
+			//		tspec = retspec;
+					nanosleep( &tspec, &retspec );
+			//	} while( tspec.tv_nsec != 0 );
+#else
+				usleep(100000);
+#endif /* __sun__ */
 			}
 		}
 	}
@@ -1252,8 +1353,12 @@ RXTXCommDriver.testRead
 		support for non serial ports Trent
 ----------------------------------------------------------*/
 
-JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(JNIEnv *env,
-	jobject jobj, jstring tty_name, jint port_type )
+JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
+	JNIEnv *env,
+	jobject jobj,
+	jstring tty_name,
+	jint port_type
+)
 {
 	struct termios ttyset;
 	char c;
@@ -1261,7 +1366,15 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(JNIEnv *env,
 	const char *name = (*env)->GetStringUTFChars(env, tty_name, 0);
 	int ret = JNI_TRUE;
 
-	if (!fhs_lock(name))
+	/* 
+		LOCK is one of three functions defined in SerialImp.h
+
+			uucp_lock		Solaris
+			fhs_lock		Linux
+			system_does_not_lock	Win32
+	*/
+
+	if ( LOCK( name ) )
 	{
 		(*env)->ReleaseStringUTFChars(env, tty_name, name);
 		return JNI_FALSE;
@@ -1270,13 +1383,14 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(JNIEnv *env,
 	/* CLOCAL eliminates open blocking on modem status lines */
 /*
 	if ((fd = open(name, O_RDONLY | CLOCAL)) <= 0) {
+		fprintf( stderr "testRead() open failed\n" );
 		ret = JNI_FALSE;
 		goto END;
 	}
 */
 	do {
-		fd=open (name, O_RDWR | O_NOCTTY | O_NONBLOCK );
-	}  while (fd < 0 && errno==EINTR);
+		fd=open ( name, O_RDWR | O_NOCTTY | O_NONBLOCK );
+	}  while ( fd < 0 && errno==EINTR );
 	if( fd < 0 )
 	{
 		ret = JNI_FALSE;
@@ -1294,14 +1408,16 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(JNIEnv *env,
 		}
 
 		/* save, restore later */
-		if ((saved_flags = fcntl(fd, F_GETFL)) < 0) {
+		if ( ( saved_flags = fcntl(fd, F_GETFL ) ) < 0) {
+			fprintf( stderr, "testRead() fcntl(F_GETFL) failed\n" );
 			ret = JNI_FALSE;
 			goto END;
 		}
 
-		memcpy(&saved_termios, &ttyset, sizeof(struct termios));
+		memcpy( &saved_termios, &ttyset, sizeof( struct termios ) );
 
-		if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
+		if ( fcntl( fd, F_SETFL, O_NONBLOCK ) < 0 ) {
+			fprintf( stderr, "testRead() fcntl(F_SETFL) failed\n" );
 			ret = JNI_FALSE;
 			goto END;
 		}
@@ -1309,16 +1425,18 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(JNIEnv *env,
 		cfmakeraw(&ttyset);
 		ttyset.c_cc[VMIN] = ttyset.c_cc[VTIME] = 0;
 
-		if (tcsetattr(fd, TCSANOW, &ttyset) < 0) {
+		if ( tcsetattr( fd, TCSANOW, &ttyset) < 0 ) {
+			fprintf( stderr, "testRead() tcsetattr failed\n" );
 			ret = JNI_FALSE;
-			tcsetattr(fd, TCSANOW, &saved_termios);
+			tcsetattr( fd, TCSANOW, &saved_termios );
 			goto END;
 		}
-		if (read(fd, &c, 1) < 0)
+		if ( read( fd, &c, 1 ) < 0 )
 		{
 #ifdef EWOULDBLOCK
 			if ( errno != EWOULDBLOCK )
 			{
+				fprintf( stderr, "testRead() read failed\n" );
 				ret = JNI_FALSE;
 			}
 #else
@@ -1327,13 +1445,22 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(JNIEnv *env,
 		}
 
 		/* dont walk over unlocked open devices */
-		tcsetattr(fd, TCSANOW, &saved_termios);
-		fcntl(fd, F_SETFL, saved_flags);
+		tcsetattr( fd, TCSANOW, &saved_termios );
+		fcntl( fd, F_SETFL, saved_flags );
 	}
+
+	/* 
+		UNLOCK is one of three functions defined in SerialImp.h
+
+			uucp_unlock		Solaris
+			fhs_unlock		Linux
+			system_does_not_unlock	Win32
+	*/
+
 END:
-	(*env)->ReleaseStringUTFChars(env, tty_name, name);
-	fhs_unlock(name);
-	close(fd);
+	UNLOCK(name);
+	(*env)->ReleaseStringUTFChars( env, tty_name, name );
+	close( fd );
 	return ret;
 }
 #if defined(__APPLE__)
@@ -1356,19 +1483,19 @@ createSerialIterator(io_iterator_t *serialIterator)
     CFMutableDictionaryRef    classesToMatch;
     if ((kernResult=IOMasterPort(NULL, &masterPort)) != KERN_SUCCESS)
     {
-        printf("IOMasterPort returned %d\n", kernResult);
-        return kernResult;
+	printf("IOMasterPort returned %d\n", kernResult);
+	return kernResult;
     }
     if ((classesToMatch = IOServiceMatching(kIOSerialBSDServiceValue)) == NULL)
     {
-        printf("IOServiceMatching returned NULL\n");
-        return kernResult;
+	printf("IOServiceMatching returned NULL\n");
+	return kernResult;
     }
     CFDictionarySetValue(classesToMatch, CFSTR(kIOSerialBSDTypeKey), CFSTR(kIOSerialBSDRS232Type));
     kernResult = IOServiceGetMatchingServices(masterPort, classesToMatch, serialIterator);
     if (kernResult != KERN_SUCCESS)
     {
-        printf("IOServiceGetMatchingServices returned %d\n", kernResult);
+	printf("IOServiceGetMatchingServices returned %d\n", kernResult);
     }
     return kernResult;
 }
@@ -1762,13 +1889,14 @@ void report(char *msg)
 #endif /* DEBUG */
 }
 
+#ifndef WIN32
 /*----------------------------------------------------------
  fhs_lock
 
    accept:      The name of the device to try to lock
                 termios struct
    perform:     Create a lock file if there is not one already.
-   return:      0 on failure 1 on success
+   return:      1 on failure 0 on success
    exceptions:  none
    comments:    This is for linux and freebsd only currently.  I see SVR4 does
                 this differently and there are other proposed changes to the
@@ -1776,8 +1904,56 @@ void report(char *msg)
 
 		more reading:
 
+----------------------------------------------------------*/
+int fhs_lock( const char *filename )
+{
+	/*
+	 * There is a zoo of lockdir possibilities
+	 * Its possible to check for stale processes with most of them.
+	 * for now we will just check for the lockfile on most
+	 * Problem lockfiles will be dealt with.  Some may not even be in use.
+	 *
+	 */
+	int fd,i;
+	char lockinfo[12], message[80];
+	char file[80], *p;
+
+	i = strlen( filename );
+	p = ( char * ) filename + i;
+	/*  FIXME  need to handle subdirectories /dev/cua/... */
+	while( *( p - 1 ) != '/' && i-- != 1 ) p--;
+	sprintf( file, "%s/LCK..%s", LOCKDIR, p );
+	if ( check_lock_status( filename ) )
+	{
+		fprintf(stderr, "fhs_lock() lockstatus fail\n");
+		return 1;
+	}
+	fd = open( file, O_CREAT | O_WRONLY | O_EXCL, 0666 );
+	if( fd < 0 )
+	{
+		fprintf(stderr, 
+			"RXTX fhs_lock() Error: creating lock file: %s\n",
+			file );
+		return 1;
+	}
+	sprintf( lockinfo, "%10d\n",(int) getpid() );
+	write( fd, lockinfo, 11 );
+	close( fd );
+	return 0;
+}
+/*----------------------------------------------------------
+ uucp_lock
+
+   accept:     char * filename.  Device to be locked 
+   perform:    Try to get a uucp_lock
+   return:     int 0 on success
+   exceptions: none 
+   comments: 
 		The File System Hierarchy Standard
 		http://www.pathname.com/fhs/
+
+		UUCP Lock Files
+		http://docs.freebsd.org/info/uucp/uucp.info.UUCP_Lock_Files.html
 
 		FSSTND
 		ftp://tsx-11.mit.edu/pub/linux/docs/linux-standards/fsstnd/
@@ -1788,149 +1964,115 @@ void report(char *msg)
 		"UNIX Network Programming", W. Richard Stevens,
 		Prentice-Hall, 1990, pages 96-101.
 
-----------------------------------------------------------*/
-int fhs_lock( const char *filename )
-{
-#ifdef LOCKFILES
-	int i,j,fd, pid;
-	char lockinfo[12], file[80], pid_buffer[20], message[80],*p;
-	struct stat buf;
-	struct stat buf2;
-	const char *lockdirs[]={ "/etc/locks", "/usr/spool/kermit",
-		"/usr/spool/locks", "/usr/spool/uucp", "/usr/spool/uucp/",
-		"/usr/spool/uucp/LCK", "/var/lock", "/var/lock/modem",
-		"/var/spool/lock", "/var/spool/locks", "/var/spool/uucp",NULL
-	};
-	struct group *g=getgrnam("uucp");
-	struct passwd *user=getpwuid(geteuid());
+		There is much to do here.
 
-	/*  This checks if the effective user is in group uucp so we can
-	 *  create lock files.  If not we give them a warning and bail.
-	 *  If its root we just skip the test.
-	 */
-	if(strcmp(user->pw_name,"root"))
-	{
-		while(*g->gr_mem)
-		{
-			if(!strcmp(*g->gr_mem,user->pw_name))
-				break;
-			*g->gr_mem++;
-		}
-		if(!*g->gr_mem)
-		{
-			printf(UUCP_ERROR);
-			return 0;
-		}
-	}
-
-	/* no lock dir? just return success */
-
-	if (stat(LOCKDIR,&buf)!=0)
-	{
-		report("could not find lock directory.\n");
-		return 1;
-	}
-
-	/*
-	 * There is a zoo of lockdir possibilities
-	 * Its possible to check for stale processes with most of them.
-	 * for now we will just check for the lockfile on most
-	 * Problem lockfiles will be dealt with.  Some may not even be in use.
-	 *
-	 */
-
-	j=0;
-	while(lockdirs[j])
-	{
-	        if (stat(lockdirs[j],&buf2) == 0)
-		{
-	       
-		        if((buf2.st_dev != buf.st_dev)
-                           || (buf2.st_ino != buf.st_ino))
-			{
-				i=strlen(filename);
-				p=(char *) filename+i;
-				while(*(p-1)!='/' && i-- !=1) p--;
-				sprintf(file,"%s/LCK..%s",lockdirs[j],p);
-				if(stat(file,&buf)==0)
-				{
-					printf("---------------------------\n");
-					printf(UNEXPECTED_LOCK_FILE, file);
-					printf("---------------------------\n");
-					return 0;
-				}
-			}
-		}
-		j++;
-	}
-	
-	/*
-	check if the device is already locked
-
-	There is much to do here.
-
-		1) UUCP style locks
+		1) UUCP style locks (done)
 			/var/spool/uucp
 		2) SVR4 locks
 			/var/spool/locks
-		3) FSSTND locks
-			/var/lock (done)
+		3) FSSTND locks (done)
+			/var/lock
 		4) handle stale locks  (done except kermit locks)
 		5) handle minicom lockfile contents (FSSTND?)
 			"     16929 minicom root\n"  (done)
 		6) there are other Lock conventions that use Major and Minor
 		   numbers...
 		7) Stevens recommends LCK..<pid>
-	most are caught above.  If they turn out to be problematic rather than
-	an exercise, we will handle them.
-	*/
 
-	i=strlen(filename);
-	p=(char *) filename+i;
-	while(*(p-1)!='/' && i-- !=1) p--;
-	sprintf(file,"%s/LCK..%s",LOCKDIR,p);
+		most are caught above.  If they turn out to be problematic
+		rather than an exercise, we will handle them.
 
-	if(stat(file,&buf)==0)
+----------------------------------------------------------*/
+int uucp_lock( const char *filename )
+{
+	char lockfilename[80], lockinfo[12], message[80];
+	char name[80];
+	int fd;
+	struct stat buf;
+
+	sprintf( message, "uucp_lock( %s );\n", filename ); 
+	report( message );
+
+	if ( check_lock_status( filename ) )
 	{
-		/* check if its a stale lock */
-		fd=open(file,O_RDONLY);
-		read(fd,pid_buffer,11);
-		close(fd);
-		sscanf(pid_buffer, "%d", &pid);
-
-		if( kill((pid_t) pid, 0) && errno==ESRCH )
-		{
-			fprintf(stderr,
-				"RXTX Warning:  Removing stale lock file.\n");
-			if(unlink(file) != 0)
-			{
-				snprintf(message, 80, "RXTX Error:  Unable to \
-					remove stale lock file: %s\n",
-					file
-				);
-				fprintf(stderr, message);
-				return 0;
-			}
-		}
-		else return 0;
+		report( "RXTX uucp check_lock_status true\n" );
+		return 1;
 	}
-	fd=open(file, O_CREAT | O_WRONLY | O_EXCL, 0666);
-	if(fd < 0)
+	if ( stat( LOCKDIR, &buf ) != 0 )
 	{
-		snprintf(message, 80,
-			"RXTX Error: Unable to create lock file: %s\n\n", file);
-		fprintf(stderr, message);
-		return 0;
+		report("RXTX uucp_lock() could not find lock directory.\n");
+		return 1;
 	}
-	sprintf(lockinfo,"%10d\n",getpid());
-	write(fd, lockinfo,11);
-	close(fd);
-	return 1;
+	if ( stat( filename, &buf ) != 0 )
+	{
+		report("RXTX uucp_lock() could not find device.\n");
+		printf("device was %s\n", name);
+		return 1;
+	}
+	sprintf( lockfilename, "%s/LK.%03d.%03d.%03d",
+		LOCKDIR,
+		(int) major( buf.st_dev ),
+	 	(int) major( buf.st_rdev ),
+		(int) minor( buf.st_rdev )
+	);
+	sprintf( lockinfo, "%10d\n", (int) getpid() );
+	if ( stat( lockfilename, &buf ) == 0 )
+	{
+		fprintf( stderr, "RXTX uucp_lock() %s is there\n",
+			lockfilename );
+		return 1;
+	}
+	fd = open( lockfilename, O_CREAT | O_WRONLY | O_EXCL, 0666 );
+	if( fd < 0 )
+	{
+		fprintf( stderr,
+			"RXTX uucp_lock() Error: creating lock file: %s\n",
+			lockfilename );
+		return 1;
+	}
+	write( fd, lockinfo,11 );
+	close( fd );
+	return 0;
+}
 
-#else /* FIXME... This needs to work on all systems that use Lock Files */
-	return 1;
-#endif /* LOCKFILES */
 
+/*----------------------------------------------------------
+ check_lock_status
+
+   accept:      the lock name in question
+   perform:     Make sure everything is sane
+   return:      0 on success
+   exceptions:  none
+   comments:    
+----------------------------------------------------------*/
+int check_lock_status( const char *filename )
+{
+	struct stat buf;
+	/*  First, can we find the directory? */
+
+	if ( stat( LOCKDIR, &buf ) != 0 )
+	{
+		report("could not find lock directory.\n");
+		return 1;
+	}
+
+	/*  OK.  Are we able to write to it? */
+
+	if ( check_group_uucp() )
+	{
+		report("No permission to create lock file\n");
+		return 1;
+	}
+
+	/* is the device alread locked */
+
+	if ( is_device_locked( filename ) )
+	{
+		report("device is locked by another application\n");
+		return 1;	
+	}
+	return 0;
+	
 }
 
 /*----------------------------------------------------------
@@ -1946,17 +2088,311 @@ int fhs_lock( const char *filename )
 ----------------------------------------------------------*/
 void fhs_unlock( const char *filename )
 {
-#ifdef LOCKFILES
 	char file[80],*p;
 	int i;
 
-	i=strlen(filename);
-	p=(char *) filename+i;
-	while(*(p-1)!='/' && i-- !=0) p--;
-	sprintf(file,"%s/LCK..%s",LOCKDIR,p);
+	i = strlen( filename );
+	p = ( char * ) filename + i;
+	/*  FIXME  need to handle subdirectories /dev/cua/... */
+	while( *( p - 1 ) != '/' && i-- != 1 ) p--;
+	sprintf( file, "%s/LCK..%s", LOCKDIR, p );
 
-	unlink(file);
-#endif /* LOCKFILES */
+	if( !check_lock_pid( file ) )
+	{
+		unlink(file);
+	}
+}
+
+/*----------------------------------------------------------
+ uucp_unlock
+
+   accept:     char *filename the device that is locked      
+   perform:    remove the uucp lockfile if it exists 
+   return:     none 
+   exceptions: none 
+   comments:   http://docs.freebsd.org/info/uucp/uucp.info.UUCP_Lock_Files.html 
+----------------------------------------------------------*/
+void uucp_unlock( const char *filename )
+{
+	struct stat buf;
+	char file[80],*p, message[80];
+	int i;
+	/* FIXME */
+
+	sprintf( message, "uucp_unlock( %s );\n", filename );
+	report( message );
+	i = strlen(filename);
+	p = (char *) filename+i;
+	while( *(p-1) != '/' && i-- != 0) p--;
+	if ( stat( filename, &buf ) != 0 ) 
+	{
+		/* hmm the file is not there? */
+		report("uucp() unlock no such device\n");
+		return;
+	}
+	sprintf( file, LOCKDIR"/LK.%03d.%03d.%03d",
+		(int) major( buf.st_dev ),
+	 	(int) major( buf.st_rdev ),
+		(int) minor( buf.st_rdev )
+	);
+	if ( stat( file, &buf ) != 0 ) 
+	{
+		/* hmm the file is not there? */
+		report("uucp() unlock no such lockfile\n");
+		return;
+	}
+	if( !check_lock_pid( file ) )
+	{ 
+		sprintf( message, "uucp unlinking %s\n", file );
+		report( message );
+		unlink(file);
+	}
+	else
+	{
+		sprintf( message, "uucp unlinking failed %s\n", file );
+		report( message );
+	}
+}
+
+/*----------------------------------------------------------
+ check_lock_pid
+
+   accept:     the name of the lockfile 
+   perform:    make sure the lock file is ours.
+   return:     0 on success
+   exceptions: none
+   comments:   
+----------------------------------------------------------*/
+int check_lock_pid( const char *file )
+{
+	int fd;
+	char pid_buffer[12];
+
+	fd=open( file, O_RDONLY );
+	if ( fd < 0 )
+	{
+		return( 1 );
+	}
+	if ( read( fd, pid_buffer, 11 ) < 0 )
+	{
+		close( fd );
+		return( 1 );
+	}
+	close( fd );
+	if ( atol( pid_buffer ) != getpid() )
+	{
+		return( 1 );
+	}
+	return( 0 );
+}
+/*----------------------------------------------------------
+ check_group_uucp
+
+   accept:     none
+   perform:    check if the user is root or in group uucp
+   return:     0 on success 
+   exceptions: none 
+   comments:   
+		This checks if the effective user is in group uucp so we can
+		create lock files.  If not we give them a warning and bail.
+		If its root we just skip the test.
+----------------------------------------------------------*/
+int check_group_uucp()
+{
+	struct group *g = getgrnam( "uucp" );
+	struct passwd *user = getpwuid( geteuid() );
+
+	if( strcmp( user->pw_name, "root" ) )
+	{
+		while( *g->gr_mem )
+		{
+			if( !strcmp( *g->gr_mem, user->pw_name ) )
+			{
+				break;
+			}
+			*g->gr_mem++;
+		}
+		if( !*g->gr_mem )
+		{
+			printf( UUCP_ERROR );
+			return 1;
+		}
+	}
+	return 0;
+}
+
+/*----------------------------------------------------------
+ is_device_locked
+
+   accept:      char * filename.  The device in question including the path.
+   perform:     see if one of the many possible lock files is aready there
+		if there is a stale lock, remove it.
+   return:      1 if the device is locked or somethings wrong.
+		0 if its possible to create our own lock file.
+   exceptions:  none
+   comments:    check if the device is already locked
+----------------------------------------------------------*/
+int is_device_locked( const char *filename )
+{
+	const char *lockdirs[] = { "/etc/locks", "/usr/spool/kermit",
+		"/usr/spool/locks", "/usr/spool/uucp", "/usr/spool/uucp/",
+		"/usr/spool/uucp/LCK", "/var/lock", "/var/lock/modem",
+		"/var/spool/lock", "/var/spool/locks", "/var/spool/uucp",NULL
+	};
+	const char *lockprefixes[] = { "LK..", "lk..", "LK." }; 
+	char *p, file[80], pid_buffer[20], message[80];
+	int i = 0, j, k, fd , pid;
+	struct stat buf;
+	struct stat buf2;
+
+	i = strlen( filename );
+	p = ( char * ) filename+i;
+	while( *( p-1 ) != '/' && i-- !=1 ) p--;
+	sprintf( file, "%s/%s%s", LOCKDIR, LOCKFILEPREFIX, p );
+
+	while( lockdirs[i] )
+	{
+		/*
+		   Look for lockfiles in all known places other than the
+		   defined lock directory for this system
+		*/
+		if( ( stat( file, &buf2 ) == 0 ) &&
+			strncmp( lockdirs[i], LOCKDIR, strlen( lockdirs[i] ) )
+		)
+		{
+			if ( ( buf2.st_dev != buf.st_dev ) ||
+				( buf2.st_ino != buf.st_ino ) )
+			{
+				j = strlen( filename );
+				p = ( char *  ) filename + j;
+				
+		/*
+		   FIXME
+		   SCO Unix use lowercase all the time
+		   I'm not sure if the define is correct
+			taj
+		*/
+				while( *( p-1 ) != '/' && j-- != 1 )
+				{
+#if defined ( __sco__ )
+					*p = tolower(*p);
+#endif /* __sco__ */
+					p--;
+				}
+				k=0;
+				while ( lockprefixes[k] )
+				{
+					/* FHS style */
+					sprintf( file, "%s/%s%s", lockdirs[i],
+						lockprefixes[k++], p );
+					if( stat( file, &buf ) == 0 )
+					{
+						fprintf( stderr, UNEXPECTED_LOCK_FILE );
+						return 1;
+					}
+
+					/* UUCP style */
+					sprintf( file, "%s/%s%03d.%03d.%03d",
+						lockdirs[i],
+						lockprefixes[k++],
+						(int) major( buf.st_dev ),
+						(int) major( buf.st_rdev ),
+						(int) minor( buf.st_rdev )
+					);
+					if( stat( file, &buf ) == 0 )
+					{
+						fprintf( stderr, UNEXPECTED_LOCK_FILE );
+						return 1;
+					}
+				}
+			}
+		}
+		i++;
+	}
+
+	/*
+		OK.  We think there are no unexpect lock files for this device
+		Lets see if there any stale lock files that need to be
+		removed.
+	*/
+		 
+#ifdef FHS
+	/*  FHS standard locks */
+		i = strlen( filename );
+		p = ( char * ) filename + i;
+		while( *(p-1) != '/' && i-- != 1) p--;
+		sprintf( file, "%s/%s%s", LOCKDIR, LOCKFILEPREFIX, p );
+#else 
+	/*  UUCP standard locks */
+		if ( stat( filename, &buf ) != 0 )
+		{
+			report("RXTX is_device_locked() could not find device.\n");
+			return 1;
+		}
+		sprintf( file, "%s/LK.%03d.%03d.%03d",
+			LOCKDIR,
+			(int) major( buf.st_dev ),
+	 		(int) major( buf.st_rdev ),
+			(int) minor( buf.st_rdev )
+		);
+
+#endif /* FHS */
+
+	if( stat( file, &buf )==0 )
+	{
+
+		/* check if its a stale lock */
+		fd=open( file, O_RDONLY );
+		read( fd, pid_buffer, 11 );
+		close( fd );
+		sscanf( pid_buffer, "%d", &pid );
+
+		if( kill( (pid_t) pid, 0 ) && errno==ESRCH )
+		{
+			fprintf( stderr,
+				"RXTX Warning:  Removing stale lock file. %s\n",
+				file );
+			if( unlink( file ) != 0 )
+			{
+				snprintf( message, 80, "RXTX Error:  Unable to \
+					remove stale lock file: %s\n",
+					file
+				);
+				report( message );
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+#endif /* WIN32 */
+
+/*----------------------------------------------------------
+ system_does_not_lock
+
+   accept:      the filename the system thinks should be locked.
+   perform:     avoid trying to create lock files on systems that dont use them
+   return:      0 for success ;)
+   exceptions:  none
+   comments:    OS's like Win32 may not have lock files.
+----------------------------------------------------------*/
+int system_does_not_lock( const char * filename )
+{
+	return 0;
+}
+
+/*----------------------------------------------------------
+ system_does_not_unlock
+
+   accept:      the filename the system thinks should be locked.
+   perform:     avoid trying to create lock files on systems that dont use them
+   return:      none
+   exceptions:  none
+   comments:    OS's like Win32 may not have lock files.
+----------------------------------------------------------*/
+void system_does_not_unlock( const char * filename )
+{
+	return;
 }
 
 /*----------------------------------------------------------

@@ -243,7 +243,58 @@ A.  Japanese
 		is provided for people that may have demanding needs and coding
 		ability. 
 
-		Instructions unique to win32 builds.
+		There is only serial port code at this time.
+
+		Three ways of compiling win32 libraries are offered:
+
+			mingw32 tools in DOS
+			lcc tools in DOS
+			cross-compiling from Linux
+
+		----------------- mingw32 tools in DOS -----------------------
+
+		Install mingw32  http://www.mingw.org
+		Install a jdk    http://java.sun.com/j2se
+		Make sure the ming32\bin and jdk\bin directories are in your
+		path.
+		In the rxtx top directory to the following:
+		mkdir build
+		copy Makefile.mingw32 build\Makefile
+		cd build
+		edit the Makefile and make sure the directories are correct.
+		execute the following:
+			make
+			make install
+		
+		----------------- lcc tools in DOS ---------------------------
+
+		Install a jdk    http://java.sun.com/j2se
+		Install lcc http://www.cs.virginia.edu/~lcc-win32/
+
+		A make file (Makefile.lcc) for compiling rxtx with lcc
+		contributed by Valentin Pavlov
+
+		You will need a config.h file in the src directory.  Other
+		builds usually generate them automatically.  The following
+		should work.
+
+		#define HAVE_FCNTL_H
+		#define HAVE_SIGNAL_H
+		#undef HAVE_SYS_FCNTL_H
+		#undef HAVE_SYS_FILE_H
+		#undef HAVE_SYS_SIGNAL_H
+		#undef HAVE_TERMIOS_H
+		#undef HAVE_SYS_TIME_H
+
+		if you know how to create the above in a dos Makefile send in			the changes.
+
+		the following commands should then work fine on the command
+		line.
+
+		cd src
+		make -f ..\Makefile.lcc
+
+		----------------- cross-compiling from Linux -----------------
 
 		Grab ming32:
 

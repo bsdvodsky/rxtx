@@ -54,6 +54,12 @@ typedef unsigned char   cc_t;
 typedef unsigned int    speed_t;
 typedef unsigned int    tcflag_t;
 
+struct timespec
+{
+	time_t	tv_sec;
+	long	tv_nsec;
+};
+
 
 
 #define NCCS 32
@@ -101,7 +107,7 @@ struct serial_icounter_struct {
 	int reserved[9]; 	/* unused */
 };
 
-int serial_open(const char *File, int flags);
+int serial_open(const char *File, int flags, ... );
 int serial_read(int fd, void *b, int size);
 int serial_write(int fd, char *Str, int length);
 /*

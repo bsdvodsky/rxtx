@@ -348,6 +348,14 @@ public class RXTXCommDriver implements CommDriver
 					};
 					CandidatePortPrefixes=Temp;
 				}
+				else if(osName.equals("Solaris"))
+				{
+					String[] Temp = {
+						"term",
+						"cua"
+					};
+					CandidatePortPrefixes=Temp;
+				}
 				else if(osName.equals("HP-UX"))
 				{
 					String[] Temp = {
