@@ -15,7 +15,7 @@ DIE=0
     DIE=1
 }
 
-# avoid libtool on Mac OS X codename Darwin Dmitry 
+# avoid libtool on Mac OS X codename Darwin Dmitry
 
 
 if test `uname` != "Darwin"; then
@@ -81,10 +81,10 @@ do
     fi
 done
 
-if test x$NOCONFIGURE = x; then
+#if test x$NOCONFIGURE = x; then
 #echo running $srcdir/configure --enable-maintainer-mode "$@"
 #$srcdir/configure --enable-maintainer-mode "$@" \
 #&& echo Now type \`make\' to compile the $PKG_NAME
 #else
-echo Skipping configure process.
-fi
+#echo Skipping configure process.
+#fi
