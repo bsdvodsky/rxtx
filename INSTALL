@@ -606,6 +606,8 @@ Be careful.  The lock file code does not support kermit style lock files or
 lock files in /var/spool.  Its sure to fail if your using subdirectories in
 /dev or do not have /dev.
 
+Lockfiles are enabled on Linux hosts.
+
 U.  How can I tell which version of rxtx is installed?
 
 Version information is not documented in Sun's CommAPI so this is probably
