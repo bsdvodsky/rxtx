@@ -255,7 +255,6 @@ A.  Japanese
 		prebuilt Binaries:
 		http://www.devolution.com/~slouken/SDL/Xmingw32/mingw32-linux-x86-glibc-2.1.tar.gz
 
-
 		I built the dll with jdk-1.2.2 for linux using jdk-1.2.2 
 		include files from the win32 JDK.
 
@@ -762,3 +761,9 @@ TrentJarvi@yahoo.com
 You made it this far.. what is one more line.
 
 Sun, Solaris and Java are registered trademarks of Sun Microsystems, Inc.
+
+
+reminder:
+
+redhat 7.1 needs:
+export LD_ASSUME_KERNEL=2.2.5
