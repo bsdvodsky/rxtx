@@ -89,7 +89,7 @@ int translate_speed( JNIEnv*, jint  );
 int translate_data_bits( JNIEnv *, int *, jint );
 int translate_stop_bits( JNIEnv *, int *, jint );
 int translate_parity( JNIEnv *, int *, jint );
-int read_byte_array( int, unsigned char *, int );
+int read_byte_array( int, unsigned char *, int, int );
 int get_java_var( JNIEnv *, jobject, char *, char * );
 int get_java_fd( JNIEnv *, jobject );
 void send_modem_events( JNIEnv *, jobject, jmethodID, int, int, int );
