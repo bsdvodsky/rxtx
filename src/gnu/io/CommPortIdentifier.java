@@ -20,17 +20,48 @@ package gnu.io;
 
 import  java.io.*;
 import  java.util.*;
-import javax.comm.*;
+import  gnu.io.*;
+import  javax.comm.*;
+
 
 /*------------------------------------------------------------------------------
 Lots of stubs here.  Taken from the javadoc material produced from Sun's
 commapi porting file.  Not used yet.
 ------------------------------------------------------------------------------*/
 
-public class CommPortIdentifier {
+public class CommPortIdentifier 
+{
 	public static final int PORT_SERIAL = 1;  // Serial Port
 	public static final int PORT_PARALLEL = 2; // Parallel Port
+	private String PortName;
+	private boolean Available;    
+	private String Owner;    
+	private CommPort commport;
+	private CommDriver RXTXDriver;
+	private int PortType;
 
+
+/*------------------------------------------------------------------------------
+	static {}   aka initialization
+	accept:       -
+	perform:      load the rxtx driver
+	return:       -
+	exceptions:   Throwable
+	comments:     static block to initialize the class
+------------------------------------------------------------------------------*/
+	// initialization only done once....
+	static 
+	{
+		try 
+		{
+			CommDriver RXTXDriver = (CommDriver) Class.forName("gnu.io.RXTXCommDriver").newInstance();
+			RXTXDriver.initialize();
+		} 
+		catch (Throwable e) 
+		{
+			System.err.println(e + "thrown while loading " + "gnu.io.RXTXCommDriver");
+		}
+	}
 /*------------------------------------------------------------------------------
 	addPortName()
 	accept:
@@ -39,7 +70,8 @@ public class CommPortIdentifier {
 	exceptions:
 	comments:
 ------------------------------------------------------------------------------*/
-	public static void addPortName(String s, int i, RXTXCommDriver c) { 
+	public static void addPortName(String s, int i, RXTXCommDriver c) 
+	{ 
 	}
 /*------------------------------------------------------------------------------
 	addPortOwnershipListener()
@@ -49,7 +81,8 @@ public class CommPortIdentifier {
 	exceptions:
 	comments:
 ------------------------------------------------------------------------------*/
-	public void addPortOwnershipListener(CommPortOwnershipListener c) { 
+	public void addPortOwnershipListener(CommPortOwnershipListener c) 
+	{ 
 	}
 /*------------------------------------------------------------------------------
 	getCurrentOwner()
@@ -59,9 +92,10 @@ public class CommPortIdentifier {
 	exceptions:
 	comments:
 ------------------------------------------------------------------------------*/
-	public String getCurrentOwner() { 
-	String s=new String();
-	return(s);
+	public String getCurrentOwner() 
+	{ 
+		String s=new String();
+		return(s);
 	}
 /*------------------------------------------------------------------------------
 	getName()
@@ -71,9 +105,10 @@ public class CommPortIdentifier {
 	exceptions:
 	comments:
 ------------------------------------------------------------------------------*/
-	public String getName() { 
-	String s = new String();
-	return(s);
+	public String getName() 
+	{ 
+		String s = new String();
+		return(s);
 	}
 /*------------------------------------------------------------------------------
 	getPortIdentifier()
@@ -83,7 +118,9 @@ public class CommPortIdentifier {
 	exceptions:
 	comments:
 ------------------------------------------------------------------------------*/
-	static public CommPortIdentifier getPortIdentifier(String s) throws NoSuchPortException { 
+	static public CommPortIdentifier getPortIdentifier(String s) throws NoSuchPortException 
+	{ 
+		System.out.println("configure --enable-RXTXIDENT is for developers only");
 		CommPortIdentifier ci=new CommPortIdentifier();
 		return(ci);
 	}
@@ -95,7 +132,8 @@ public class CommPortIdentifier {
 	exceptions:
 	comments:
 ------------------------------------------------------------------------------*/
-	static public CommPortIdentifier getPortIdentifier(CommPort c) throws NoSuchPortException { 
+	static public CommPortIdentifier getPortIdentifier(CommPort c) throws NoSuchPortException 	
+	{ 
 		CommPortIdentifier ci=new CommPortIdentifier();
 		return(ci);
 
@@ -109,7 +147,9 @@ public class CommPortIdentifier {
 	comments:
 ------------------------------------------------------------------------------*/
 /*
-	static public Enumeration getPortIdentifiers() { 
+	static public Enumeration getPortIdentifiers() 
+	{ 
+		return new CommPortEnumerator();
 	}
 */
 /*------------------------------------------------------------------------------
@@ -120,7 +160,8 @@ public class CommPortIdentifier {
 	exceptions:
 	comments:
 ------------------------------------------------------------------------------*/
-	public int getPortType() { 
+	public int getPortType() 
+	{ 
 		return(1);
 	}
 /*------------------------------------------------------------------------------
@@ -131,7 +172,8 @@ public class CommPortIdentifier {
 	exceptions:
 	comments:
 ------------------------------------------------------------------------------*/
-	public boolean isCurrentlyOwned() { 
+	public boolean isCurrentlyOwned() 
+	{ 
 		return(false);
 	}
 /*------------------------------------------------------------------------------
@@ -142,23 +184,37 @@ public class CommPortIdentifier {
 	exceptions:
 	comments:
 ------------------------------------------------------------------------------*/
-/*
-	public CommPort open(FileDescriptor f) throws UnsupportedCommOperationException { 
-
+	public CommPort open(FileDescriptor f) throws UnsupportedCommOperationException 
+	{ 
+		throw new UnsupportedCommOperationException();
 	}
-*/
 /*------------------------------------------------------------------------------
 	open()
-	accept:
-	perform:
-	return:
-	exceptions:
+	accept:      application makeing the call and milliseconds to block
+                     during open.
+	perform:     open the port if possible
+	return:      CommPort if successfull
+	exceptions:  PortInUseException if in use.
 	comments:
 ------------------------------------------------------------------------------*/
-/*
-	public synchronized CommPort open(String s, int i) throws PortInUseException { 
+	private boolean HideOwnerEvents;
+
+	public synchronized CommPort open(String TheOwner, int i) throws PortInUseException 
+	{ 
+		commport = RXTXDriver.getCommPort(PortName,PortType);
+		if(Available)
+		{
+			Available = false;
+			Owner = TheOwner;
+			return commport;
+		}
+		/* 
+		possibly talk other jvms about getting the port?
+		NativeFindOwner(PortName);
+		throw new PortInUseException(); 
+		*/
+		return null;
 	}
-*/
 /*------------------------------------------------------------------------------
 	removePortOwnership()
 	accept:
@@ -167,7 +223,9 @@ public class CommPortIdentifier {
 	exceptions:
 	comments:
 ------------------------------------------------------------------------------*/
-	public void removePortOwnershipListener(CommPortOwnershipListener c) { 
+	public void removePortOwnershipListener(CommPortOwnershipListener c) 
+	{ 
 	}
+
 }
 
