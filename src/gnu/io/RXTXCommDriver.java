@@ -27,7 +27,20 @@ import javax.comm.*;
 public class RXTXCommDriver implements CommDriver {
 
 
-        static { System.loadLibrary( "Serial" ); }
+	static String OS;
+        static 
+	{ 
+		OS = System.getProperty("os.name");
+		if(!OS.compare("Linux"))
+		{
+			System.loadLibrary( "Serial" ); 
+		}
+		if(!OS.compare("Win95"))
+		{
+			System.loadLibrary("SerialW95");
+		}
+		//...  propably not needed.  hmm.
+	}
 
 	/** Get the Serial port prefixes for the running OS */
 	private native boolean IsDeviceGood(String dev);
@@ -130,9 +143,13 @@ public class RXTXCommDriver implements CommDriver {
 	public CommPort getCommPort( String portName, int portType ) {
 		try {
 			if (portType==CommPortIdentifier.PORT_SERIAL)
+			{
 				return new RXTXPort( portName ); 
+			}
 			else if (portType==CommPortIdentifier.PORT_PARALLEL)
+			{
 				return new LPRPort( portName ); 
+			}
 		} catch( IOException e ) {
 			e.printStackTrace();
 		}

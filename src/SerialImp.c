@@ -103,7 +103,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_open(
 	ttyset.c_iflag = INPCK;
 	ttyset.c_lflag = 0;
 	ttyset.c_oflag = 0;
-	ttyset.c_cflag = CREAD | CS8;
+	ttyset.c_cflag = CREAD | CS8 | CLOCAL;
 	ttyset.c_cc[ VMIN ] = 1;
 	ttyset.c_cc[ VTIME ] = 0;
 
