@@ -298,26 +298,26 @@ int translate_stop_bits( JNIEnv *env, int *cflag, jint stopBits )
 ----------------------------------------------------------*/ 
 int translate_parity( JNIEnv *env, int *cflag, jint parity )
 {
+	(*cflag) &= ~(PARENB | PARODD);
 	switch( parity ) {
 		case PARITY_NONE:
-			(*cflag) &= ~PARENB;
 			return 1;
 #ifdef CMSPAR
 		case PARITY_EVEN:
-			(*cflag) |= PARENB & ~PARODD & ~CMSPAR;
+			(*cflag) |= PARENB;
 			return 1;
 		case PARITY_ODD:
-			(*cflag) |= PARENB | PARODD & ~CMSPAR;
+			(*cflag) |= PARENB | PARODD;
 			return 1;
 		case PARITY_MARK:
 			(*cflag) |= PARENB | PARODD | CMSPAR;
 			return 1;
 		case PARITY_SPACE:
-			(*cflag) |= PARENB & ~PARODD | CMSPAR;
+			(*cflag) |= PARENB | CMSPAR;
 			return 1;
 #else
 		case PARITY_EVEN:
-			(*cflag) |= PARENB & ~PARODD;
+			(*cflag) |= PARENB;
 			return 1;
 		case PARITY_ODD:
 			(*cflag) |= PARENB | PARODD;
