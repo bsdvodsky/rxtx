@@ -180,7 +180,7 @@ Trent
 #endif /* __hpux__ */
 #if defined(__osf__)  /* Digital Unix */
 #	define DEVICEDIR "/dev/"
-#	define LOCKDIR ""
+#	define LOCKDIR "/var/spool/uucp"
 #	define LOCKFILEPREFIX "LK."
 #	define UUCP
 #endif /* __osf__ */
