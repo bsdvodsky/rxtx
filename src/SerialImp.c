@@ -2361,7 +2361,7 @@ int is_device_locked( const char *filename )
 				{
 					/* FHS style */
 					sprintf( file, "%s/%s%s", lockdirs[i],
-						lockprefixes[k++], p );
+						lockprefixes[k], p );
 					if( stat( file, &buf ) == 0 )
 					{
 						report_error( UNEXPECTED_LOCK_FILE );
@@ -2371,7 +2371,7 @@ int is_device_locked( const char *filename )
 					/* UUCP style */
 					sprintf( file, "%s/%s%03d.%03d.%03d",
 						lockdirs[i],
-						lockprefixes[k++],
+						lockprefixes[k],
 						(int) major( buf.st_dev ),
 						(int) major( buf.st_rdev ),
 						(int) minor( buf.st_rdev )
@@ -2381,6 +2381,7 @@ int is_device_locked( const char *filename )
 						report_error( UNEXPECTED_LOCK_FILE );
 						return 1;
 					}
+					k++;
 				}
 			}
 		}
