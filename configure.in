@@ -102,6 +102,7 @@ AC_ARG_ENABLE(JDK_HOME,
       fi
    fi
    )
+
 #AC_ARG_ENABLE(DEBUG,
 #   [  --enable-DEBUG          Print debugging info from SerialImp.c],
 #   if test x$enable_DEBUG = xyes; then 
@@ -122,3 +123,83 @@ JAVANATINC="\$(JPATH)/`cd $JPATH; find ./include -name jni_md.h|sed s#jni_md\\\\
 JAVAINCLUDE="\$(JPATH)/include"
 JCLASSPATH="-classpath \$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:.:$CLASSPATH"
 AC_OUTPUT(Makefile)
+AC_ARG_ENABLE(SLOW,
+   [  --enable-SLOW           Java queries that do nothing [default=no]], echo $enable_JDK_HOME, enable_SLOW="no")
+   if test x$enable_SLOW = xyes; then 
+echo 
+echo -----------------------------
+echo If the following generates errors it will not cause problems.  Please
+echo email jarvi@ezlink.com if you do get errors.  This will be used to avoid
+echo build problems in the future
+echo
+echo if your in a rush just type ^C
+echo -----------------------------
+cat > conftest.java << EOF
+
+/* this may be usefull for getting around java cobwebs during build */
+
+public class conftest {
+	
+	public static void main(String[[]] args) {
+		switch(Integer.parseInt(args[[0]])){
+			case 1:
+				System.out.println(System.getProperty("java.library.path"));
+				break;
+			case 2:
+				System.out.println(System.getProperty("os.version"));
+				break;
+			case 3:
+				System.out.println(System.getProperty("os.arch"));
+				break;
+			case 4:
+				System.out.println(System.getProperty("os.name"));
+				break;
+			case 5:
+				System.out.println(System.getProperty("java.home"));
+				break;
+			case 6:
+				System.out.println(System.getProperty("java.version"));
+				break;
+			case 7:
+				System.out.println(System.getProperty("java.library.path"));
+				break;
+			case 8:
+				System.out.println(System.getProperty("java.class.path"));
+				break;
+			case 9:
+				System.out.println(System.getProperty("java.class.version"));
+				break;
+			default:
+				break;
+		}
+	}
+}
+EOF
+javac conftest.java
+echo -n checking os.name  " "
+OS_NAME=`java conftest 4`
+echo $OS_NAME
+echo -n checking os.arch   " "
+OS_ARCH=`java conftest 3`
+echo $OS_ARCH
+echo -n checking os.version   " "
+OS_VERSION=`java conftest 2`
+echo $OS_VERSION
+echo -n checking java.version   " "
+JAVA_VERSION=`java conftest 6`
+echo $JAVA_VERSION
+echo -n checking java.home   " "
+JAVA_HOME=`java conftest 5`
+echo $JAVA_HOME
+echo -n checking java.library.path   " "
+JAVA_LIBRARY_PATH=`java conftest 7`
+echo $JAVA_LIBRARY_PATH
+echo -n checking java.class.path   " "
+JAVA_CLASS_PATH=`java conftest 8`
+echo $JAVA_CLASS_PATH
+echo -n checking java.class.version   " "
+JAVA_CLASS_VERSION=`java conftest 9`
+echo $JAVA_CLASS_VERSION
+rm -f conftest.java
+rm -f conftest.class
+   fi
