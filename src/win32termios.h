@@ -25,13 +25,13 @@
 #include <windows.h>
 #include <sys/types.h>
 #include <io.h>
-#ifdef DEBUG
+#ifdef TRACE
 #	define ENTER(x) printf("entering "x" \n");
 #	define LEAVE(x) printf("leavine "x" \n");
 #else
 #	define ENTER(x)
 #	define LEAVE(x)
-#endif /* DEBUG */
+#endif /* TRACE */
 #define YACK() \
 { \
 	char *allocTextBuf; \
@@ -115,6 +115,7 @@ int serial_select(int, struct fd_set *, struct fd_set *, struct fd_set *, struct
 #define read serial_read
 #define write serial_write
 
+struct termios_list *find_port( int );
 void usleep(unsigned long usec);
 int fcntl(int fd, int command, ...);
 const char *get_dos_port(const char *);
