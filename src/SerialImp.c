@@ -72,9 +72,9 @@
 #if defined(__sun__)
 #	include <sys/filio.h>
 #	include <sys/mkdev.h>
-#endif
+#endif /* __sun__ */
 #if defined(__hpux__)
-#include <sys/modem.h>
+#	include <sys/modem.h>
 #endif /* __hpux__ */
 /* FIXME -- new file */
 #if defined(__APPLE__)
@@ -387,7 +387,6 @@ fail:
 ----------------------------------------------------------*/
 int translate_speed( JNIEnv *env, jint speed )
 {
-	printf("speed = %i\n", (int) speed);
 	switch( speed ) {
 		case 0:		return B0;
 		case 50:	return B50;
@@ -450,7 +449,6 @@ int translate_data_bits( JNIEnv *env, tcflag_t *cflag, jint dataBits )
 		case JDATABITS_8:
 			(*cflag) = temp | CS8;
 			return 1;
-		default:
 	}
 
 	throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,
@@ -481,7 +479,6 @@ int translate_stop_bits( JNIEnv *env, tcflag_t *cflag, jint stopBits )
 		case STOPBITS_2:
 			(*cflag) |= CSTOPB;
 			return 1;
-		default:
 	}
 
 	throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,
@@ -521,8 +518,8 @@ int translate_parity( JNIEnv *env, tcflag_t *cflag, jint parity )
 			(*cflag) |= PARENB | CMSPAR;
 			return 1;
 #endif /* CMSPAR */
-		default:
 	}
+
 	throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,
 		"translate_parity", "parity" );
 	return 0;
@@ -1320,7 +1317,6 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(JNIEnv *env,
 		if (read(fd, &c, 1) < 0)
 		{
 #ifdef EWOULDBLOCK
-			printf("    Read() < 0\n");
 			if ( errno != EWOULDBLOCK )
 			{
 				ret = JNI_FALSE;
@@ -1425,25 +1421,23 @@ registerKnownSerialPorts(JNIEnv *env, jobject jobj)
     } else {
         jclass cls = (*env)->GetObjectClass(env,jobj);
         jmethodID mid = (*env)->GetMethodID(
-            env, cls, "registerKnownPortsCallback", "(Ljava/lang/String;I)V");
+            env, cls, "addPortName", "(Ljava/lang/String;I;Ljavax/comm/CommDriver)Z");
         if (mid == 0) {
-            printf("getMethodID of registerKnownPortsCallback failed\n");
+            printf("getMethodID of CommDriver.addPortName failed\n");
         } else {
-            jint portType = 1;
             while (theObject = IOIteratorNext(theSerialIterator))
             {
                 (*env)->CallVoidMethod(env, jobj, mid,
-                    (*env)->NewStringUTF(env, getRegistryString(theObject, kIOTTYDeviceKey)), portType);
+                    NewStringUTF(getRegistryString(theObject, kIOTTYDeviceKey)));
                 numPorts++;
                 (*env)->CallVoidMethod(env, jobj, mid,
-                    (*env)->NewStringUTF(env, getRegistryString(theObject, kIODialinDeviceKey)), portType);
+                    NewStringUTF(getRegistryString(theObject, kIODialinDeviceKey)));
                 numPorts++;
                 (*env)->CallVoidMethod(env, jobj, mid,
-                    (*env)->NewStringUTF(env, getRegistryString(theObject, kIOCalloutDeviceKey)), portType);
+                    NewStringUTF(getRegistryString(theObject, kIOCalloutDeviceKey)));
                 numPorts++;
             }
         }
-    	(*env)->DeleteLocalRef( env, cls );
     }
     return numPorts;
 }
@@ -1795,7 +1789,7 @@ void report(char *msg)
 		Prentice-Hall, 1990, pages 96-101.
 
 ----------------------------------------------------------*/
-int fhs_lock(const char *filename)
+int fhs_lock( const char *filename )
 {
 #ifdef LOCKFILES
 	int i,j,fd, pid;
@@ -1950,7 +1944,7 @@ int fhs_lock(const char *filename)
                 differently and there are other proposed changes to the
 		Filesystem Hierachy Standard
 ----------------------------------------------------------*/
-void fhs_unlock(const char *filename)
+void fhs_unlock( const char *filename )
 {
 #ifdef LOCKFILES
 	char file[80],*p;
@@ -1988,5 +1982,5 @@ void dump_termios(char *foo,struct termios *ttyset)
 	{
 		fprintf(stderr,"%d=%x ", i, ttyset->c_cc[i]);
 	}
-	fprintf(stderr, "\n");
+	fprintf(stderr,"\n");
 }
