@@ -3,7 +3,8 @@ This is ChangeLog Wed Jun 20 10:47:21 MDT 2001
 rxtx-1.5 and rxtx-1.4 changes are kept in the same file.  skip to the version
 you downloaded.
 
-1.5-6		      win32 fixes <wroberts1@home.com>
+1.5-6		      Lock file fixes <wroberts1@home.com>
+1.5-5		      win32 fixes <wroberts1@home.com>
 		      Initial Solaris port
 		      initial Mac OS X port
 		      Joseph Goldstone <joseph@lp.com>
@@ -25,10 +26,6 @@ you downloaded.
 		      Closed memleaks on open()/close()
                       registered port support.
 		      Joseph Goldstone <joseph@lp.com>
-1.5-5  Jun 28, 2001   Merged with rxtx-1.4
-		      More work on Mac OS X port
-		      Joseph Goldstone <joseph@lp.com>
-		      minor cleanups
 1.5-4  Jan 26, 2001   Irix build fixes (still needs CFLAGS fixed?)
 		      Michael Delgadillo <delgadil@ymi.com>
 		      Windows build support with lcc
@@ -56,7 +53,7 @@ you downloaded.
 		      Stallion Card support 
 		      Greg Luck <gluck@tempo-services.com.au>
 		      CommPort enumeration with rxtx's comm.jar
-1.4-10 Aug 31, 2001   see rxtx-1.5-6
+1.4-10 Aug 31, 2001   see rxtx-1.5-5
 1.4-9  Jun 21, 2001   Steve Drach <drach@eng.sun.com>
                       Minor fix of error reporting in lockfiles
 		      Mac OS X port Joseph Goldstone <joseph@lp.com>
