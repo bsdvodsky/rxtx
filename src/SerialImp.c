@@ -2078,7 +2078,7 @@ int fhs_lock( const char *filename )
 	 */
 	int fd,i;
 	char lockinfo[12], message[80];
-	char file[80], message[80], *p;
+	char file[80], *p;
 
 	i = strlen( filename );
 	p = ( char * ) filename + i;
