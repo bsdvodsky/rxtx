@@ -33,6 +33,7 @@ import java.util.StringTokenizer;
 */
 public class RXTXCommDriver implements CommDriver
 {
+	private static boolean debug = false;
 	static
 	{
 		System.loadLibrary( "Serial" );
@@ -43,18 +44,49 @@ public class RXTXCommDriver implements CommDriver
 
 
 	private final String[] getPortPrefixes(String AllKnownPorts[]) {
-		int i=0;
+		/*
+		256 is the number of prefixes ( COM, cua, ttyS, ...) not
+		the number of devices (ttyS0, ttyS1, ttyS2, ...)
+
+		On a Linux system there are about 400 prefixes in /dev.  
+		registerScannedPorts() assigns AllKnownPorts to something less
+		than 50 prefixes.
+
+		rxtx-1.5 uses Vectors to avoid this mess.
+
+		Trent
+		*/
+
 		String PortString[]=new String [256];
+		if(AllKnownPorts==null)
+		{
+			if (debug)
+				System.out.println("\nRXTXCommPort:getPortPrefixes() No ports are known for this System.\nPlease check the ports listed for " +osName+" in RXTXCommDriver:registerScannedPorts()\n");
+		}
+		int i=0;
 		for(int j=0;j<AllKnownPorts.length;j++){
 			if(isDeviceGood(AllKnownPorts[j])) {
-				PortString[i++]=AllKnownPorts[j];
+				PortString[i++]=new String(AllKnownPorts[j]);
 			}
 		}
-		String PortString2[] =new String[i];
-		for(int j=0;j<i;j++){
-			PortString2[j]=PortString[j];
+		String[] returnArray=new String[i];
+		System.arraycopy(PortString, 0, returnArray, 0, i);
+		if(PortString[0]==null)
+		{
+			if (debug)
+				System.out.println("\nRXTXCommPort:getPortPrefixes() No ports matched the list assumed for this\nSystem in the directory /dev.  Please check the ports listed for \"" +osName+"\" in\nRXTXCommDriver:registerScannedPorts()\n");
 		}
-		return PortString2;
+		else
+		{
+			if (debug)
+				System.out.println("\nRXTXCommPort:getPortPrefixes()\nThe following port prefixes have been identified as valid on "+osName+":\n");
+			for(int j=0;j<returnArray.length;j++)
+			{
+				if (debug)
+					System.out.println(j +" "+ PortString[j]);
+			}
+		}
+		return returnArray;
 	}
 
 
@@ -99,10 +131,15 @@ public class RXTXCommDriver implements CommDriver
 		String Prefix[],
 		int PortType
 	) {
-		for( int i = 0; i < devs.length; i++ ) {
-			for( int p = 0; p < Prefix.length; p++ ) {
+		int p =0 ;
+		int i =0;
+		if (debug)
+			System.out.println("Entering RegisterValidPorts()");
+		if ( devs[0]==null || Prefix[0]==null) return;
+		for( i = 0;i<devs.length; i++ ) {
+			for( p = 0;p<Prefix.length; p++ ) {
+				String portName = new String("/dev/" + devs[ i ]);
 				if( devs[ i ].startsWith( Prefix[ p ] ) ) {
-					String portName = "/dev/" + devs[ i ];
 					if (accessReadWrite(portName))
 						CommPortIdentifier.addPortName(
 							portName,
@@ -112,6 +149,8 @@ public class RXTXCommDriver implements CommDriver
 				}
 			}
 		}
+		if (debug)
+			 System.out.println("Leaving RegisterValidPorts()");
 	}
 
 	String osName=System.getProperty("os.name");
@@ -136,9 +175,6 @@ public class RXTXCommDriver implements CommDriver
 	* January 02, 2000
 	* Bencom
 
-    */
-    /*
-	See SerialImp.c's *KnownPorts[] when adding ports
     */
 	public void initialize()
 	{
@@ -199,7 +235,6 @@ public class RXTXCommDriver implements CommDriver
     * be serial ports on this OS and they can be opened then register
     * them.
     *
-    * See SerialImp.c's *KnownPorts[] when adding ports
     */
 	private void registerScannedPorts()
 	{
@@ -300,7 +335,8 @@ public class RXTXCommDriver implements CommDriver
 
 		else
 		{
-			System.out.println(osName + " ports have not been entered in RXTXCommDriver.java.  This may just be a typo in the method initialize().");
+			if (debug)
+				System.out.println(osName + " ports have not been entered in RXTXCommDriver.java.  This may just be a typo in the method initialize().");
 			AllKnownSerialPorts=null;
 		}
 
@@ -322,16 +358,27 @@ public class RXTXCommDriver implements CommDriver
 			AllKnownParallelPorts=null;
 		}
 
+		if (devs==null)
+		{
+			if (debug)
+				System.out.println("RXTXCommDriver:registerScannedPorts() no Device files to check ");
+			return;
+		}
 		RegisterValidPorts(
 			devs,
 			getPortPrefixes(AllKnownSerialPorts),
 			CommPortIdentifier.PORT_SERIAL
 		);
-		RegisterValidPorts(
-			devs,
-			getPortPrefixes(AllKnownParallelPorts),
-			CommPortIdentifier.PORT_PARALLEL
-		);
+		/*
+		if(AllKnownParallelPorts!=null)
+			RegisterValidPorts(
+				devs,
+				getPortPrefixes(AllKnownParallelPorts),
+				CommPortIdentifier.PORT_PARALLEL
+			);
+		else if (debug) 
+			System.out.println("Skipping Printer Ports");
+	*/
 	}
 
 
@@ -355,8 +402,9 @@ public class RXTXCommDriver implements CommDriver
 				return new LPRPort( portName );
 			}
 		} catch( PortInUseException e ) {
-			System.out.println(
-				"Port in use by another application");
+			if (debug)
+				System.out.println(
+					"Port in use by another application");
 		}
 		return null;
 	}

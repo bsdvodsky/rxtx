@@ -2211,6 +2211,7 @@ public class conftest
 	}
 }
 EOF
+CLASSPATH=.:$CLASSPATH
 javac conftest.java
 }
 
@@ -2501,16 +2502,16 @@ if test "$CC" = "gcc" || test "$CC"="egcs"; then
 		;;
 	IBM*)
 		find_java_native_include jni_md.h
-		JAVAH="javah -d \$(DEST) -jni"
-		JAVAC="javac -d \$(TOP)/ -O"
+		JAVAH="javah \$(CLASSPATH) -d \$(DEST) -jni"
+		JAVAC="javac \$(CLASSPATH) -d \$(TOP)/ -O"
 		JAR="jar"
 		JAVADOC="javadoc"
 		CFLAGS="$CFLAGS -D_BSD_SOURCE"
 		;;
 	*)
 		find_java_native_include jni_md.h
-		JAVAH="javah -d \$(DEST) -jni"
-		JAVAC="javac -d \$(TOP)/ -O"
+		JAVAH="javah \$(CLASSPATH) -d \$(DEST) -jni"
+		JAVAC="javac \$(CLASSPATH) -d \$(TOP)/ -O"
 		JAR="jar"
 		JAVADOC="javadoc"
 		CFLAGS="$CFLAGS -D_BSD_SOURCE"

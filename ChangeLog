@@ -16,6 +16,10 @@ you downloaded.
 		      Stallion Card support 
 		      Greg Luck <gluck@tempo-services.com.au>
 		      CommPort enumeration with rxtx's comm.jar
+1.4-7  Nov 13, 2000   HP-UX fixes for port enumeration
+		      Cathrine Guiollot <catherine_guiollot@hp.com>
+		      CLASSPATH build fixes
+		      Dale Seaburg <kg5lt@earthlink.net>
 1.4-6  Oct 26, 2000   support for explicitly-specified lists of ports
 		      Martin Pool <mbp@linuxcare.com>
 		      Documentation for explicitly-specified lists of ports

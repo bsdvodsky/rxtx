@@ -78,7 +78,7 @@
 #	define LOCKDIR ""
 #endif
 #if defined(__BEOS__)
-#	define DEVICEDIR "/dev/ports"
+#	define DEVICEDIR "/dev/ports/"
 /* see SerialImp.c fhs_lock() & fhs_unlock() */
 #	define LOCKDIR ""
 #endif
