@@ -19,113 +19,80 @@
 srcdir = @srcdir@
 VPATH = @srcdir@
 
-WJI= -I @WINDOWS_JAVA_INCLUDE@ -I @WINDOWS_JAVA_INCLUDE@/win32 
 AUTOMAKE_OPTIONS = foreign
-TOP=@TOP@
-JPATH=@JPATH@
-JCL_PATH=@JCL_PATH@
-INCLUDES= -I $(TOP) -I $(TOP)/$(target_alias) -I . -I $(JAVAINCLUDE) -I $(JAVANATINC)
-NSJAVA=1
-THREADS_FLAG=@THREAD_FLAG@
-JAVAC=$(JPATH)/bin/javac $(JCLASSPATH):$(COMM_JAR_PATH):$(JCL_JAR_PATH) -d $(TOP)/ -O 
-JAVAH=$(JPATH)/bin/javah $(JAVA_H_CLASSPATH) -d $(TOP)/$(target_alias) -jni
-JAVA=$(JPATH)/bin/java $(JCLASSPATH)
-JAR=$(JPATH)/bin/jar 
-JAVADOC=$(JPATH)/bin/javadoc $(JCLASSPATH)
-LIBTOOL = $(SHELL) $(TOP)/libtool
-LINK = $(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) -version-info 1:0:1
-SERIAL_HEADER = $(TOP)/$(target_alias)/gnu_io_RXTXPort.h $(TOP)/$(target_alias)/gnu_io_RXTXCommDriver.h
-PARALLEL_HEADER = $(TOP)/$(target_alias)/gnu_io_LPRPort.h
-CLEANFILES = $(TOP)/*.class $(TOP)/gnu/io/*.class $(TOP)/jcl.jar
-#LTLIBRARIES =     $(lib_LTLIBRARIES)
-#BUILT_SOURCES = $(TOP)/$(target_alias)/libSerial.la
-SUFFIXES = .java .class
-SUFFIXES = .class .h
+INCLUDES= -I $(TOP) -I $(DEST) -I . $(JAVAINCLUDE) $(JAVANATINC)
+####################### vars for rxtx-1.4->1.5 transition
+JARTARGET=jcl.jar
+CLASSDIR=gnu.io
+CLASSTOP=gnu
+CLASSDEST=gnu/io
+####################### tools
+LIBTOOLC=$(TOP)/libtool --mode=compile $(CC) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(VERBOSE_IOEXCEPTIONS) -c
+LIBTOOL_INST=$(TOP)/libtool --mode=install $(INSTALL_PROGRAM)
+LINK =$(TOP)/libtool --mode=link $(CC) $(CFLAGS) $(LDFLAGS) -version-info 1:0:1
+####################### dirs
+SPATH = $(srcdir)/src
+DEST=$(target_alias)
+####################### rules
+CLASSES = $(patsubst $(SPATH)/%.java,$(TOP)/$(CLASSDEST)/%.class,$(wildcard $(SPATH)/*.java))
+javafiles = $(wildcard $(SPATH)/*.java)
+javahfiles = $(patsubst $(SPATH)/%.java,%,$(wildcard $(SPATH)/*.java))
+#######################
+CLEANFILES = $(TOP)/*.class $(TOP)/$(CLASSDEST)/*.class $(TOP)/$(JARTARGET)
 
-install: all jcl install-lib
+#  compile src/SerialImp.c and simular files into libraries.
+$(target_alias)/lib%.la: $(SPATH)/%Imp.@EXTENSION@ $(CLASSES)
+	@( \
+	$(LIBTOOL_FIX) \
+	cd $(DEST); \
+	$(LIBTOOLC) ../$(SPATH)/$*Imp.@EXTENSION@ -o $(TOP)/$(DEST)/$*Imp.lo; \
+	$(LINK) -o lib$*.la -rpath $(RXTX_PATH) $(TOP)/$(DEST)/$*Imp.lo)
+
+#  compile src/RXTXPort.java and simular files into classes
+#  then create the .jar file
+$(CLASSES): $(javafiles) $(TOP)/Makefile
+	$(JAVAH_FIX)
+	$(JAVAC) $(javafiles)
+	@$(JAVAH) `(for i in $(javahfiles);do \
+		if grep -q native.*\( $(SPATH)/$$i.java; then \
+			echo $(CLASSDIR).$$i; \
+		fi; \
+	done)`
+	$(JAR) cf $(JARTARGET) $(CLASSTOP)/*
+
+#  install libSerial.so into the proper directory and copy $(JARTARGET) to its
+#  proper location
+install: all
+	@$(LIBTOOL_INST) \
+	`for i in $(TARGETLIB);do \
+		if [ -f $$i ];then \
+			echo $$i; \
+		fi; \
+	done` $(RXTX_PATH)
+	$(INSTALL_PROGRAM) $(JARTARGET) $(JHOME)/
 
 clean-generic:
-	rm -rf $(TOP)/$(target_alias) $(TOP)/gnu 
+	rm -rf $(DEST) $(TOP)/$(CLASSTOP)
 	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
-	@echo -e "\n\nMake distclean will remove the remaining files\n\n"
-install-lib:
-	( cd $(TOP)/$(target_alias) ; \
-	if [ -f libSerial.la ];then \
-	$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) libSerial.la $(RXTX_PATH);\
-	fi; \
-	if [ -f libParallel.la ];then \
-	$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) libParallel.la $(RXTX_PATH);\
-	fi; \
-	)
-	$(INSTALL_PROGRAM) jcl.jar $(JPATH)/$(JCL_PATH)/
-run: $(TOP)/test.class all jcl
-	(cd $(TOP)/;chmod 755 *.class;\
-	LD_LIBRARY_PATH="$(target_alias)";\
-	$(JAVA) test)
 
-all: @IDENTIFIERS@ @TARGETLIB@
-	@echo -e "\n\nIf you have javax.comm.* and java.comm.* in your CLASSPATH, type make jcl to"
-	@echo -e "build the javacomm20-x86.tar.Z supporting classes.\n"
-	@echo "Note: CLASSPATH was grabbed during the configure stage.  Modification of the"
-	@echo "environment variable will not change the behavior of make without rerunning" 
-	@echo  -e "configure or editing the Makefile. \n"
+all: $(TARGETLIB)
 
-jcl:  $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class $(TOP)/gnu/io/RXTXPort.class @IDENTIFIERS@
-	$(JAR) cf jcl.jar gnu/io/*
-	@echo "make install will install RxTx"
+#  create the javadoc files.
+docs: $(CLASSES)
+	$(JAVADOC) $(javafiles)
 
-$(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class \
-		$(TOP)/gnu/io/LPRPort.class \
-		: $(srcdir)/src/RXTXCommDriver.java \
-		$(srcdir)/src/LPRPort.java \
-		$(srcdir)/src/RXTXPort.java 
-# handle java quirks here.
-	$(JAVAH_FIX) \
-	$(JAVAC) $(srcdir)/src/RXTXPort.java $(srcdir)/src/LPRPort.java $(srcdir)/src/RXTXCommDriver.java
+################  WIN32 CrossCompiling from here down #######################
 
-$(TOP)/$(target_alias)/libParallel.la: $(TOP)/$(target_alias)/ParallelImp.lo
-	( cd $(TOP)/$(target_alias); \
-	$(LINK) -o libParallel.la -rpath $(RXTX_PATH) $(TOP)/$(target_alias)/ParallelImp.lo;)
-
-$(TOP)/$(target_alias)/ParallelImp.lo: $(srcdir)/src/ParallelImp.c \
-                                  $(PARALLEL_HEADER) \
-				  $(TOP)/Makefile
-	(cd $(TOP)/$(target_alias); \
-	$(LIBTOOL) --mode=compile $(CC) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) @VERBOSE_IOEXCEPTIONS@ -c ../$(srcdir)/src/ParallelImp.c -o $(TOP)/$(target_alias)/ParallelImp.lo; )
-
-$(TOP)/$(target_alias)/libSerial.la: $(TOP)/$(target_alias)/SerialImp.lo
-	( cd $(TOP)/$(target_alias); \
-	$(LINK) -o libSerial.la -rpath $(RXTX_PATH) $(TOP)/$(target_alias)/SerialImp.lo; )
-
-$(TOP)/$(target_alias)/SerialImp.lo: $(srcdir)/src/SerialImp.c \
-                                  $(SERIAL_HEADER) \
-				  $(TOP)/Makefile
-	(cd $(TOP)/$(target_alias); \
-	$(LIBTOOL) --mode=compile $(CC) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) @VERBOSE_IOEXCEPTIONS@ -c ../$(srcdir)/src/SerialImp.c -o $(TOP)/$(target_alias)/SerialImp.lo; )
-
-$(TOP)/%.class $(TOP)/gnu/io/%.class: $(srcdir)/src/%.java 
-	$(JAVAC) $< 
-
-$(SERIAL_HEADER) $(PARALLEL_HEADER): $(TOP)/gnu/io/RXTXPort.class
-	$(JAVAH) gnu.io.`echo $(@F) | sed s#\.h##|sed s#gnu_io_##`
-	touch $(TOP)/$(target_alias)/$(@F)
-
-borg: $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class $(TOP)/gnu/io/LPRPort.class $(SERIAL_HEADER)
-	gcc -DWIN32 -D __int64="long long" -mno-fp-ret-in-387 -b$(target_alias) -I $(TOP) -I $(TOP)/$(target_alias) -I . $(WJI) -I ../src/ -Wall -c ../src/SerialImp.c -o $(TOP)/$(target_alias)/SerialImp.o
-	gcc -DWIN32 -D __int64="long long" -mno-fp-ret-in-387 -b$(target_alias) -I $(TOP) -I $(TOP)/$(target_alias) -I . $(WJI) -I ../src/ -Wall -c ../src/termios.c -o $(TOP)/$(target_alias)/termios.o
-	gcc -DWIN32 -D __int64="long long" -mno-fp-ret-in-387 -b$(target_alias) -I $(TOP) -I $(TOP)/$(target_alias) -I . $(WJI) -I ../src/ -Wall -c ../src/fixup.c -o $(TOP)/$(target_alias)/fixup.o
-	gcc -DWIN32 -D __int64="long long" -mno-fp-ret-in-387 -b$(target_alias) -I $(TOP) -I $(TOP)/$(target_alias) -I . $(WJI) -I ../src/ -Wall -c ../src/init.cc -o $(TOP)/$(target_alias)/init.o
+$(DEST)/Serial.dll: $(CLASSES) $(TOP)/Makefile
+	gcc -DWIN32 -D __int64="long long" -mno-fp-ret-in-387 -b$(target_alias) -I $(TOP) -I $(DEST) -I . $(WINDOWS_JAVA_INCLUDE) -I $(SPATH) -Wall -c $(SPATH)/SerialImp.c -o $(DEST)/SerialImp.o
+	gcc -DWIN32 -D __int64="long long" -mno-fp-ret-in-387 -b$(target_alias) -I $(TOP) -I $(DEST) -I . $(WINDOWS_JAVA_INCLUDE) -I $(SPATH) -Wall -c $(SPATH)/termios.c -o $(DEST)/termios.o
+	gcc -DWIN32 -D __int64="long long" -mno-fp-ret-in-387 -b$(target_alias) -I $(TOP) -I $(DEST) -I . $(WINDOWS_JAVA_INCLUDE) -I $(SPATH) -Wall -c $(SPATH)/fixup.c -o $(DEST)/fixup.o
+	gcc -DWIN32 -D __int64="long long" -mno-fp-ret-in-387 -b$(target_alias) -I $(TOP) -I $(DEST) -I . $(WINDOWS_JAVA_INCLUDE) -I $(SPATH) -Wall -c $(SPATH)/init.cc -o $(DEST)/init.o
 	ld --base-file $(target_alias)/Serial.base --dll -o $(target_alias)/Serial.dll $(target_alias)/termios.o $(target_alias)/SerialImp.o $(target_alias)/fixup.o $(target_alias)/init.o -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmingw32 -lmoldname -lcrtdll -e _dll_entry@12 --base-file $(target_alias)/Serial.base
 	 echo EXPORTS >$(target_alias)/Serial.def;for i in `nm i386-mingw32/Serial.dll | grep "T _Java"|cut -b 13-`;do echo -n $$i|sed s#@.*##;echo "="$$i;done >> $(target_alias)/Serial.def
 	dlltool -b$(target_alias) --as=as --dllname $(target_alias)/Serial.dll --def $(target_alias)/Serial.def --base-file $(target_alias)/Serial.base --output-exp $(target_alias)/Serial.exp
 	ld --base-file $(target_alias)/Serial.base $(target_alias)/Serial.exp -dll -o $(target_alias)/Serial.dll $(target_alias)/termios.o $(target_alias)/SerialImp.o $(target_alias)/fixup.o $(target_alias)/init.o -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmingw32 -lmoldname -lcrtdll -e _dll_entry@12 --base-file $(target_alias)/Serial.base
 	dlltool -b$(target_alias) --as=as --dllname $(target_alias)/Serial.dll --def $(target_alias)/Serial.def --base-file $(target_alias)/Serial.base --output-exp $(target_alias)/Serial.exp
 	ld $(target_alias)/Serial.exp -dll -o $(target_alias)/Serial.dll $(target_alias)/termios.o $(target_alias)/SerialImp.o $(target_alias)/fixup.o $(target_alias)/init.o -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmingw32 -lmoldname -lcrtdll -e _dll_entry@12 --base-file $(target_alias)/Serial.base
-
-docs:
-	mkdir gnu;
-	cd gnu;ln -s $(srcdir)/src io
-	cd ..
-	rm -rf gnu
 
 # END
