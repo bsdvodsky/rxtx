@@ -723,11 +723,11 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_readArray( JNIEnv *env,
 	jfield = (*env)->GetFieldID( env, jclazz, "timeout", "I" );
 	timeout = (int)( (*env)->GetIntField( env, jobj, jfield ) );
 
-	if( length < 1 ) {
-		return 0;
-	}
-	if( length > SSIZE_MAX ) {
-		IOException( env,"readArray", "Invalid length" );
+	if( length > SSIZE_MAX || length < 1 ) {
+		if( length == 0 ) {
+			return 0;
+		}
+		IndexOutOfBoundsException( env,"readArray", "Invalid length" );
 		return -1;
 	}
 
@@ -952,6 +952,27 @@ void IOException( JNIEnv *env, char *foo, char *msg )
 	snprintf( buf, 60, "%s in %s", msg, foo );
 	(*env)->ThrowNew( env, clazz, buf );
 }
+/*----------------------------------------------------------
+IndexOutOfBoundsException
+
+   accept:      env (keyhole to java)
+                *foo (function name)
+                *msg (error message)
+   perform:     Throw a java.lang.IndexOutOfBoundsException
+   return:      none
+   exceptions:  haha!
+   comments:
+----------------------------------------------------------*/ 
+void IndexOutOfBoundsException( JNIEnv *env, char *foo, char *msg )
+{
+	char buf[ 60 ];
+	jclass clazz = (*env)->FindClass( env, "java/lang/IndexOutOfBoundsException" );
+	if( clazz == 0 ) return;
+
+	snprintf( buf, 60, "%s in %s", msg, foo );
+	(*env)->ThrowNew( env, clazz, buf );
+}
+
 
 
 /*----------------------------------------------------------
