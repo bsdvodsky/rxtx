@@ -21,6 +21,12 @@
 package javax.comm;
 import java.util.*;
 
+/**
+* @author Trent Jarvi
+* @version %I%, %G%
+* @since JDK1.0
+*/
+
 public interface RS485PortEventListener extends EventListener
 {
 	public abstract void RS485Event( RS485PortEvent ev );

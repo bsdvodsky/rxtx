@@ -19,6 +19,13 @@
 package javax.comm;
 import java.util.*;
 
+/**
+* @author Trent Jarvi
+* @version %I%, %G%
+* @since JDK1.0
+*/
+
+
 public interface SerialPortEventListener extends EventListener
 {
 	public abstract void serialEvent( SerialPortEvent ev );

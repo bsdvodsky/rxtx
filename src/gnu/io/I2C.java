@@ -21,6 +21,12 @@ import java.io.*;
 import java.util.*;
 import java.lang.Math;
 
+/**
+* @author Trent Jarvi
+* @version %I%, %G%
+* @since JDK1.0
+*/
+
 
 /**
   * I2C

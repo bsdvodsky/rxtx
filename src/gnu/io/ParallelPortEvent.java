@@ -19,6 +19,12 @@
 package javax.comm;
 import java.util.*;
 
+/**
+* @author Trent Jarvi
+* @version %I%, %G%
+* @since JDK1.0
+*/
+
 public class ParallelPortEvent extends EventObject
 {
 	static public final int  PAR_EV_ERROR   =1;

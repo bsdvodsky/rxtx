@@ -26,8 +26,11 @@ import java.io.*;
 import java.util.*;
 
 /**
-  * RS485Port
-  */
+* @author Trent Jarvi
+* @version %I%, %G%
+* @since JDK1.0
+*/
+
 abstract class RS485Port extends CommPort {
 	public static final int  DATABITS_5             =5;
 	public static final int  DATABITS_6             =6;

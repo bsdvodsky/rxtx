@@ -40,6 +40,10 @@ void set_errno(int error) {
   my_errno = error;
 }
 
+void usleep(unsigned long usec)
+{
+	sleep(1);
+}
 int CBR_to_B(int Baud) {
 	switch (Baud) {
 		case 75:		return(B75);

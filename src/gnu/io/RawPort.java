@@ -23,8 +23,11 @@ import java.io.*;
 import java.util.*;
 
 /**
-  * RawPort
-  */
+* @author Trent Jarvi
+* @version %I%, %G%
+* @since JDK1.0
+*/
+
 abstract class RawPort extends CommPort {
 	public static final int  DATABITS_5             =5;
 	public static final int  DATABITS_6             =6;

@@ -58,6 +58,7 @@ int serial_select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
 #define write serial_write
 #define select serial_select
 
+void usleep(unsigned long usec);
 int fcntl(int fd, int command, int arg);
 const char *get_dos_port(const char *);
 void set_errno(int);

@@ -19,6 +19,13 @@
 package javax.comm;
 import java.util.*;
 
+/**
+* The requested Port does not exist
+* @author Trent Jarvi
+* @version %I%, %G%
+* @since JDK1.0
+*/
+
 public class NoSuchPortException extends Exception
 {
 }
