@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
-|   Copyright 1997-2003 by Trent Jarvi taj@www.linux.org.uk.
+|   Copyright 1997-2005 by Trent Jarvi taj@www.linux.org.uk.
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Lesser General Public
@@ -50,9 +50,7 @@
 #include "config.h"
 #include "gnu_io_RXTXPort.h"
 #endif /* dima */
-#ifndef __LCC__
-#   include <unistd.h>
-#else /* windows lcc compiler for fd_set. probably wrong */
+#ifdef __LCC__ /* windows lcc compiler for fd_set. probably wrong */
 #   include<winsock.h>
 #endif /* __LCC__ */
 #include <time.h>
@@ -63,6 +61,7 @@
 #include <limits.h>
 #include <sys/stat.h>
 #ifndef WIN32
+#include <unistd.h>
 #include <sys/ioctl.h>
 #include <sys/param.h>
 #include <sys/utsname.h>
@@ -76,9 +75,6 @@
 #		define S_ISCHR(m) (1)
 #	endif /* S_ISCHR(m) */
 #endif /* WIN32 */
-#ifdef HAVE_ASM_TERMBITS_H
-#	include <asm/termbits.h>
-#else
 #ifdef HAVE_TERMIOS_H
 #	include <termios.h>
 #endif /* HAVE_TERMIOS_H */
@@ -137,6 +133,7 @@
 #include <math.h>
 
 extern int errno;
+
 #include "SerialImp.h"
 
 
