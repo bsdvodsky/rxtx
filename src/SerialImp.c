@@ -158,6 +158,7 @@ JNIEXPORT void JNICALL RXTXPort(Initialize)(
 #if defined DEBUG && defined(__linux__)
 	struct utsname name;
 	char message[80];
+	printf("initialize!\n");
 #endif /* DEBUG && __linux__ */
 	/* This bit of code checks to see if there is a signal handler installed
 	   for SIGIO, and installs SIG_IGN if there is not.  This is necessary
@@ -644,8 +645,10 @@ int translate_parity( JNIEnv *env, tcflag_t *cflag, jint parity )
 			return 1;
 		case JPARITY_EVEN:
 			(*cflag) |= PARENB;
+     			(*cflag) &= ~PARODD;
 			LEAVE( "translate_parity" );
 			return 1;
+
 		case JPARITY_ODD:
 			(*cflag) |= PARENB | PARODD;
 			LEAVE( "translate_parity" );
@@ -1370,10 +1373,7 @@ JNIEXPORT jint JNICALL RXTXPort(readByte)( JNIEnv *env,
 		return -1;
 	}
 	LEAVE( "RXTXPort:readByte" );
-	return ( (jint) buffer[ 0 ] );
-/*
 	return (bytes ? (jint)buffer[ 0 ] : -1);
-*/
 }
 
 /*----------------------------------------------------------
@@ -1924,6 +1924,7 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 	int pid = -1;
 
 	ENTER( "RXTXPort:testRead" );
+	printf( "testing %s\n", name );
 #ifdef TRENT_IS_HERE_DEBUGGING_ENUMERATION
 	/* vmware lies about which ports are there causing irq conflicts */
 	/* this is for testing only */
