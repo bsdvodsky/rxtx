@@ -973,15 +973,16 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 #endif
 	unsigned int omflags;
 
-	jmethodID method, interrupt;
+	jmethodID sendEvent, interrupt;
 	jboolean interrupted = 0;
 	jclass jclazz, jthread;
+	jthrowable exception;
 	jclazz = (*env)->GetObjectClass( env, jobj );
 	fd = fd = get_java_var(env, jobj, "fd", "I");
-	method = (*env)->GetMethodID( env, jclazz, "sendEvent", "(IZ)V" );
+	sendEvent = (*env)->GetMethodID( env, jclazz, "sendEvent", "(IZ)Z" );
 	jthread = (*env)->FindClass( env, "java/lang/Thread" );
-	interrupt = (*env)->GetStaticMethodID( env, jthread, "interrupted", "()Z" );
-
+	interrupt = (*env)->GetStaticMethodID( env, jthread, "interrupted", 
+		"()Z" );
 	/* Some multiport serial cards do not implement TIOCGICOUNT ... */
 	/* So use the 'dumb' mode to enable using them after all! JK00 */
 #if defined(TIOCGICOUNT)
@@ -1009,6 +1010,8 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 
 	FD_ZERO( &rfds );
 	while( !interrupted ) {
+		interrupted = (*env)->CallStaticBooleanMethod( env, jthread, 
+			interrupt );
 		FD_SET( fd, &rfds );
 		/* Check every 1 second, or on receive data */
 		tv_sleep.tv_sec = 1; 
@@ -1032,7 +1035,8 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 				break;
 			}
 			else if( change ) {
-				(*env)->CallVoidMethod( env, jobj, method,
+				interrupted=(*env)->CallBooleanMethod( env, 
+					jobj, sendEvent,
 					(jint)SPE_OUTPUT_BUFFER_EMPTY, 
 					JNI_TRUE );
 			}
@@ -1053,23 +1057,27 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 				break; 
 			}
 			while( sis.frame != osis.frame ) {
-				(*env)->CallVoidMethod( env, jobj, method, 
-					(jint)SPE_FE, JNI_TRUE );
+				interrupted = (*env)->CallBooleanMethod( env, 
+					jobj, sendEvent, (jint)SPE_FE, 
+					JNI_TRUE );
 				osis.frame++;
 			}
 			while( sis.overrun != osis.overrun ) {
-				(*env)->CallVoidMethod( env, jobj, method, 
+				interrupted = (*env)->CallBooleanMethod( env, 
+					jobj, sendEvent, 
 					(jint)SPE_OE, JNI_TRUE );
 				osis.overrun++;
 			}
 			while( sis.parity != osis.parity ) {
-				(*env)->CallVoidMethod( env, jobj, method, 
+				interrupted = (*env)->CallBooleanMethod( env, 
+					jobj, sendEvent, 
 					(jint)SPE_PE, JNI_TRUE );
 				osis.parity++;
 			}
 			while( sis.brk != osis.brk ) {
-				(*env)->CallVoidMethod( env, jobj, method, 
-					(jint)SPE_BI, JNI_TRUE );
+				interrupted = (*env)->CallBooleanMethod( env, 
+					jobj, sendEvent, (jint)SPE_BI, 
+					JNI_TRUE );
 				osis.brk++;
 			}
 			osis = sis;
@@ -1079,41 +1087,40 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 			fprintf( stderr, "TIOCMGET Failed\n" );
 			break; 
 		}
-		interrupted = (*env)->CallStaticBooleanMethod( env, jthread, 
-			interrupt );
 	       /* A Portable implementation */
 		change = (mflags&TIOCM_CTS) - (omflags&TIOCM_CTS);
 		if( change ) {
 			fprintf(stderr, "Sending SPE_CTS\n");
-			(*env)->CallVoidMethod( env, jobj, method,
-				(jint)SPE_CTS, JNI_TRUE );
+			interrupted = (*env)->CallBooleanMethod( env, jobj, 
+				sendEvent, (jint)SPE_CTS, JNI_TRUE );
 		}
 		change = (mflags&TIOCM_DSR) - (omflags&TIOCM_DSR);
 		if( change ) {
 			fprintf(stderr, "Sending SPE_DSR\n");
-			(*env)->CallVoidMethod( env, jobj, method,
-				(jint)SPE_DSR, JNI_TRUE );
+			interrupted = (*env)->CallBooleanMethod( env, jobj, 
+				sendEvent, (jint)SPE_DSR, JNI_TRUE );
 		}
 		change = (mflags&TIOCM_RNG) - (omflags&TIOCM_RNG);
 		if( change ) {
 			fprintf(stderr, "Sending SPE_RI\n");
-			(*env)->CallVoidMethod( env, jobj, method,
-				(jint)SPE_RI, JNI_TRUE );
+			interrupted = (*env)->CallBooleanMethod( env, jobj, 
+				sendEvent, (jint)SPE_RI, JNI_TRUE );
 		}
 		change = (mflags&TIOCM_CD) - (omflags&TIOCM_CD);
 		if( change ) {
 			fprintf(stderr, "Sending SPE_CD\n");
-			(*env)->CallVoidMethod( env, jobj, method,
-				(jint)SPE_CD, JNI_TRUE );
+			interrupted = (*env)->CallBooleanMethod( env, jobj, 
+				sendEvent, (jint)SPE_CD, JNI_TRUE );
 		}
 		omflags = mflags;
 		if( ioctl( fd, FIONREAD, &change ) ) {
 			fprintf( stderr, "FIONREAD Failed\n" );
 		}
 		else if( change ) {
-			(*env)->CallVoidMethod( env, jobj, method,
-				(jint)SPE_DATA_AVAILABLE, JNI_TRUE );
-			usleep(1000); /* select wont block */
+			interrupted = (*env)->CallBooleanMethod( env, jobj, 
+				sendEvent, (jint)SPE_DATA_AVAILABLE, JNI_TRUE );
+			if( !interrupted )
+				usleep(1000); /* select wont block */
 		}
 	}
 	return;

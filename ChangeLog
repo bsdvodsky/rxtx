@@ -1,3 +1,6 @@
+1.4-4  Jun 15, 2000   An attempt to get eventLoop() to exit properly.
+                      Chris Portal <cportal@mathworks.com>
+		      data accessed by multiple threads declared volatile.
 1.4-3  Jun 14, 2000   synchronization fixes(?) 
                       Chris Portal <cportal@mathworks.com>
 		      Joey Armstrong <joeya@mathworks.com>
