@@ -1291,10 +1291,27 @@ JNIEXPORT jint JNICALL RXTXPort(nativeavailable)( JNIEnv *env,
 	ENTER( "RXTXPort:nativeavailable" );
 	if( ioctl( fd, FIONREAD, &result ) )
 	{
-		LEAVE( "RXTXPort:nativeavailable" );
-		throw_java_exception( env, IO_EXCEPTION, "nativeavailable",
+#ifdef __unixware__
+	/*
+	    On SCO OpenServer FIONREAD always fails for serial devices,
+	    so try ioctl FIORDCHK instead; will only tell us whether
+	    bytes are available, not how many, but better than nothing.
+	*/
+		result = ioctl(fd, FIORDCHK, 0);
+#ifdef DEBUG
+		fprintf(stderr, "    FIORDCHK result %d, errno %d\n", result , result == -1 ? errno : 0);
+#endif
+		if (result == -1) {
+#endif /* __unixware__ */
+			LEAVE( "RXTXPort:nativeavailable" );
+			throw_java_exception( env, IO_EXCEPTION,
+						"nativeavailable",
 			strerror( errno ) );
-		return -1;
+			return -1;
+#ifdef __unixware__
+		} else
+		return (jint)result;
+#endif /* __unixware__ */
 	}
 	LEAVE( "RXTXPort:nativeavailable" );
 	return (jint)result;
