@@ -3,7 +3,9 @@ This is MacOSX.  Last modified: Thu Oct  4 19:34:31 MDT 2001
 --------------------- Code Warrior Builds -------------------
 
 If a Headers directory turns up missing in CVS A tarball was included in
-PB/LibSerial just in case.
+PB/LibSerial just in case.  It should be ok.
+
+contributed by Dmitry Markman <dimitry.markman@verizon.net>
 
 --------------------- Gnu Tool Builds -----------------------
 
