@@ -112,7 +112,7 @@ final class RXTXPort extends SerialPort
 	*  @throws UnsupportedCommOperationException
 	*  @see javax.comm.UnsupportedCommOperationException
 	*/
-	public void setSerialPortParams( int b, int d, int s, int p )
+	public synchronized void setSerialPortParams( int b, int d, int s, int p )
 		throws UnsupportedCommOperationException
 	{
 		if (debug)
@@ -809,7 +809,7 @@ final class RXTXPort extends SerialPort
 	private native void nativeClose( String name );
 	/**
 	*/
-	public void close()
+	public synchronized void close()
 	{
 		if (debug)
 			System.out.println("RXTXPort:close( " + this.name + " )"); 
