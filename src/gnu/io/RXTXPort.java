@@ -26,10 +26,10 @@ import javax.comm.*;
 /**
   * RXTXPort
   */
-final class RXTXPort extends SerialPort {
+class RXTXPort extends SerialPort {
 
-
-	static {
+	static 
+	{
 		System.loadLibrary( "Serial" );
 		Initialize();
 	}
@@ -225,7 +225,7 @@ final class RXTXPort extends SerialPort {
 
 	/** Process SerialPortEvents */
 	native void eventLoop();
-	void sendEvent( int event, boolean state ) {
+	public void sendEvent( int event, boolean state ) {
 		switch( event ) {
 			case SerialPortEvent.DATA_AVAILABLE:
 				if( monThread.Data ) break;
