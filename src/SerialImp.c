@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
-|   Copyright 1997-2000 by Trent Jarvi trentjarvi@yahoo.com
+|   Copyright 1997-2001 by Trent Jarvi trentjarvi@yahoo.com
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Library General Public
@@ -1151,7 +1151,10 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(JNIEnv *env,
 			goto END;
 		}
 		if (read(fd, &c, 1) < 0)
-			ret = JNI_FALSE;
+			if ( errno != EWOULDBLOCK )
+			{ 
+				ret = JNI_FALSE; 
+			}
 	}
 END:
 	fhs_unlock(name);

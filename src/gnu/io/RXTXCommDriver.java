@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------
 |   A wrapper to convert RXTX into Linux Java Comm
 |   Copyright 1998 Kevin Hester, kevinh@acm.org
-|   Copyright 2000 Trent Jarvi, trentjarvi@yahoo.com
+|   Copyright 2000-2001 Trent Jarvi, trentjarvi@yahoo.com
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Library General Public
@@ -123,9 +123,9 @@ public class RXTXCommDriver implements CommDriver
 							PortType,
 							this
 						);
+					}
 				}
 			}
-		}
 		}
 		if (debug)
 			System.out.println("Leaving registerValidPorts()");
