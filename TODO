@@ -16,6 +16,8 @@ the problem and find a fix for RXTX please let the maintainer know.
 Buffer Size is just a var.  No memory is allocated.  This was done to duplicate
 the behavior in the behavior table in javax.comm.CommPort.html.  Its not clear
 to me if the buffers are just mallocs or modem buffers.  Any experts there?
+(its probably refering to fopen()/fread()/fwrite()/fclose() which may or may
+not be of interest to someone)
 
 While looking through the blackdown mail list, it was obvious that some people
 really want printer support.  Here is a chance to put it in themselves.
@@ -24,6 +26,17 @@ ParallelPort and CommPortIdentifier files are provided so you can start
 implementing right away without worrying about how automake works.  They are 
 not written in stone.  If you want to do it differently feel free.
 The good side is the stuff compiles as is.  
+
+Currently (rxtx-1.4-5) sun's jdk (version 1.2.2_006) with native threads is 
+locking up with multiple open()/closes().  Its ugly.   The stack trace is 
+useless.  No insight from jdb.  The green threads are working.
+
+I'd suggest avoiding native threads with 1.2.2_006 unless you can figure out
+whats going wrong.
+
+
+Irix SerialPort support
+	I've heard it works.  I didnt get an exact diff back but it should work.
 
 *BSD SerialPort support
 	freebsd serial works.

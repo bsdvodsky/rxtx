@@ -27,6 +27,7 @@ PORTING:   hints for people trying to port rxtx
 Authors:   who wrote what.
 ChangeLog: when they wrote it.
 RMISecurityManager.html:  Comments for people using RMISecurityManager 
+SerialPortInstructions.txt:  HOWTO on read/writing to your com ports on linux for beginners
 
 There are numerous possibilities for projects that involve serial communication.
 Java is an excellent language for putting GUI apps together.  Well have fun.  

@@ -18,36 +18,37 @@
 --------------------------------------------------------------------------*/
 package gnu.io;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import javax.comm.*;
 
 /**
-   This is the JavaComm for Linux driver.  
+   This is the JavaComm for Linux driver.
 */
 public class RXTXCommDriver implements CommDriver {
 
 
 	static String OS;
-        static 
-	{ 
+	static
+	{
 		OS = System.getProperty("os.name");
 		if(OS.equals("Win95"))
 		{
 			System.loadLibrary("SerialW95");
 		}
-		else 
+		else
 		{
-			System.loadLibrary( "Serial" ); 
+			System.loadLibrary( "Serial" );
 		}
 	}
 
 	/** Get the Serial port prefixes for the running OS */
-	private native boolean IsDeviceGood(String dev);
+	private native boolean isDeviceGood(String dev);
 	private final String[] getPortPrefixes(String AllKnownPorts[]) {
 		int i=0;
 		String PortString[]=new String [256];
 		for(int j=0;j<AllKnownPorts.length;j++){
-			if(IsDeviceGood(AllKnownPorts[j])) {
+			if(isDeviceGood(AllKnownPorts[j])) {
 				PortString[i++]=AllKnownPorts[j];
 			}
 		}
@@ -68,11 +69,11 @@ public class RXTXCommDriver implements CommDriver {
 				if( devs[ i ].startsWith( Prefix[ p ] ) ) {
 					String portName = "/dev/" + devs[ i ];
 					File port = new File( portName );
-					if( port.canRead() && port.canWrite() ) 
-						CommPortIdentifier.addPortName( 
+					if( port.canRead() && port.canWrite() )
+						CommPortIdentifier.addPortName(
 							portName,
 							PortType,
-							this 
+							this
 						);
 				}
 			}
@@ -85,23 +86,23 @@ public class RXTXCommDriver implements CommDriver {
     * 1) Ensure that that the hardware is present.
     * 2) Load any required native libraries.
     * 3) Register the port names with the CommPortIdentifier.
-	 * 
+	 *
 	 * <p>From the NullDriver.java CommAPI sample.
-         *
-         * added printerport stuff
-         * Holger Lehmann
-         * July 12, 1999
-         * IBM
+	 *
+	 * added printerport stuff
+	 * Holger Lehmann
+	 * July 12, 1999
+	 * IBM
 
-         * Added ttyM for Moxa boards
-         * Removed obsolete device cuaa
-         * Peter Bennett
-         * January 02, 2000
-         * Bencom
+	 * Added ttyM for Moxa boards
+	 * Removed obsolete device cuaa
+	 * Peter Bennett
+	 * January 02, 2000
+	 * Bencom
 
     */
     /*
-	See SerialImp.c's *KnownPorts[] when adding ports 
+	See SerialImp.c's *KnownPorts[] when adding ports
     */
 	public void initialize() {
 		File dev = new File( "/dev" );
@@ -122,11 +123,11 @@ public class RXTXCommDriver implements CommDriver {
 			"ttyI", // linux virtual modems
 			"ttyL", // linux SDL RISCom serial card
 			"ttyM", // linux PAM Software's multimodem boards
-			        // linux ISI serial card
+				// linux ISI serial card
 			"ttyMX",// linux Moxa Smart IO cards
 			"ttyP", // linux Hayes ESP serial card
 			"ttyR", // linux comtrol cards
-			        // linux Specialix RIO serial card
+				// linux Specialix RIO serial card
 			"ttyS", // linux Serial Ports
 			"ttySI",// linux SmartIO serial card
 			"ttySR",// linux Specialix RIO serial card 257+
@@ -136,14 +137,19 @@ public class RXTXCommDriver implements CommDriver {
 			"ttyW", // linux specialix cards
 			"ttyX", // linux SpecialX serial card
 
-			"ttyf", // irix serial ports with hardware flow
+			"ttyd", // irix basic serial ports
 			"ttym", // irix modems
+			"ttyf", // irix serial ports with hardware flow
 			"ttyq", // irix pseudo ttys
-			"ttyd", // irix serial ports
+			"ttyc", // irix raw character devices
+			"tty4d",// irix RS422
+			"tty4f",// irix RS422 with HSKo/HSki
+			"midi", // irix serial midi
+			"us",   // irix mapped interface
 
 			"cuaa", // FreeBSD Serial Ports
 
-			"tty0", // netbsd serial ports 
+			"tty0", // netbsd serial ports
 
 			"tty0p",// HP-UX serial ports
 			"tty1p" // HP-UX serial ports
@@ -170,22 +176,23 @@ public class RXTXCommDriver implements CommDriver {
 
 
 	/*
-	 * getCommPort() will be called by CommPortIdentifier from its openPort()
-	 * method. portName is a string that was registered earlier using the
-	 * CommPortIdentifier.addPortName() method. getCommPort() returns an
-	 * object that extends either SerialPort or ParallelPort.
+	 * getCommPort() will be called by CommPortIdentifier from its
+	 * openPort() method. portName is a string that was registered earlier
+	 * using the CommPortIdentifier.addPortName() method. getCommPort()
+	 * returns an object that extends either SerialPort or ParallelPort.
 	 *
 	 * <p>From the NullDriver.java CommAPI sample.
 	 */
-	public CommPort getCommPort( String portName, int portType ) {
+	public CommPort getCommPort( String portName, int portType )
+	{
 		try {
 			if (portType==CommPortIdentifier.PORT_SERIAL)
 			{
-				return new RXTXPort( portName ); 
+				return new RXTXPort( portName );
 			}
 			else if (portType==CommPortIdentifier.PORT_PARALLEL)
 			{
-				return new LPRPort( portName ); 
+				return new LPRPort( portName );
 			}
 		} catch( IOException e ) {
 			e.printStackTrace();
