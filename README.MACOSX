@@ -1,0 +1,88 @@
+10.2 installation
+
+here is the instructions for building and installing RXTX 2.0.X from CVS
+on Mac OS X 10.2 from scratch
+
+1. open Terminal application
+2. create somewhere folder with arbitrary name for example RXTX_2.0
+in Terminal window
+3.        cd <path to RXTX_2.0 folder>
+4.       export CVSROOT=:pserver:anonymous@cvs.milestonesolutions.com:/usr/local/cvsroot
+5.       cvs login                                       (password is         mousy)
+6.       cvs co rxtx-devel
+7.      cd rxtx-devel/MACOSX_IDE/PB/
+8.     open .
+
+at that point you will see Finder's window
+
+9.  decode and unstuff file LibSerial.pbproj.sit.hqx
+
+YOU MUST INSTALL JULY APPLE DEVELOPER TOOLS!!!! (come with 10.2 CDs)
+
+10. open the project LibSerial.pbproj
+
+if you open new ProjectBuilder first time you will need to answer to few questions
+
+(I hope you don't have RXTX 1.5/2.1 installation on your machine. if you do javah file won't 
+work,
+but don't worry, you have Header folder already)
+
+IF YOU HAVE RXTX 1.5.X/2.1.X installation on your machine you should remove
+librxtxSerial.jnilib and RXTXcomm.jar from your hard drive.
+
+11. create file with name
+javax.comm.properties
+
+that should contain only 1 line:
+Driver=gnu.io.RXTXCommDriver
+
+put this file into the folder (you will need admin privileges)
+
+/System/Library/Frameworks/JavaVM.framework/Home/lib
+
+12. you should download from sun's site SOLARIS version of comm.jar (not Windows)
+you have  to put that file into  /System/Library/Frameworks/JavaVM.framework/Home/lib/ext folder
+
+
+13. go to ProjectBuilder application
+14. choose jcl.jar target
+(be sure that ProjectBuilder  can find comm.jar file)
+
+15. press button "Clean active target" "broom"
+16. build target ("hammer")
+17. choose librxtxSerial.jnilib target
+18. press button "Clean active target" "broom"
+19. build target ("hammer")
+
+near the file LibSerial.pbproj you can find build folder
+
+you will find jcl.jar and librxtxSerial.jnilib there.
+copy those files into /Library/Java/Extensions folder
+
+20. you should set up uucp privileges
+if you don't have uucp group on your computer
+
+you should add group uucp
+and you should add yourself into uucp group
+
+after that run following script
+(you can find it in the folder 
+rxtx-devel/MACOSX_IDE/ForPackageMaker/Install/Resources/RXTX.pre_install)
+
+#!/bin/sh
+curruser=`sudo id -p | grep 'login' | sed 's/login.//'`
+
+if [ ! -d /var/spool/uucp ]
+then
+sudo mkdir /var/spool/uucp
+fi
+
+sudo chgrp uucp /var/spool/uucp
+sudo chmod 775 /var/spool/uucp
+if [ ! `sudo niutil -readprop / /groups/uucp users | grep $curruser > /dev/null` ]
+then
+ sudo niutil -mergeprop / /groups/uucp users $curruser
+fi
+
+21. you are all set
+
