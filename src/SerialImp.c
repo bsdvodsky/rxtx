@@ -910,6 +910,7 @@ int get_java_fd( JNIEnv *env, jobject jobj )
 IOException
 
    accept:      env (keyhole to java)
+                *foo (function name)
                 *msg (error message)
    perform:     Throw a java.io.IOException
    return:      none
@@ -918,12 +919,12 @@ IOException
 ----------------------------------------------------------*/ 
 void IOException( JNIEnv *env, char *foo, char *msg )
 {
+	char buf[ 60 ];
 	jclass clazz = (*env)->FindClass( env, "java/io/IOException" );
 	if( clazz == 0 ) return;
-#ifdef DEBUG
-	printf("rxtx is throwing an IOExecption from Java_gnu_io_RXTXPort_%s\n",foo);
-#endif
-	(*env)->ThrowNew( env, clazz, msg );
+
+	snprintf( buf, 60, "%s in %s", msg, foo );
+	(*env)->ThrowNew( env, clazz, buf );
 }
 
 
@@ -931,6 +932,7 @@ void IOException( JNIEnv *env, char *foo, char *msg )
 UnsupportedCommOperationException
 
    accept:      env (keyhole to java)
+                *foo (function name)
                 *msg (error message)
    perform:     Throw a javax.comm.UnsupportedCommOperationException
    return:      none
@@ -939,11 +941,12 @@ UnsupportedCommOperationException
 ----------------------------------------------------------*/ 
 void UnsupportedCommOperationException( JNIEnv *env, char *foo, char *msg )
 {
+	char buf[ 60 ];
 	jclass clazz = (*env)->FindClass( env,
 		"javax/comm/UnsupportedCommOperationException" );
 	if( clazz == 0 ) return;
-#ifdef DEBUG
-	printf("rxtx is throwing an UnsupportedCommOperationException from %s\n",foo);
-#endif
-	(*env)->ThrowNew( env, clazz, msg );
+
+	snprintf( buf, 60, "%s in %s", msg, foo );
+	(*env)->ThrowNew( env, clazz, buf );
 }
+
