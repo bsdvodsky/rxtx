@@ -33,8 +33,7 @@ LIBTOOL = $(SHELL) $(TOP)/libtool
 LINK = $(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) -version-info 1:0:1
 SERIAL_HEADER = $(TOP)/$(target_alias)/gnu_io_RXTXPort.h 
 PARALLEL_HEADER = $(TOP)/$(target_alias)/gnu_io_LPRPort.h
-CLEANFILES = .deps/* $(TOP)/*.class $(TOP)/gnu/io/*.class \
-              $(TOP)/*/.libs/* $(TOP)/stamp-h
+CLEANFILES = CLEANFILES = $(TOP)/*.class $(TOP)/gnu/io/*.class $(TOP)/jcl.jar
 #LTLIBRARIES =     $(lib_LTLIBRARIES)
 #BUILT_SOURCES = $(TOP)/$(target_alias)/libSerial.la
 SUFFIXES = .java .class
@@ -42,6 +41,10 @@ SUFFIXES = .class .h
 
 install: all jcl install-lib
 
+clean-generic:
+	rm -rf $(TOP)/$(target_alias) $(TOP)/gnu 
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
+	@echo -e "\n\nMake distclean will remove the remaining files\n\n"
 install-lib:
 	( cd $(TOP)/$(target_alias) ; \
 	if [ -f libSerial.la ];then \
@@ -59,14 +62,11 @@ run: $(TOP)/test.class all jcl
 	$(JAVA) test)
 
 all: @IDENTIFIERS@ @TARGETLIB@
-	@echo ""
-	@echo "If you have javax.comm.* and java.comm.* in your CLASSPATH, type make jcl to"
-	@echo "build the javacomm20-x86.tar.Z supporting classes."
-	@echo ""
+	@echo -e "\n\nIf you have javax.comm.* and java.comm.* in your CLASSPATH, type make jcl to"
+	@echo -e "build the javacomm20-x86.tar.Z supporting classes.\n"
 	@echo "Note: CLASSPATH was grabbed during the configure stage.  Modification of the"
 	@echo "environment variable will not change the behavior of make without rerunning" 
-	@echo "configure or editing the Makefile."
-	@echo ""
+	@echo  -e "configure or editing the Makefile. \n"
 
 jcl:  $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class $(TOP)/gnu/io/RXTXPort.class @IDENTIFIERS@
 	$(JAR) cf jcl.jar gnu/io/*
