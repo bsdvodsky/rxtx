@@ -48,7 +48,7 @@ extern int errno;
 #include "SerialImp.h"
 
 /*----------------------------------------------------------
-NativePort.Initialize
+RXTXPort.Initialize
 
    accept:      none
    perform:     Initialize the native library
@@ -68,7 +68,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_Initialize( JNIEnv *env,
 
 
 /*----------------------------------------------------------
-NativePort.open
+RXTXPort.open
 
    accept:      The device to open.  ie "/dev/ttyS0"
    perform:     open the device, set the termios struct to sane settings and 
@@ -119,14 +119,14 @@ fail:
 
 
 /*----------------------------------------------------------
-NativePort.close
+RXTXPort.nativeClose
 
    accept:      none
    perform:     get the fd from the java end and close it
    return:      none
    exceptions:  none
 ----------------------------------------------------------*/ 
-JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_close( JNIEnv *env,
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_nativeClose( JNIEnv *env,
 	jobject jobj )
 {
 	int result;
@@ -140,7 +140,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_close( JNIEnv *env,
 
 
 /*----------------------------------------------------------
- NativePort.nativeSetSerialPortParams
+ RXTXPort.nativeSetSerialPortParams
 
    accept:     speed, data bits, stop bits, parity
    perform:    set the serial port parameters
@@ -319,7 +319,7 @@ int translate_parity( JNIEnv *env, int *cflag, jint parity )
 
 
 /*----------------------------------------------------------
-NativePort.writeByte
+RXTXPort.writeByte
 
    accept:      byte to write (passed as int)
    perform:     write a single byte to the port
@@ -343,7 +343,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeByte( JNIEnv *env,
 
 
 /*----------------------------------------------------------
-NativePort.writeArray
+RXTXPort.writeArray
 
    accept:      jbarray: bytes used for writing 
                 offset: offset in array to start writing
@@ -373,7 +373,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeArray( JNIEnv *env,
 
 
 /*----------------------------------------------------------
-NativePort.drain
+RXTXPort.drain
 
    accept:      none
    perform:     wait until all data is transmitted
@@ -398,7 +398,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_drain( JNIEnv *env,
 
 
 /*----------------------------------------------------------
-NativePort.sendBreak
+RXTXPort.sendBreak
 
    accept:     duration in milliseconds.
    perform:    send break for actual time.  not less than 0.25 seconds.
@@ -414,7 +414,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_sendBreak( JNIEnv *env,
 
 
 /*----------------------------------------------------------
-NativePort.isDSR
+RXTXPort.isDSR
 
    accept:      none
    perform:     check status of DSR
@@ -436,7 +436,7 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isDSR( JNIEnv *env,
 
 
 /*----------------------------------------------------------
-NativePort.isCD
+RXTXPort.isCD
 
    accept:      none
    perform:     check status of CD
@@ -458,7 +458,7 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isCD( JNIEnv *env,
 
 
 /*----------------------------------------------------------
-NativePort.isCTS
+RXTXPort.isCTS
 
    accept:      none
    perform:     check status of CTS
@@ -480,7 +480,7 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isCTS( JNIEnv *env,
 
 
 /*----------------------------------------------------------
-NativePort.isRI
+RXTXPort.isRI
 
    accept:      none
    perform:     check status of RI
@@ -502,7 +502,7 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isRI( JNIEnv *env,
 
 
 /*----------------------------------------------------------
-NativePort.isRTS
+RXTXPort.isRTS
 
    accept:      none
    perform:     check status of RTS
@@ -524,7 +524,7 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isRTS( JNIEnv *env,
 
 
 /*----------------------------------------------------------
-NativePort.setRTS
+RXTXPort.setRTS
 
    accept:      state  flag to set/unset.
    perform:     depends on the state flag
@@ -549,7 +549,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setRTS( JNIEnv *env,
 
 
 /*----------------------------------------------------------
-NativePort.isDTR
+RXTXPort.isDTR
 
    accept:      none
    perform:     check status of DTR
@@ -571,7 +571,7 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isDTR( JNIEnv *env,
 
 
 /*----------------------------------------------------------
-NativePort.setDTR
+RXTXPort.setDTR
 
    accept:      new DTR state
    perform:     if state is true, TIOCM_DTR is set
@@ -647,7 +647,7 @@ int read_byte_array( int fd, unsigned char *buffer, int length, int threshold,
 
 
 /*----------------------------------------------------------
-NativePort.readByte
+RXTXPort.readByte
 
    accept:      none
    perform:     Read a single byte from the port
@@ -676,7 +676,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_readByte( JNIEnv *env,
 
 
 /*----------------------------------------------------------
-NativePort.readArray
+RXTXPort.readArray
 
    accept:       offset (bytes to skip) and Length (bytes to read)
    perform:      read bytes from the port into a byte array
@@ -727,7 +727,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_readArray( JNIEnv *env,
 
 
 /*----------------------------------------------------------
-NativePort.nativeavailable
+RXTXPort.nativeavailable
 
    accept:      none
    perform:     find out the number of bytes available for reading
@@ -747,7 +747,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_nativeavailable( JNIEnv *env,
 
 
 /*----------------------------------------------------------
-NativePort.setHWFC
+RXTXPort.setHWFC
 
    accept:      state (JNI_FALSE 0, JNI_TRUE 1)
    perform:     set hardware flow control to state
@@ -772,7 +772,7 @@ fail:
 
 
 /*----------------------------------------------------------
-NativePort.eventLoop
+RXTXPort.eventLoop
 
    accept:      none
    perform:     periodically check for SerialPortEvents
@@ -888,7 +888,7 @@ void send_modem_events( JNIEnv *env, jobject jobj, jmethodID method,
 get_java_fd
 
    accept:      env (keyhole to java)
-                jobj (java NativePort object)
+                jobj (java RXTXPort object)
    return:      the fd field from the java object
    exceptions:  none
    comments:
