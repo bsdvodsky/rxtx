@@ -28,6 +28,7 @@
 #include <sys/errno.h>
 #include <sys/param.h>
 #include <sys/time.h>
+#include <sys/utsname.h>
 #ifdef HAVE_TERMIOS_H
 #	include <termios.h>
 #endif
@@ -43,6 +44,7 @@
 
 #if defined(__linux__)
 #	include <linux/serial.h>
+#	include <linux/version.h>
 #endif
 
 extern int errno;
@@ -62,6 +64,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_Initialize(
 	jclass jclazz 
 	)
 {
+	struct utsname name;
 	/* This bit of code checks to see if there is a signal handler installed
 	   for SIGIO, and installs SIG_IGN if there is not.  This is necessary
 	   for the native threads jdk, but we don't want to do it with green
@@ -73,6 +76,21 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_Initialize(
 	sigaction( SIGIO, NULL, &handler );
 	if( !handler.sa_handler ) signal( SIGIO, SIG_IGN );
 #endif /* __FreeBSD__ */
+#if defined(__linux__) 
+	/* Lets let people who upgraded kernels know they may have problems */
+	if (uname (&name) == -1)
+	{
+ 		printf("RXTX WARNING:  cannot get system name\n");
+		return;
+	}
+	if(strcmp(name.release,UTS_RELEASE)!=0)
+	{
+		printf("\n\n\nRXTX WARNING:  This library was compiled to run with OS release %s and you are currently running OS release %s.  In some cases this can be a problem.  Try recompiling RXTX if you notice strange behavior.  If you just compiled RXTX make sure /usr/include/linux is a symbolic link to the include files that came with the kernel source and not an older copy.\n\n\npress enter to continue\n",UTS_RELEASE,name.release);
+		getchar();
+	}
+#endif /* __linux__ */
+	
+
 }
 
 
