@@ -432,6 +432,57 @@ public class RXTXCommDriver implements CommDriver
 					String[] Temp = {
 						"tty0p",// HP-UX serial ports
 						"tty1p" // HP-UX serial ports
+				};
+				AllKnownSerialPorts=Temp;
+				}
+
+				else if(osName.equals("UnixWare") ||
+						osName.equals("OpenUNIX"))
+				{
+					String[] Temp = {
+						"tty00s", // UW7/OU8 serial ports
+						"tty01s",
+						"tty02s",
+						"tty03s" 
+					};
+					AllKnownSerialPorts=Temp;
+				}
+
+			else if	(osName.equals("OpenServer"))
+				{
+					String[] Temp = {
+						"tty1A",  // OSR5 serial ports
+						"tty2A",
+						"tty3A",
+						"tty4A",
+						"tty5A",
+						"tty6A",
+						"tty7A",
+						"tty8A",
+						"tty9A",
+						"tty10A",
+						"tty11A",
+						"tty12A",
+						"tty13A",
+						"tty14A",
+						"tty15A",
+						"tty16A",
+						"ttyu1A", // OSR5 USB-serial ports
+						"ttyu2A",
+						"ttyu3A",
+						"ttyu4A",
+						"ttyu5A",
+						"ttyu6A",
+						"ttyu7A",
+						"ttyu8A",
+						"ttyu9A",
+						"ttyu10A",
+						"ttyu11A",
+						"ttyu12A",
+						"ttyu13A",
+						"ttyu14A",
+						"ttyu15A",
+						"ttyu16A"
 					};
 					CandidatePortPrefixes=Temp;
 				}
