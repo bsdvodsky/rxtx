@@ -1109,11 +1109,13 @@ ioctl()
 int ioctl(int fd, int request, ...) {
 	DWORD dwStatus = 0;
 	va_list ap;
-	int *arg;
+	int *arg, ret;
 	struct serial_struct *sstruct;
 	struct async_struct *astruct;
 	struct serial_multiport_struct *mstruct;
 	struct serial_icounter_struct *sistruct;
+	DWORD ErrCode;
+	COMSTAT Stat;
 
 	va_start(ap, request);
 	
@@ -1205,7 +1207,13 @@ int ioctl(int fd, int request, ...) {
 		/*  number of bytes available for reading */
 		case FIONREAD: 
 			arg = va_arg(ap, int *);
-			return -ENOIOCTLCMD;;
+			ret = ClearCommError(tl[fd]->hComm, &ErrCode, &Stat);
+			if ( ret == 0 ) return -1;
+			*arg = (int) Stat.cbInQue;
+			/* FIXME ? */
+			set_errno( EBADFD );
+			break;
+
 		/* pending bytes to be sent */
 		case TIOCOUTQ:
 			arg = va_arg(ap, int *);
