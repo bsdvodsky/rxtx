@@ -429,7 +429,7 @@ int serial_open(const char *filename, int flags) {
 		0,
 		0,
 		OPEN_EXISTING,
-		0,	//		FILE_FLAG_OVERLAPPED,
+		FILE_FLAG_OVERLAPPED,	//		FILE_FLAG_OVERLAPPED,
 		0);
 	if (hComm == INVALID_HANDLE_VALUE) {
 		errno = EINVAL;
@@ -485,17 +485,54 @@ serial_write()
 ----------------------------------------------------------*/
 
 int serial_write(int fd, char *Str, int length) {
-	DWORD nBytes;
+	DWORD nBytes, pendingResult, wrote;
+	OVERLAPPED ol;
+
 	/***** output mode flags (c_oflag) *****/
 	/* FIXME: OPOST: enable ONLCR, OXTABS & ONOEOT */
 	/* FIXME: ONLCR: convert newline char to CR & LF */
 	/* FIXME: OXTABS: convert tabs to spaces */
 	/* FIXME: ONOEOT: discard ^D (004) */
-	if (!WriteFile(tl[fd]->hComm, Str, length, &nBytes, NULL)) {
-		ClearError(tl[fd]->hComm);
+
+	ol.hEvent = CreateEvent( NULL, TRUE, FALSE, NULL );
+
+	if ( ol.hEvent == NULL )	
+	{
+		fprintf( stderr, "Write could not create overlapped\n");
 		nBytes=-1;
+		goto fail;
+	}
+
+	if (!WriteFile(tl[fd]->hComm, Str, length, &nBytes, &ol ))
+	{
+		if ( GetLastError() != ERROR_IO_PENDING )
+		{
+			ClearError(tl[fd]->hComm);
+			nBytes=-1;
+			goto end;
+		}
+		else
+		{
+			pendingResult = WaitForSingleObject(
+						ol.hEvent,
+						INFINITE );
+			if ( 	( pendingResult !=  WAIT_OBJECT_0 ) ||
+				( ! GetOverlappedResult( tl[fd]->hComm,
+							&ol,
+							&wrote,
+							FALSE )
+				)		
+			)
+			{
+				nBytes=-1;
+				goto end;
+			}
+		}
 	}
 	FlushFileBuffers(tl[fd]->hComm);
+end:
+	CloseHandle( ol.hEvent );
+fail:
 	return nBytes;
 }
 
@@ -1316,7 +1353,7 @@ int  serial_select(int  n,  fd_set  *readfds,  fd_set  *writefds,
 			break;
 		printf( " %i %s\n", i, tl[i]->filename );
 	}
-	if ( !SetCommMask( tl[n-1]->hComm, EV_RXCHAR ) )
+	if ( !SetCommMask( tl[n-1]->hComm, EV_RXCHAR|EV_TXEMPTY ) )
 		goto fail;
 	
 	if ( !WaitCommEvent( tl[ n-1 ]->hComm, &dwCommEvent, NULL ) )
