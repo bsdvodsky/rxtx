@@ -184,41 +184,41 @@ final class RXTXPort extends SerialPort {
 	private SerialPortEventListener SPEventListener;
 
 	/** Thread to monitor data */
-	private Thread monThread;
+	private MonitorThread monThread;
 
 	/** Process SerialPortEvents */
 	native void eventLoop();
 	void sendEvent( int event, boolean state ) {
 		switch( event ) {
 			case SerialPortEvent.DATA_AVAILABLE:
-				if( monData ) break;
+				if( monThread.Data ) break;
 				return;
 			case SerialPortEvent.OUTPUT_BUFFER_EMPTY:
-				if( monOutput ) break;
+				if( monThread.Output ) break;
 				return;
 			case SerialPortEvent.CTS:
-				if( monCTS ) break;
+				if( monThread.CTS ) break;
 				return;
 			case SerialPortEvent.DSR:
-				if( monDSR ) break;
+				if( monThread.DSR ) break;
 				return;
 			case SerialPortEvent.RI:
-				if( monRI ) break;
+				if( monThread.RI ) break;
 				return;
 			case SerialPortEvent.CD:
-				if( monCD ) break;
+				if( monThread.CD ) break;
 				return;
 			case SerialPortEvent.OE:
-				if( monOE ) break;
+				if( monThread.OE ) break;
 				return;
 			case SerialPortEvent.PE:
-				if( monPE ) break;
+				if( monThread.PE ) break;
 				return;
 			case SerialPortEvent.FE:
-				if( monFE ) break;
+				if( monThread.FE ) break;
 				return;
 			case SerialPortEvent.BI:
-				if( monBI ) break;
+				if( monThread.BI ) break;
 				return;
 			default:
 				return;
@@ -233,14 +233,9 @@ final class RXTXPort extends SerialPort {
 	{
 		if( SPEventListener != null ) throw new TooManyListenersException();
 		SPEventListener = lsnr;
-		monThread = new Thread() {
-			public void run() {
-				eventLoop();
-			}
-		};
+		monThread = new MonitorThread();
 		monThread.start(); 
 	}
-
 	/** Remove the serial port event listener */
 	public void removeEventListener() {
 		SPEventListener = null;
@@ -248,41 +243,20 @@ final class RXTXPort extends SerialPort {
 			monThread.interrupt();
 			monThread = null;
 		}
-		/* FIXME: Should we reset all the notify flags here? */
 	}
 
-	/** Note: these have to be separate boolean flags because the
-	   SerialPortEvent constants are NOT bit-flags, they are just
-	   defined as integers from 1 to 10  -DPL */
-	private boolean monData = false;
-	public void notifyOnDataAvailable( boolean enable ) { monData = enable; }
+	public void notifyOnDataAvailable( boolean enable ) { monThread.Data = enable; }
 
-	private boolean monOutput = false;
-	public void notifyOnOutputEmpty( boolean enable ) { monOutput = enable; }
+	public void notifyOnOutputEmpty( boolean enable ) { monThread.Output = enable; }
 
-	private boolean monCTS = false;
-	public void notifyOnCTS( boolean enable ) { monCTS = enable; }
-
-	private boolean monDSR = false;
-	public void notifyOnDSR( boolean enable ) { monDSR = enable; }
-
-	private boolean monRI = false;
-	public void notifyOnRingIndicator( boolean enable ) { monRI = enable; }
-
-	private boolean monCD = false;
-	public void notifyOnCarrierDetect( boolean enable ) { monCD = enable; }
-
-	private boolean monOE = false;
-	public void notifyOnOverrunError( boolean enable ) { monOE = enable; }
-
-	private boolean monPE = false;
-	public void notifyOnParityError( boolean enable ) { monPE = enable; }
-
-	private boolean monFE = false;
-	public void notifyOnFramingError( boolean enable ) { monFE = enable; }
-
-	private boolean monBI = false;
-	public void notifyOnBreakInterrupt( boolean enable ) { monBI = enable; }
+	public void notifyOnCTS( boolean enable ) { monThread.CTS = enable; }
+	public void notifyOnDSR( boolean enable ) { monThread.DSR = enable; }
+	public void notifyOnRingIndicator( boolean enable ) { monThread.RI = enable; }
+	public void notifyOnCarrierDetect( boolean enable ) { monThread.CD = enable; }
+	public void notifyOnOverrunError( boolean enable ) { monThread.OE = enable; }
+	public void notifyOnParityError( boolean enable ) { monThread.PE = enable; }
+	public void notifyOnFramingError( boolean enable ) { monThread.FE = enable; }
+	public void notifyOnBreakInterrupt( boolean enable ) { monThread.BI = enable; }
 
 
 	/** Close the port */
@@ -331,6 +305,25 @@ final class RXTXPort extends SerialPort {
 		}
 		public int available() throws IOException {
 			return nativeavailable();
+		}
+	}
+	class MonitorThread extends Thread {
+	/** Note: these have to be separate boolean flags because the
+	   SerialPortEvent constants are NOT bit-flags, they are just
+	   defined as integers from 1 to 10  -DPL */
+		private boolean CTS=false;
+		private boolean DSR=false;
+		private boolean RI=false;
+		private boolean CD=false;
+		private boolean OE=false;
+		private boolean PE=false;
+		private boolean FE=false;
+		private boolean BI=false;
+		private boolean Data=false;
+		private boolean Output=false;
+		MonitorThread() { }
+		public void run() {
+			eventLoop();
 		}
 	}
 }

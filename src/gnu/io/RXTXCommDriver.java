@@ -27,20 +27,25 @@ import javax.comm.*;
 public class RXTXCommDriver implements CommDriver {
 
 
+        static {
+                System.loadLibrary( "Serial" );
+        }
+
 	/** Get the Serial port prefixes for the running OS */
-	private final String[] getSerialPortPrefixes() {
-		String os = System.getProperties().getProperty( "os.name" );
-		if( os.equals( "Linux" ) )
-			return new String [] { "modem", "ttyS", "ttyW", "ttyC", "ttyI" };
-		return new String [] {
-			"modem",	// modem ports
-			"ttyd",	// irix serial ports
-			"ttyf",	// irix serial ports with hardware flow
-			"ttym",	// irix modems
-			"ttyq",	// irix pseudo ttys
-			"ttyW",	// specialix cards
-			"ttyC"	// cyclades cards
-		};
+	private native boolean IsDeviceGood(String dev);
+	private final String[] getSerialPortPrefixes(String AllKnownPorts[]) {
+		int i=0;
+		String PortString[]=new String [256];
+		for(int j=0;j<AllKnownPorts.length;j++){
+			if(IsDeviceGood(AllKnownPorts[j])) {
+				PortString[i++]=AllKnownPorts[j];
+			}
+		}
+		String PortString2[] =new String[i];
+		for(int j=0;j<i;j++){
+			PortString2[j]=PortString[j];
+		}
+		return PortString2;
 	}
 
 
@@ -56,7 +61,18 @@ public class RXTXCommDriver implements CommDriver {
 	public void initialize() {
 		File dev = new File( "/dev" );
 		String[] devs = dev.list();
-		String[] portPrefix = getSerialPortPrefixes();
+		String[] AllKnownPorts={
+			"modem",// linux symbolic link to modem.
+			"ttyS",// linux Serial Ports
+			"ttyI",// linux virtual modems
+			"ttyW",// linux specialix cards
+			"ttyC",// linux cyclades cards
+			"ttyf",// irix serial ports with hardware flow
+			"ttym",// irix modems
+			"ttyq",// irix pseudo ttys
+			"ttyd",// irix serial ports
+		};
+		String[] portPrefix = getSerialPortPrefixes(AllKnownPorts);
 		for( int i = 0; i < devs.length; i++ ) {
 			for( int p = 0; p < portPrefix.length; p++ ) {
 				if( devs[ i ].startsWith( portPrefix[ p ] ) ) {

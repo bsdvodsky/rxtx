@@ -47,6 +47,12 @@ Here's whats on my system for comparison.  Correct versions are important.
 
 mail any bugs to jarvi@ezlink.com.  
 
+jdk-1.2 users may not on redhat systems that java complains about not being
+able to find libstdc++-libc6.0-1.so.2.  A symbolic link can be used to get
+around this feature of java.
+
+ /usr/lib/libstdc++-libc6.0-1.so.2 -> libstdc++.so.2.8.0
+
 Known 'Features'.
 
 

@@ -894,19 +894,19 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 #if defined(FULL_EVENT) && defined(__linux__)
 		if( sis.rx != osis.rx ) (*env)->CallVoidMethod( env, jobj, method,
 			(jint)SPE_DATA_AVAILABLE, JNI_TRUE );
-		while( sis.frame > osis.frame ) {
+		while( sis.frame != osis.frame ) {
 			(*env)->CallVoidMethod( env, jobj, method, (jint)SPE_FE, JNI_TRUE );
 			osis.frame++;
 		}
-		while( sis.overrun > osis.overrun ) {
+		while( sis.overrun != osis.overrun ) {
 			(*env)->CallVoidMethod( env, jobj, method, (jint)SPE_OE, JNI_TRUE );
 			osis.overrun++;
 		}
-		while( sis.parity > osis.parity ) {
+		while( sis.parity != osis.parity ) {
 			(*env)->CallVoidMethod( env, jobj, method, (jint)SPE_PE, JNI_TRUE );
 			osis.parity++;
 		}
-		while( sis.brk > osis.brk ) {
+		while( sis.brk != osis.brk ) {
 			(*env)->CallVoidMethod( env, jobj, method, (jint)SPE_BI, JNI_TRUE );
 			osis.brk++;
 		}
@@ -1009,4 +1009,41 @@ void throw_java_exception( JNIEnv *env, char *exc, char *foo, char *msg )
 	}
 	snprintf( buf, 60, "%s in %s", msg, foo );
 	(*env)->ThrowNew( env, clazz, buf );
+}
+
+JNIEXPORT jboolean  JNICALL Java_gnu_io_RXTXCommDriver_IsDeviceGood(JNIEnv *env,
+	jobject jobj, jstring tty_name){
+
+	jboolean result;
+	static struct stat mystat;
+	char teststring[256];
+	int fd,i;
+    	const char *name = (*env)->GetStringUTFChars(env, tty_name, 0);
+
+	for(i=0;i<64;i++){
+		sprintf(teststring,"/dev/%s%i",name, i);
+		stat(teststring,&mystat);
+		if(S_ISCHR(mystat.st_mode)){
+			fd=open(teststring,O_RDONLY|O_NONBLOCK);
+			if (fd>0){
+				close(fd);
+				result=JNI_TRUE;
+				break;
+			}
+			result=JNI_FALSE;
+		}
+		else result=JNI_FALSE;
+	}
+	sprintf(teststring,"/dev/%s",name);
+	stat(teststring,&mystat);
+	if(S_ISCHR(mystat.st_mode)){
+		fd=open(teststring,O_RDONLY|O_NONBLOCK);
+		if (fd>0){
+			close(fd);
+			result=JNI_TRUE;
+		}
+	}
+	(*env)->ReleaseStringUTFChars(env, tty_name, name);
+	return(result);
+	
 }
