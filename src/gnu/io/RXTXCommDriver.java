@@ -36,7 +36,7 @@ import java.util.StringTokenizer;
 public class RXTXCommDriver implements CommDriver
 {
 
-	private static boolean debug = true;
+	private static boolean debug = false;
 
 	static
 	{
@@ -233,7 +233,7 @@ public class RXTXCommDriver implements CommDriver
     *  gnu.io.rxtx.ParallelPorts=/dev/lp0:
     *
     */
-	private boolean registerSpecifiedPorts(int PortType) 
+	private boolean registerSpecifiedPorts(int PortType)
 	{
 		String val = null;
 				
@@ -251,14 +251,12 @@ public class RXTXCommDriver implements CommDriver
 			    System.out.println(e.toString());
 			    }//end if
 			}//end catch
-			
-	
+
 		if (debug)
 			System.out.println("checking for system-known ports of type "+PortType);
 		if (debug)
 			System.out.println("checking registry for ports of type "+PortType);
-		
-		
+
 		switch (PortType) {
 			case CommPortIdentifier.PORT_SERIAL:
 				if ((val = System.getProperty("gnu.io.rxtx.SerialPorts")) == null)
