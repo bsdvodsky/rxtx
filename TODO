@@ -52,11 +52,21 @@ ParallelPort support.  Needs some code.
 	probably broken the printer support.  More comments in ParallelImp.c
 
 RS485 Support
-	The basic layout is in place with no native implementation.
+	This is intended to be an rs232->rs485 driver.
+
 	devices are not coded into RXTXDriver.java see /dev/ttyS0 and gang
 	for examples.
 	Nothing is carved in stone.  Changes will probably be needed in
 	several of the files.
+
+	So far the only significant difference between RS485Imp.c and RXTXImp.c
+	is writeByte and writeArray raise and drop DTR as needed.  I've not
+	spent a large amount of time on this.  It compiles.  I need to find
+	an RS485 device to test this.
+
+	I could picture enumerating the devices on the bus simular to
+	enumerating ports with 232 comm.  It could be possible to build
+	the packets with vendor specific bits.
 
 	files:
 		RS485.java
@@ -64,28 +74,34 @@ RS485 Support
 		RS485PortEvent.java
 		RS485PortEventListener.java
 I2C Support
+
 	The basic layout is in place with no native implementation.
 	devices are not coded into RXTXDriver.java see /dev/ttyS0 and gang
 	for examples.
 	Nothing is carved in stone.  Changes will probably be needed in
 	several of the files.
 
+	I want I2C support for a recycling infusion mash system (home brewery)
+	I'm looking at building.  Who said there isnt free beer?
+
 	files:
 		I2C.java
 		I2CPort.java
 		I2CPortEvent.java 
 		I2CPortEventListener.java
+	
+	I'll be returning to this after I order the parts for dallas semi.
 
 CommPortIdentifier support. Needs some code.
 
 	This has actually expanded to a complete comm.jar implementation.
 	Contact the maintainer if you have interest in working on this.
-	Some code is withheld from the distro to maintain traditional jcl
-	functionality during the transition.
 
-	./configure --enable-RXTXIDENT will create a Makefile that uses it.
 	Plenty of example code can be found in commapi/samples/porting
 	Please dont send in Sun's code.  
+
+	Comm Port Ownership is mostly stubs.  Should be easy to implement
+	if someone is interested.  See Cpo*
 
 	files:
 		CommDriver.java
