@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
-|   Copyright 1997-2001 by Trent Jarvi trentjarvi@yahoo.com
+|   Copyright 1997-2002 by Trent Jarvi taj@www.linux.org.uk
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Library General Public
@@ -321,7 +321,7 @@ int find_preopened_ports( const char *filename )
 }
 
 /*----------------------------------------------------------
-RXTXPort.open
+configure_port
 
    accept:      env, file descriptor
    perform:     set the termios struct to sane settings and
@@ -366,7 +366,7 @@ fail:
 }
 
 /*----------------------------------------------------------
-RXTXPort.open
+get_java_baudrate
 
    accept:      the native speed setting
    perform:     translate the native speed to a Java speed
@@ -401,7 +401,7 @@ int get_java_baudrate( int native_speed )
 }
 
 /*----------------------------------------------------------
-RXTXPort.open
+set_java_vars
 
    accept:      fd of the preopened device
    perform:     Now that the object is instatiated, set the Java variables
@@ -475,7 +475,7 @@ CBAUD is for SYSV compatibility.  It is considerably inferior to POSIX's
 cf{get,set}{i,o}speed and shouldn't be provided or used.
 
 */
-#if defined(CBAUD)//dima
+#if defined(CBAUD)/* dima */
     	baudrate = ttyset.c_cflag&CBAUD;
 #else
     	baudrate = cfgetispeed(&ttyset);
@@ -597,7 +597,9 @@ JNIEXPORT void JNICALL RXTXPort(nativeClose)( JNIEnv *env,
 	pid = get_java_var( env, jobj,"pid","I" );
 
 	report(">nativeClose pid\n");
-	//usleep(10000);
+	/*
+	usleep(10000);
+	*/
 	if( !pid ) {
 		(*env)->ExceptionDescribe( env );
 		(*env)->ExceptionClear( env );
@@ -730,7 +732,7 @@ int set_port_params( JNIEnv *env, int fd, int cspeed, int dataBits,
 			return( 1 );
 		}
 
-		cspeed = 38400;
+		cspeed = B38400;
 	}
 #endif /* TIOCGSERIAL  !WIN32 */
 
@@ -753,14 +755,11 @@ int set_port_params( JNIEnv *env, int fd, int cspeed, int dataBits,
 		result &= ~TIOCM_DTR;
 		ioctl( fd, TIOCMSET, &result );
 	}
-	else {
-	if(
-		cfsetispeed( &ttyset, cspeed ) < 0 ||
+	if(     cfsetispeed( &ttyset, cspeed ) < 0 ||
 		cfsetospeed( &ttyset, cspeed ) < 0 )
 	{
 		report( "nativeSetSerialPortParams: Cannot Set Speed\n" );
 		return( 1 );
-	}
 	}
 
 	if( tcsetattr( fd, TCSANOW, &ttyset ) < 0 )
@@ -975,7 +974,7 @@ int translate_parity( JNIEnv *env, tcflag_t *cflag, jint parity )
 			return 1;
 #endif /* CMSPAR */
 		default:
-			printf("Parity missed %i\n", parity );
+			printf("Parity missed %i\n", (int) parity );
 	}
 
 	LEAVE( "translate_parity" );
@@ -996,15 +995,22 @@ drain_loop()
 void *drain_loop( void *arg )
 {
 	struct event_info_struct *eis = ( struct event_info_struct * ) arg;
-	char msg[80];
+	/* char msg[80]; */
 	int i;
 	pthread_detach( pthread_self() );
 
 	for(i=0;;i++)
 	{
 		report_verbose("drain_loop:  looping\n");
-		usleep(10000);
-		// system_wait();
+#if defined(__sun__)
+	/* FIXME: No time to test on all OS's for production */
+		usleep(5000);
+#else
+		usleep(1000000);
+#endif /* __sun__ */
+		/*
+		system_wait();
+		*/
 		if( eis->eventloop_interrupted )
 		{
 			goto end;
@@ -1013,8 +1019,10 @@ void *drain_loop( void *arg )
 		{
 			if( eis && eis->writing )
 			{
-				//sprintf(msg, "drain_loop: setting OUTPUT_BUFFER_EMPTY\n" );
-				//report( msg );
+				/*
+				sprintf(msg, "drain_loop: setting OUTPUT_BUFFER_EMPTY\n" );
+				report( msg );
+				*/
 				eis->output_buffer_empty_flag = 1;
 				eis->writing=JNI_FALSE;
 			}
@@ -1076,7 +1084,9 @@ static void warn_sig_abort( int signo )
 {
 	char msg[80];
 	sprintf( msg, "RXTX Recieved Signal %i\n", signo );
-	//report_error( msg );
+	/*
+	report_error( msg );
+	*/
 }
 #endif /* TIOCSERGETLSR */
 
@@ -1145,12 +1155,13 @@ int init_threads( struct event_info_struct *eis )
 RXTXPort.writeByte
 
    accept:      byte to write (passed as int)
+                jboolean interrupted (no events if true)
    perform:     write a single byte to the port
    return:      none
    exceptions:  IOException
 ----------------------------------------------------------*/
 JNIEXPORT void JNICALL RXTXPort(writeByte)( JNIEnv *env,
-	jobject jobj, jint ji )
+	jobject jobj, jint ji, jboolean interrupted )
 {
 #ifndef TIOCSERGETLSR
 	struct event_info_struct *index = master_index;
@@ -1159,6 +1170,9 @@ JNIEXPORT void JNICALL RXTXPort(writeByte)( JNIEnv *env,
 	int fd = get_java_var( env, jobj,"fd","I" );
 	int result;
 	char msg[80];
+#if defined ( __sun__ )
+	int count;
+#endif /* __sun__ */
 
 	report_time_start();
 	ENTER( "RXTXPort:writeByte" );
@@ -1167,15 +1181,27 @@ JNIEXPORT void JNICALL RXTXPort(writeByte)( JNIEnv *env,
 		report( msg );
 		result=WRITE (fd, &byte, sizeof(unsigned char));
 	}  while (result < 0 && errno==EINTR);
+/*
+	This makes write for win32, glinux and Sol behave the same
+#if defined ( __sun__ )
+	do {
+		report_verbose( "nativeDrain: trying tcdrain\n" );
+		result=tcdrain(fd);
+		count++;
+	}  while (result && errno==EINTR && count <3);
+#endif *//* __sun __ */
 #ifndef TIOCSERGETLSR
-	index = master_index;
-	if( index )
+	if( ! interrupted )
 	{
-		while( index->fd != fd &&
-			index->next ) index = index->next;
+		index = master_index;
+		if( index )
+		{
+			while( index->fd != fd &&
+				index->next ) index = index->next;
+		}
+		index->writing = 1;
+		report( "writeByte:  index->writing = 1" );
 	}
-	index->writing = 1;
-	report( "writeByte:  index->writing = 1" );
 #endif
 	sprintf( msg, "RXTXPort:writeByte %i\n", result );
 	report( msg );
@@ -1195,12 +1221,14 @@ RXTXPort.writeArray
    accept:      jbarray: bytes used for writing
                 offset: offset in array to start writing
                 count: Number of bytes to write
+                jboolean interrupted (no events if true)
    perform:     write length bytes of jbarray
    return:      none
    exceptions:  IOException
 ----------------------------------------------------------*/
 JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
-	jobject jobj, jbyteArray jbarray, jint offset, jint count )
+	jobject jobj, jbyteArray jbarray, jint offset, jint count,
+		jboolean interrupted )
 {
 #ifndef TIOCSERGETLSR
 	struct event_info_struct *index = master_index;
@@ -1208,7 +1236,12 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 	int fd;
 	int result=0,total=0;
 	jbyte *body;
-	//char message[1000];
+#if defined ( __sun__ )
+	int icount;
+#endif /* __sun__ */
+	/*
+	char message[1000];
+	*/
 #if defined ( __sun__ )
 	struct timespec retspec;
 
@@ -1220,9 +1253,11 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 
 	report_time_start();
 	ENTER( "writeArray" );
-	/* warning Will Rogers */
-	//sprintf( message, "::::RXTXPort:writeArray(%s);\n", (char *) body );
-	//report_verbose( message );
+	/* warning Roy Rogers */
+	/*
+	sprintf( message, "::::RXTXPort:writeArray(%s);\n", (char *) body );
+	report_verbose( message );
+	*/
 
 	do {
 		result=WRITE (fd, body + total + offset, count - total); /* dima */
@@ -1231,15 +1266,27 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 		}
 		report("writeArray()\n");
 	}  while ( ( total < count ) || (result < 0 && errno==EINTR ) );
+/*
+	This makes write for win32, glinux and Sol behave the same
+#if defined ( __sun__ )
+	do {
+		report_verbose( "nativeDrain: trying tcdrain\n" );
+		result=tcdrain(fd);
+		icount++;
+	}  while (result && errno==EINTR && icount <3);
+#endif *//* __sun__ */
 	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
 #ifndef TIOCSERGETLSR
-	if( index )
+	if( !interrupted )
 	{
-		while( index->fd != fd &&
-			index->next ) index = index->next;
+		if( index )
+		{
+			while( index->fd != fd &&
+				index->next ) index = index->next;
+		}
+		index->writing = 1;
+		report( "writeArray:  index->writing = 1" );
 	}
-	index->writing = 1;
-	report( "writeArray:  index->writing = 1" );
 #endif /* TIOCSERGETLSR */
 	/*
 		50 ms sleep to make sure read can get in
@@ -1262,7 +1309,7 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 /*----------------------------------------------------------
 RXTXPort.nativeDrain
 
-   accept:      none
+   accept:      jboolean interrupted (no events if true)
    perform:     wait until all data is transmitted
    return:      none
    exceptions:  IOException
@@ -1272,8 +1319,8 @@ RXTXPort.nativeDrain
                 count logic added to avoid infinite loops when EINTR is
                 true...  Thread.yeild() was suggested.
 ----------------------------------------------------------*/
-JNIEXPORT void JNICALL RXTXPort(nativeDrain)( JNIEnv *env,
-	jobject jobj )
+JNIEXPORT jboolean JNICALL RXTXPort(nativeDrain)( JNIEnv *env,
+	jobject jobj, jboolean interrupted )
 {
 	int fd = get_java_var( env, jobj,"fd","I" );
 	struct event_info_struct *eis = ( struct event_info_struct * ) get_java_var( env, jobj, "eis", "I" );
@@ -1291,9 +1338,14 @@ JNIEXPORT void JNICALL RXTXPort(nativeDrain)( JNIEnv *env,
 
 	sprintf( message, "RXTXPort:drain() returns: %i\n", result ); 
 	report_verbose( message );
+#if defined(__sun__)
+	/* FIXME: No time to test on all OS's for production */
+	return( JNI_TRUE );
+#endif /* __sun__ */
 	LEAVE( "RXTXPort:drain()" );
 	if( result ) throw_java_exception( env, IO_EXCEPTION, "nativeDrain",
 		strerror( errno ) );
+	if( interrupted ) return( JNI_FALSE );
 #if !defined(TIOCSERGETLSR) && !defined(WIN32)
 	if( eis && eis->writing )
 	{
@@ -1306,7 +1358,7 @@ JNIEXPORT void JNICALL RXTXPort(nativeDrain)( JNIEnv *env,
 		send_event( eis, SPE_OUTPUT_BUFFER_EMPTY, 1 );
 	}
 	report_time_end( );
-	return;
+	return( JNI_FALSE );
 }
 
 /*----------------------------------------------------------
@@ -2201,7 +2253,7 @@ CBAUD is for SYSV compatibility.  It is considerably inferior to POSIX's
 cf{get,set}{i,o}speed and shouldn't be provided or used.
 
 */
-#if defined(CBAUD)//dima
+#if defined(CBAUD)/* dima */
     	baudrate = ttyset.c_cflag&CBAUD;
 #else
     	if(cfgetispeed(&ttyset) != cfgetospeed(&ttyset)) return -1;
@@ -2432,7 +2484,7 @@ RXTXPort.nativeSetEndOfInputChar
 		See termios.c for the windows bits.
 
 		EofChar = val;
-		fBinary = false;  //winapi docs say always use true. ?
+		fBinary = false;  winapi docs say always use true. ?
 ----------------------------------------------------------*/
 JNIEXPORT jboolean JNICALL RXTXPort(nativeSetEndOfInputChar)( JNIEnv *env,
 	jobject jobj, jbyte value )
@@ -2736,8 +2788,9 @@ JNIEXPORT jint JNICALL RXTXPort(nativeavailable)( JNIEnv *env,
 	int result;
 	char message[80];
 
-//	ENTER( "RXTXPort:nativeavailable" );
 /*
+	ENTER( "RXTXPort:nativeavailable" );
+
     On SCO OpenServer FIONREAD always fails for serial devices,
     so try ioctl FIORDCHK instead; will only tell us whether
     bytes are available, not how many, but better than nothing.
@@ -2764,11 +2817,15 @@ JNIEXPORT jint JNICALL RXTXPort(nativeavailable)( JNIEnv *env,
 				errno %d\n", result , result == -1 ? errno : 0);
 		report( message );
 	}
-//	LEAVE( "RXTXPort:nativeavailable" );
+/*
+	LEAVE( "RXTXPort:nativeavailable" );
+*/
 	return (jint)result;
 fail:
 	report("RXTXPort:nativeavailable:  ioctl() failed\n");
-//	LEAVE( "RXTXPort:nativeavailable" );
+/*
+	LEAVE( "RXTXPort:nativeavailable" );
+*/
 	throw_java_exception( env, IO_EXCEPTION, "nativeavailable",
 		strerror( errno ) );
 	return (jint)result;
@@ -2876,13 +2933,17 @@ int check_line_status_register( struct event_info_struct *eis )
 		send_event( eis, SPE_OUTPUT_BUFFER_EMPTY, 1 );
 	}
 #else
-	//printf("test %i\n",  eis->output_buffer_empty_flag );
+/*
+	printf("test %i\n",  eis->output_buffer_empty_flag );
+*/
 	if( eis && eis->output_buffer_empty_flag == 1 && 
 		eis->eventflags[SPE_OUTPUT_BUFFER_EMPTY] )
 	{
 		report_verbose("check_line_status_register: sending SPE_OUTPUT_BUFFER_EMPTY\n");
 		send_event( eis, SPE_OUTPUT_BUFFER_EMPTY, 1 );
-		//send_event( eis, SPE_DATA_AVAILABLE, 1 );
+/*
+		send_event( eis, SPE_DATA_AVAILABLE, 1 );
+*/
 		eis->output_buffer_empty_flag = 0;
 	}
 #endif /* TIOCSERGETLSR */
@@ -3008,9 +3069,10 @@ check_tiocmget_changes
 ----------------------------------------------------------*/
 void check_tiocmget_changes( struct event_info_struct * eis )
 {
-	unsigned int mflags;
+	unsigned int mflags = 0;
 	int change;
 
+	/* DORITO */
 	if( !eis ) return;
 	change  = eis->change;
 
@@ -3121,8 +3183,10 @@ void report_serial_events( struct event_info_struct *eis )
 		if( check_line_status_register( eis ) )
 			return;
 
+#ifndef WIN32 /* something is wrong here */
 	if ( eis && eis->has_tiocgicount )
 		check_cgi_count( eis );
+#endif /* WIN32 */
 
 	check_tiocmget_changes( eis );
 
@@ -3131,16 +3195,26 @@ void report_serial_events( struct event_info_struct *eis )
 		if(!eis->eventflags[SPE_DATA_AVAILABLE] )
 		{
 			report_verbose("report_serial_events: ignoring DATA_AVAILABLE\n");
-			//report(".");
+/*
+			report(".");
+*/
+#if !defined(__sun__)
+	/* FIXME: No time to test on all OS's for production */
 			usleep(20000);
+#endif /* !__sun__ */
 			return;
 		}
 		report("report_serial_events: sending DATA_AVAILABLE\n");
 		if(!send_event( eis, SPE_DATA_AVAILABLE, 1 ))
 		{
 			/* select wont block */
+#if !defined(__sun__)
+	/* FIXME: No time to test on all OS's for production */
 			usleep(20000);
-			//system_wait();
+#endif /* !__sun__ */
+/*
+			system_wait();
+*/
 		}
 	}
 }
@@ -3171,7 +3245,9 @@ int initialise_event_info_struct( struct event_info_struct *eis )
 	if( index )
 	{
 		while( index->next )
+		{
 			index = index->next;
+		}
 		index->next = eis;
 		eis->prev = index;
 		eis->next = NULL;
@@ -3288,7 +3364,9 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 				return;
 			}
 			usleep(20000);
-			// Trent system_wait();
+/*
+			 Trent system_wait();
+*/
 		}  while ( eis.ret < 0 && errno == EINTR );
 		if( eis.ret >= 0 )
 		{
@@ -3315,7 +3393,7 @@ RXTXCommDriver.nativeGetVersion
 JNIEXPORT jstring JNICALL RXTXCommDriver(nativeGetVersion) (JNIEnv *env,
 	jclass jclazz )
 {
-	return (*env)->NewStringUTF( env, "RXTX-1.4-16pre2" );
+	return (*env)->NewStringUTF( env, "RXTX-2.1-1" );
 }
 
 /*----------------------------------------------------------
@@ -3891,7 +3969,10 @@ JNIEXPORT void JNICALL RXTXPort(nativeSetEventFlag)( JNIEnv *env,
 		report_error("nativeSetEventFlag !index\n");
 		return;
 	}
-	while( index->fd != fd && index->next ) index = index->next;
+	while( index->fd != fd && index->next )
+	{
+		index = index->next;
+	}
 	if( index->fd != fd )
 	{
 		report_error("nativeSetEventFlag !fd\n");
@@ -3964,7 +4045,9 @@ int get_java_var( JNIEnv *env, jobject jobj, char *id, char *type )
 	jclass jclazz = (*env)->GetObjectClass( env, jobj );
 	jfieldID jfd = (*env)->GetFieldID( env, jclazz, id, type );
 
-//	ENTER( "get_java_var" );
+/*
+	ENTER( "get_java_var" );
+*/
 	if( !jfd ) {
 		(*env)->ExceptionDescribe( env );
 		(*env)->ExceptionClear( env );
@@ -3977,7 +4060,9 @@ int get_java_var( JNIEnv *env, jobject jobj, char *id, char *type )
 	(*env)->DeleteLocalRef( env, jclazz );
 	if(!strncmp( "fd",id,2) && result == 0)
 		report_error( "get_java_var: invalid file descriptor\n" );
-//	LEAVE( "get_java_var" );
+/*
+	LEAVE( "get_java_var" );
+*/
 	return result;
 }
 

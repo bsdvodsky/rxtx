@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
-|   Copyright 1997-2001 by Trent Jarvi trentjarvi@yahoo.com.
+|   Copyright 1997-2002 by Trent Jarvi taj@www.linux.org.uk.
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Library General Public
@@ -47,7 +47,7 @@
 		16, \
 		NULL ); \
 	sprintf( message, "Error 0x%x at %s(%d): %s\n", errorCode, __FILE__, __LINE__, allocTextBuf); \
-	report_warning( message ); \
+	report_error( message ); \
 	LocalFree(allocTextBuf); \
 }
 
@@ -155,7 +155,9 @@ int tcdrain ( int );
 int tcflow ( int , int );
 int tcsendbreak ( int , int );
 int ioctl(int fd, int request, ... );
-//int fstat(int fd, ... );
+/*
+int fstat(int fd, ... );
+*/
 void cfmakeraw(struct termios *s_termios);
 int termiosGetParityErrorChar( int );
 void termiosSetParityError( int, char );
@@ -397,7 +399,9 @@ void termiosSetParityError( int, char );
 #define TIOCGSOFTCAR	0x5419
 #define TIOCSSOFTCAR	0x541a
 #define TIOCSER_TEMP	0x01
-// #define FIONREAD	0x541b
+/*
+#define FIONREAD	0x541b
+*/
 #define TIOCGSERIAL	0x541e
 #define TIOCSSERIAL	0x541f
 #define TCSBRKP		0x5425
@@ -409,7 +413,11 @@ void termiosSetParityError( int, char );
 #define TIOCSERSETMULTI	0x545b
 #define TIOCMIWAIT	0x545c
 /* this would require being able to get the number of overruns ... */
-#define TIOCGICOUNT	0x545d
+/*
+	FIXME
+	frame and parity errors caused crashes in testing BlackBox
+	#define TIOCGICOUNT	0x545d
+*/
 
 /* ioctl errors */
 #define ENOIOCTLCMD	515

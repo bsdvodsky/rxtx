@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
-|   Copyright 1997-2001 by Trent Jarvi trentjarvi@yahoo.com.
+|   Copyright 1997-2002 by Trent Jarvi taj@www.linux.org.uk.
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Library General Public
@@ -37,12 +37,12 @@ public class RXTXVersion
 	private static String Version;
 
 	static {
-		Version = "RXTX-1.4-16pre2";
+		Version = "RXTX-2.1-1";
 	}
 	/**
 	*  static method to return the current version of RXTX
 	*  unique to RXTX.
-	*  @returns a string representing the version  "RXTX-1.4-9"
+	*  @returns a string representing the version  "RXTX-2.0-1"
 	*/
 	public static String getVersion()
 	{
