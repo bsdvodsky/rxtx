@@ -219,7 +219,7 @@ JNIEXPORT jint JNICALL RXTXPort(open)(
 {
 	struct termios ttyset;
 	int fd;
-	int  pid;
+	int  pid = -1;
 	char message[80];
 	const char *filename;
 	jclass jclazz = (*env)->GetObjectClass( env, jobj );
@@ -232,7 +232,9 @@ JNIEXPORT jint JNICALL RXTXPort(open)(
 		return -1;
 	}
 
+#ifndef WIN32
 	pid = getpid();
+#endif /* WIN32 */
 
 	(*env)->SetIntField(env, jobj, jfid, ( jint ) pid );
 	(*env)->DeleteLocalRef( env, jclazz );
@@ -902,9 +904,12 @@ JNIEXPORT jboolean JNICALL RXTXPort(isDSR)( JNIEnv *env,
 {
 	unsigned int result = 0;
 	int fd = get_java_var( env, jobj,"fd","I" );
+	char message[80];
 
 	ENTER( "RXTXPort:isDSR" );
 	ioctl( fd, TIOCMGET, &result );
+	sprintf( message, "RXTXPort:isDSR returns %i\n", result & TIOCM_DSR );
+	report( message );
 	LEAVE( "RXTXPort:isDSR" );
 	if( result & TIOCM_DSR ) return JNI_TRUE;
 	else return JNI_FALSE;
@@ -929,9 +934,11 @@ JNIEXPORT jboolean JNICALL RXTXPort(isCD)( JNIEnv *env,
 {
 	unsigned int result = 0;
 	int fd = get_java_var( env, jobj,"fd","I" );
+	char message[80];
 
 	ENTER( "RXTXPort:isCD" );
 	ioctl( fd, TIOCMGET, &result );
+	sprintf( message, "RXTXPort:isCD returns %i\n", result & TIOCM_CD );
 	LEAVE( "RXTXPort:isCD" );
 	if( result & TIOCM_CD ) return JNI_TRUE;
 	else return JNI_FALSE;
@@ -952,9 +959,12 @@ JNIEXPORT jboolean JNICALL RXTXPort(isCTS)( JNIEnv *env,
 {
 	unsigned int result = 0;
 	int fd = get_java_var( env, jobj,"fd","I" );
+	char message[80];
 
 	ENTER( "RXTXPort:isCTS" );
 	ioctl( fd, TIOCMGET, &result );
+	sprintf( message, "RXTXPort:isCTS returns %i\n", result & TIOCM_CTS );
+	report( message );
 	LEAVE( "RXTXPort:isCTS" );
 	if( result & TIOCM_CTS ) return JNI_TRUE;
 	else return JNI_FALSE;
@@ -975,9 +985,12 @@ JNIEXPORT jboolean JNICALL RXTXPort(isRI)( JNIEnv *env,
 {
 	unsigned int result = 0;
 	int fd = get_java_var( env, jobj,"fd","I" );
+	char message[80];
 
 	ENTER( "RXTXPort:isRI" );
 	ioctl( fd, TIOCMGET, &result );
+	sprintf( message, "RXTXPort:isRI returns %i\n", result & TIOCM_RI );
+	report( message );
 	LEAVE( "RXTXPort:isRI" );
 	if( result & TIOCM_RI ) return JNI_TRUE;
 	else return JNI_FALSE;
@@ -998,9 +1011,12 @@ JNIEXPORT jboolean JNICALL RXTXPort(isRTS)( JNIEnv *env,
 {
 	unsigned int result = 0;
 	int fd = get_java_var( env, jobj,"fd","I" );
+	char message[80];
 
 	ENTER( "RXTXPort:isRTS" );
 	ioctl( fd, TIOCMGET, &result );
+	sprintf( message, "RXTXPort:isRTS returns %i\n", result & TIOCM_RTS );
+	report( message );
 	LEAVE( "RXTXPort:isRTS" );
 	if( result & TIOCM_RTS ) return JNI_TRUE;
 	else return JNI_FALSE;
@@ -1022,12 +1038,16 @@ JNIEXPORT void JNICALL RXTXPort(setRTS)( JNIEnv *env,
 {
 	unsigned int result = 0;
 	int fd = get_java_var( env, jobj,"fd","I" );
+	char message[80];
 
 	ENTER( "RXTXPort:setRTS" );
 	ioctl( fd, TIOCMGET, &result );
 	if( state == JNI_TRUE ) result |= TIOCM_RTS;
 	else result &= ~TIOCM_RTS;
 	ioctl( fd, TIOCMSET, &result );
+	if( state == JNI_TRUE ) result |= TIOCM_DSR;
+	sprintf( message, "setRTS( %i )\n", state );
+	report( message );
 	LEAVE( "RXTXPort:setRTS" );
 	return;
 }
@@ -1048,11 +1068,18 @@ JNIEXPORT void JNICALL RXTXPort(setDSR)( JNIEnv *env,
 {
 	unsigned int result = 0;
 	int fd = get_java_var( env, jobj,"fd","I" );
+	char message[80];
 
+	ENTER( "RXTXPort:setDSR()" );
 	ioctl( fd, TIOCMGET, &result );
+	
+	sprintf( message, "setDSR( %i )\n", state );
 	if( state == JNI_TRUE ) result |= TIOCM_DSR;
 	else result &= ~TIOCM_DSR;
 	ioctl( fd, TIOCMSET, &result );
+	sprintf( message, "setDSR( %i )\n", state );
+	report( message );
+	LEAVE( "RXTXPort:setDSR()" );
 	return;
 }
 
@@ -1071,9 +1098,12 @@ JNIEXPORT jboolean JNICALL RXTXPort(isDTR)( JNIEnv *env,
 {
 	unsigned int result = 0;
 	int fd = get_java_var( env, jobj,"fd","I" );
+	char message[80];
 
 	ENTER( "RXTXPort:isDTR" );
 	ioctl( fd, TIOCMGET, &result );
+	sprintf( message, "iSDTR( ) returns %i\n", result& TIOCM_DTR );
+	report( message );
 	LEAVE( "RXTXPort:isDTR" );
 	if( result & TIOCM_DTR ) return JNI_TRUE;
 	else return JNI_FALSE;
@@ -1094,14 +1124,150 @@ JNIEXPORT void JNICALL RXTXPort(setDTR)( JNIEnv *env,
 {
 	unsigned int result = 0;
 	int fd = get_java_var( env, jobj,"fd","I" );
+	char message[80];
 
 	ENTER( "RXTXPort:setDTR" );
 	ioctl( fd, TIOCMGET, &result );
 	if( state == JNI_TRUE ) result |= TIOCM_DTR;
 	else result &= ~TIOCM_DTR;
 	ioctl( fd, TIOCMSET, &result );
+	sprintf( message, "setDTR( %i )\n", state );
+	report( message );
 	LEAVE( "RXTXPort:setDTR" );
 	return;
+}
+
+/*----------------------------------------------------------
+RXTXPort.nativeGetParityErrorChar
+
+   accept:      -
+   perform:     check the ParityErrorChar
+   return:      The ParityErrorChar as an int.
+   exceptions:  UnsupportedCommOperationException if not implemented
+   comments:    It appears the Parity char is usually \0.  The windows
+		API allows for this to be changed.  I cant find may
+		examples of this being done.  Maybe for a reason.
+
+		Use a direct call to the termios file until we find a
+		solution.
+----------------------------------------------------------*/
+JNIEXPORT jint JNICALL RXTXPort(nativeGetParityErrorChar)( JNIEnv *env,
+	jobject jobj )
+{
+	unsigned int result = 0;
+	int fd = get_java_var( env, jobj,"fd","I" );
+
+	ENTER( "nativeGetParityErrorChar" );
+#ifdef WIN32
+	result = termiosGetParityErrorChar( fd );
+#else
+	/*
+	   arg!  I cant find a way to change it from \0 in Linux.  I think
+		   the frame and parity error characters are hardcoded.
+	*/
+		result = ( jint ) '\0';
+
+#endif /* WIN32 */
+	LEAVE( "nativeGetParityErrorChar" );
+	return( result );
+}
+
+/*----------------------------------------------------------
+RXTXPort.nativeGetEndOfInputChar
+
+   accept:      -
+   perform:     check the EndOf InputChar
+   return:      the EndOfInputChar as an int.
+   exceptions:  UnsupportedCommOperationException if not implemented
+   comments:    
+----------------------------------------------------------*/
+JNIEXPORT jint JNICALL RXTXPort(nativeGetEndOfInputChar)( JNIEnv *env,
+	jobject jobj )
+{
+	int fd = get_java_var( env, jobj,"fd","I" );
+	struct termios ttyset;
+
+	ENTER( "nativeGetEndOfInputChar" );
+	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
+	LEAVE( "nativeGetEndOfInputChar" );
+	return( (jint) ttyset.c_cc[VEOF] );
+fail:
+	LEAVE( "nativeGetEndOfInputChar" );
+	report( "nativeGetEndOfInputChar failed\n" );
+	return( -1 );
+}
+
+/*----------------------------------------------------------
+RXTXPort.nativeSetParityErrorChar
+
+   accept:      the ParityArrorCharacter as an int.
+   perform:     Set the ParityErrorChar
+   return:      JNI_TRUE on success
+   exceptions:  UnsupportedCommOperationException if not implemented
+   comments:    It appears the Parity char is usually \0.  The windows
+		API allows for this to be changed.  I cant find may
+		examples of this being done.  Maybe for a reason.
+
+		Use a direct call to the termios file until we find a
+		solution.
+----------------------------------------------------------*/
+JNIEXPORT jboolean JNICALL RXTXPort(nativeSetParityErrorChar)( JNIEnv *env,
+	jobject jobj, jint value )
+	{
+		int fd = get_java_var( env, jobj,"fd","I" );
+
+		ENTER( "nativeSetParityErrorChar" );
+	#ifdef WIN32
+		termiosSetParityError( fd, ( char ) value );
+		LEAVE( "nativeSetParityErrorChar" );
+		return( JNI_TRUE );
+	#else
+	/*
+	   arg!  I cant find a way to change it from \0 in Linux.  I think
+	   the frame and parity error characters are hardcoded.
+	*/
+
+	throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,
+		"Not implemented... yet",
+		strerror( errno ) );
+	LEAVE( "nativeSetParityErrorChar" );
+	return( JNI_FALSE );
+#endif /* WIN32 */
+}
+
+/*----------------------------------------------------------
+RXTXPort.nativeSetEndOfInputChar
+
+   accept:      They EndOfInputChar as an int
+   perform:     set the EndOfInputChar
+   return:      JNI_TRUE on success
+   exceptions:  UnsupportedCommOperationException if not implemented
+   comments:    This may cause troubles on Windows.
+		Lets give it a shot and see what happens.
+
+		See termios.c for the windows bits.
+
+		EofChar = val;
+		fBinary = false;  //winapi docs say always use true. ?
+----------------------------------------------------------*/
+JNIEXPORT jboolean JNICALL RXTXPort(nativeSetEndOfInputChar)( JNIEnv *env,
+	jobject jobj, jint value )
+{
+	int fd = get_java_var( env, jobj,"fd","I" );
+	struct termios ttyset;
+
+	ENTER( "nativeSetEndOfInputChar" );
+	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
+	ttyset.c_cc[VEOF] = ( char ) value;
+	if( tcsetattr( fd, TCSANOW, &ttyset ) < 0 ) goto fail;
+	LEAVE( "nativeSetEndOfInputChar" );
+	return( JNI_TRUE );
+fail:
+	throw_java_exception( env, IO_EXCEPTION, "nativeSetEndOfInputChar",
+		strerror( errno ) );
+	report( "nativeSetEndOfInputChar failed\n" );
+	LEAVE( "nativeSetEndOfInputChar" );
+	return( JNI_FALSE );
 }
 
 /*----------------------------------------------------------
@@ -1150,26 +1316,26 @@ int read_byte_array( int fd, unsigned char *buffer, int length, int timeout )
 		}  while (ret < 0 && errno==EINTR);
 		if( ret == 0 )
 		{
-			report( "read_byte_array: select returned 0" );
+			report( "read_byte_array: select returned 0\n" );
 			LEAVE( "read_byte_array" );
 			break;
 		}
 		if( ret < 0 )
 		{
-			report( "read_byte_array: select returned -1" );
+			report( "read_byte_array: select returned -1\n" );
 			LEAVE( "read_byte_array" );
 			return -1;
 		}
 		ret = READ( fd, buffer + bytes, left );
 		if( ret == 0 )
 		{
-			report( "read_byte_array: read returned 0 bytes" );
+			report( "read_byte_array: read returned 0 bytes\n" );
 			LEAVE( "read_byte_array" );
 			break;
 		}
 		else if( ret < 0 )
 		{
-			report( "read_byte_array: read returned -1" );
+			report( "read_byte_array: read returned -1\n" );
 			LEAVE( "read_byte_array" );
 			return -1;
 		}
@@ -1308,19 +1474,21 @@ JNIEXPORT jint JNICALL RXTXPort(nativeavailable)( JNIEnv *env,
 	    bytes are available, not how many, but better than nothing.
 	*/
 		result = ioctl(fd, FIORDCHK, 0);
-#ifdef DEBUG
-		fprintf(stderr, "    FIORDCHK result %d, errno %d\n", result , result == -1 ? errno : 0);
-#endif
+		sprintf(message, "    FIORDCHK result %d, errno %d\n", result , result == -1 ? errno : 0);
+		report( message );
 		if (result == -1) {
 #endif /* __unixware__ */
-			LEAVE( "RXTXPort:nativeavailable" );
+			LEAVE( "RXTXPort:nativeavailable IOException" );
 			throw_java_exception( env, IO_EXCEPTION,
 						"nativeavailable",
 			strerror( errno ) );
 			return -1;
 #ifdef __unixware__
 		} else
-		return (jint)result;
+		{
+			LEAVE( "RXTXPort:nativeavailable" );
+			return (jint)result;
+		}
 #endif /* __unixware__ */
 	}
 	LEAVE( "RXTXPort:nativeavailable" );
@@ -1628,6 +1796,7 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 	int fd;
 	const char *name = (*env)->GetStringUTFChars(env, tty_name, 0);
 	int ret = JNI_TRUE;
+	int pid = -1;
 
 	ENTER( "RXTXPort:testRead" );
 #ifdef TRENT_IS_HERE_DEBUGGING_ENUMERATION
@@ -1740,7 +1909,10 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 
 END:
 	/* We opened the file in this thread, use this pid to unlock */
-	UNLOCK(name, getpid() );
+#ifndef WIN32
+	pid = getpid();
+#endif /* WIN32 */
+	UNLOCK(name, pid );
 	(*env)->ReleaseStringUTFChars( env, tty_name, name );
 	CLOSE( fd );
 	LEAVE( "RXTXPort:testRead" );
