@@ -1501,6 +1501,15 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 	const char *name = (*env)->GetStringUTFChars(env, tty_name, 0);
 	int ret = JNI_TRUE;
 
+	ENTER( "RXTXPort:testRead" );
+#ifdef TRENT_IS_HERE
+	/* vmware lies about which ports are there causing irq conflicts */
+	/* this is for testing only */
+	report( name );
+	if( !strcmp( name, "COM1" )  || !strcmp( name, "COM2" ) )
+		return( JNI_TRUE );
+#endif /* TRENT_IS_HERE */
+
 	/* 
 		LOCK is one of three functions defined in SerialImp.h
 
@@ -1509,7 +1518,6 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 			system_does_not_lock	Win32
 	*/
 
-	ENTER( "RXTXPort:testRead" );
 	if ( LOCK( name ) )
 	{
 		(*env)->ReleaseStringUTFChars(env, tty_name, name);
