@@ -1,0 +1,29 @@
+Instructions unique to win32 builds.
+
+Grab ming32:
+
+I build the dll with jdk-1.2.2 for linux using jdk-1.2.2 include files from 
+win32.
+
+Make sure that ming32 bin dir is the first in your path
+
+export PATH="/usr/local/cross-tools/i386-mingw32/bin/:$PATH:/usr/X11R6/bin:/usr/local/java/bin:/usr/local/java/jre/bin/:"
+
+Place Sun jdk 1.2.2 win32 include files in a known location.
+	mkdir /home/jarvi/win32java
+	cp -r /mnt/win98/.../java/include /home/jarvi/win32java
+
+run configure to generate a Makefile
+	cd /home/jarvi/rxtx-*
+	mkdir build
+	cd build
+	../configure --target=i386-mingw32 --host=i386-redhat-linux
+
+build the class files and dll.
+	make jcl
+	make borg
+
+	the files will be located in
+	rxtx-*/build/...
+
+Hope that helps.  Send in additional comments if its not clear.
