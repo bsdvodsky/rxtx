@@ -1,3 +1,5 @@
+1.3-5   Jul 26, 1999  Threshold and Timeout implemented on native side.  default
+                      on open is to block.  Hope this doesnt fill the mailbox.
 1.3-4   Jul 26, 1999  Printer port fixes Holger Lehmann <holle@almaden.ibm.com>
                       minor build fixes
                       intelligent port identification

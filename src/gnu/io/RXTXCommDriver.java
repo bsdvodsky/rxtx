@@ -94,7 +94,8 @@ public class RXTXCommDriver implements CommDriver {
 			"ttyf", // irix serial ports with hardware flow
 			"ttym", // irix modems
 			"ttyq", // irix pseudo ttys
-			"ttyd"  // irix serial ports
+			"ttyd",  // irix serial ports
+			"tty0"   // netbsd serial ports 
 		};
 	/** Get the Parallel port prefixes for the running os
 	* Holger Lehmann

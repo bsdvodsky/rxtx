@@ -87,8 +87,7 @@ int translate_speed( JNIEnv* env, jint speed );
 int translate_data_bits( JNIEnv *env, int *cflag, jint dataBits );
 int translate_stop_bits( JNIEnv *env, int *cflag, jint stopBits );
 int translate_parity( JNIEnv *env, int *cflag, jint parity );
-int read_byte_array( int fd, unsigned char *buffer, int length, int threshold,
-   int timeout );
+int read_byte_array( int fd, unsigned char *buffer, int length,int timeout );
 int get_java_fd( JNIEnv *env, jobject jobj );
 void send_modem_events( JNIEnv *env, jobject jobj, jmethodID method,
    int event, int change, int state );

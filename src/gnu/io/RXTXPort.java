@@ -125,31 +125,40 @@ final class RXTXPort extends SerialPort {
 	public int getReceiveFramingByte() { return 0; }
 
 
-	/** Receive timeout control 
-	stubs?
-		jarvi@ezlink.com
-	 */
-
+	/** Receive timeout control */
 	private int timeout = 0;
-	public void enableReceiveTimeout( int t ) {
-		if( t > 0 ) timeout = t;
-		else timeout = 0;
-	}
-	public void disableReceiveTimeout() { timeout = 0; }
-	public boolean isReceiveTimeoutEnabled() { return timeout > 0; }
-	public int getReceiveTimeout() { return timeout; }
 
+	public native int NativegetReceiveTimeout();
+	public native boolean NativeisReceiveTimeoutEnabled();
+	public native void NativeenableReceiveTimeout(int t);
+	public void disableReceiveTimeout(){
+		NativeenableReceiveTimeout(0);
+		timeout = 0;
+	}
+	public void enableReceiveTimeout( int t ){
+		if( t > 0 )  {
+			timeout = t;
+			NativeenableReceiveTimeout( t );
+		}
+		else {
+			timeout = 0;
+			NativeenableReceiveTimeout( 0 );
+		}
+	}
+	public boolean isReceiveTimeoutEnabled(){
+		return(NativeisReceiveTimeoutEnabled());
+	}
+	public int getReceiveTimeout(){
+		return(NativegetReceiveTimeout( ));
+	}
 
 	/** Receive threshold control */
-	private int threshold = 1;
-	public void enableReceiveThreshold( int t ) {
-		if( t > 1 ) threshold = t;
-		else threshold = 1;
+	public native void enableReceiveThreshold( int t );
+	public void disableReceiveThreshold() { 
+		enableReceiveThreshold(0);
 	}
-	public void disableReceiveThreshold() { threshold = 1; }
-	public int getReceiveThreshold() { return threshold; }
-	public boolean isReceiveThresholdEnabled() { return threshold > 1; };
-
+	public native int getReceiveThreshold();
+	public native boolean isReceiveThresholdEnabled();
 
 	/** Input/output buffers */
 	/** FIXME I think this refers to 

@@ -42,7 +42,11 @@
 #   include <sys/signal.h>
 #endif
 
-#include <linux/lp.h>
+#ifdef __linux__
+	#include <linux/lp.h>
+#else ifdef __freebsd__
+	#include <machine/lpt.h>
+#endif
 
 extern int errno;
 
@@ -125,7 +129,12 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isPrinterBusy(JNIEnv *env,
 	int status;
 	int fd = get_java_fd( env, jobj );
 	ioctl(fd, LPGETSTATUS, &status);
+#if defined __linux__
 	return( status & LP_PBUSY ? JNI_TRUE : JNI_FALSE );
+#else if defined __freebsd__
+	return( status & EBUSY ? JNI_TRUE : JNI_FALSE );
+#endif
+	return(JNI_FALSE);
 }
 /*----------------------------------------------------------
 LPRPort.isPrinterError
@@ -172,7 +181,12 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isPrinterTimedOut(JNIEnv *env,
 	int status;
 	int fd = get_java_fd( env, jobj );
 	ioctl(fd, LPGETSTATUS, &status);
+#if defined __linux__
 	return( status & LP_PBUSY ? JNI_TRUE : JNI_FALSE );
+#else if defined __freebsd__
+	return( status & EBUSY ? JNI_TRUE : JNI_FALSE );
+#endif
+	return( JNI_FALSE );
 }
 
 
@@ -505,7 +519,11 @@ JNIEXPORT void JNICALL Java_gnu_io_LPRPort_eventLoop( JNIEnv *env,
                        PAR_EV_ERROR:
 */
 
+#if defined __linux__
 		if (pflags&LP_PBUSY)    /* inverted input, active high */
+#else if defined __freebsd__
+		if (pflags&EBUSY)    /* inverted input, active high */
+#endif
 			(*env)->CallVoidMethod( env, jobj, method, (jint)PAR_EV_ERROR, JNI_TRUE );
 		if (pflags&LP_PACK)     /* unchanged input, active low */
 			(*env)->CallVoidMethod( env, jobj, method, (jint)PAR_EV_ERROR, JNI_TRUE );

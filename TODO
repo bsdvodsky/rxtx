@@ -6,6 +6,15 @@ implementing right away without worrying about how automake works.  They are
 not written in stone.  If you want to do it differently feel free.
 The good side is the stuff compiles as is.  
 
+*BSD SerialPort support
+	kernel specific implementations
+	buggy event loop.
+
+RXTXPort.java
+	framing control -?-
+	buffer control -?-
+	look for FIXME
+
 ParallelPort support.  Needs some code.
 	./configure --enable-PRINTER will create a Makefile that uses it.
 	The SerialPort code should help one get up to speed on implementing

@@ -2650,6 +2650,13 @@ Linux)
 	;;
 	esac 
 ;;
+*BSD)
+	RXTX_PATH="\$(prefix)/lib"
+	JCL_PATH="lib"
+	CFLAGS="$CFLAGS -D_NO_POSIX=1 -D_NO_XOPEN4=1"
+	JAVANATINC="\$(JPATH)/`cd $JPATH; find ./include -name jni_md.h|sed s#jni_md\\\\.h##|sed s#\\\\.\\\\/##`"
+	JCLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:$CLASSPATH"
+;;
 irix*)
 	JCL_PATH="lib"
 	CFLAGS="$CFLAGS -D_NO_POSIX=1 -D_NO_XOPEN4=1"
