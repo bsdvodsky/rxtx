@@ -248,8 +248,8 @@ int translate_data_bits( JNIEnv *env, int *cflag, jint dataBits )
    return:     1 if successful
 					0 if an exception is thrown
    exceptions: UnsupportedCommOperationException
-	comments:	If you specify 5 data bits and 2 stop bits, the port will
-					allegedly use 1.5 stop bits.  Does anyone care?
+   comments:   If you specify 5 data bits and 2 stop bits, the port will
+               allegedly use 1.5 stop bits.  Does anyone care?
 ----------------------------------------------------------*/ 
 int translate_stop_bits( JNIEnv *env, int *cflag, jint stopBits )
 {
@@ -273,10 +273,10 @@ int translate_stop_bits( JNIEnv *env, int *cflag, jint stopBits )
    accept:     javax.comm.SerialPort.PARITY_* constant
    perform:    set proper termios c_cflag bits
    return:     1 if successful
-					0 if an exception is thrown
+               0 if an exception is thrown
    exceptions: UnsupportedCommOperationException
-	comments:	The CMSPAR bit should be used for 'mark' and 'space' parity,
-					but it's not in glibc's includes.  Oh well, rarely used anyway.
+   comments:   The CMSPAR bit should be used for 'mark' and 'space' parity,
+               but it's not in glibc's includes.  Oh well, rarely used anyway.
 ----------------------------------------------------------*/ 
 int translate_parity( JNIEnv *env, int *cflag, jint parity )
 {
@@ -381,7 +381,7 @@ NativePort.sendBreak
    accept:     duration in milliseconds.
    perform:    send break for actual time.  not less than 0.25 seconds.
    exceptions: none
-   comments:	not very precise
+   comments:   not very precise
 ----------------------------------------------------------*/ 
 JNIEXPORT void JNICALL Java_gnu_io_NativePort_sendBreak( JNIEnv *env,
 	jobject jobj, jint duration )
@@ -521,7 +521,7 @@ JNIEXPORT void JNICALL Java_gnu_io_NativePort_setRTS( JNIEnv *env,
 	ioctl( fd, TIOCMGET, &result );
 	if( state == JNI_TRUE ) result |= TIOCM_RTS;
 	else result &= ~TIOCM_RTS;
-   ioctl( fd, TIOCMSET, &result );
+	ioctl( fd, TIOCMSET, &result );
 	return;
 }
 
@@ -567,7 +567,7 @@ JNIEXPORT void JNICALL Java_gnu_io_NativePort_setDTR( JNIEnv *env,
 	ioctl( fd, TIOCMGET, &result );
 	if( state == JNI_TRUE ) result |= TIOCM_DTR;
 	else result &= ~TIOCM_DTR;
-   ioctl( fd, TIOCMSET, &result );
+	ioctl( fd, TIOCMSET, &result );
 	return;
 }
 
@@ -585,8 +585,8 @@ read_byte_array
                 -1 fail (IOException)
                  0 timeout
                 >0 number of bytes read
-	comments:    According to the Communications API spec, a receive threshold
-	             of 1 is the same as having the threshold disabled.
+   comments:    According to the Communications API spec, a receive threshold
+                of 1 is the same as having the threshold disabled.
 ----------------------------------------------------------*/ 
 int read_byte_array( int fd, unsigned char *buffer, int length, int threshold,
 	int timeout )
@@ -646,7 +646,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_NativePort_readByte( JNIEnv *env,
 		IOException( env, strerror( errno ) );
 		return -1;
 	}
-	return (jint)buffer[ 0 ];
+	return (bytes ? (jint)buffer[ 0 ] : -1);
 }
 
 
@@ -697,7 +697,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_NativePort_readArray( JNIEnv *env,
 	for( i = 0; i < bytes; i++ ) body[ i + offset ] = buffer[ i ];
 	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
 	free( buffer );
-	return bytes;
+	return (bytes ? bytes : -1);
 }
 
 
@@ -707,7 +707,7 @@ NativePort.nativeavailable
    accept:      none
    perform:     find out the number of bytes available for reading
    return:      available bytes
-	             -1 on error
+                -1 on error
    exceptions:  none
 ----------------------------------------------------------*/ 
 JNIEXPORT jint JNICALL Java_gnu_io_NativePort_nativeavailable( JNIEnv *env,
@@ -831,15 +831,15 @@ JNIEXPORT void JNICALL Java_gnu_io_NativePort_eventLoop( JNIEnv *env,
  send_modem_events
 
    accept:      int    event     SerialPortEvent constant
-	             int    change    Number of times this event happened
-					 int    state     current state: 0 is false, nonzero is true
-	perform:     Send the necessary events
-	return:      none
-	exceptions:  none
-	comments:    Since the interrupt counters tell us how many times the
-	             state has changed, we can send a SerialPortEvent for each
-	             interrupt (change) that has occured.  If we don't do this,
-	             we'll miss a whole bunch of events.
+                int    change    Number of times this event happened
+                int    state     current state: 0 is false, nonzero is true
+   perform:     Send the necessary events
+   return:      none
+   exceptions:  none
+   comments:    Since the interrupt counters tell us how many times the
+                state has changed, we can send a SerialPortEvent for each
+                interrupt (change) that has occured.  If we don't do this,
+                we'll miss a whole bunch of events.
 ----------------------------------------------------------*/ 
 void send_modem_events( JNIEnv *env, jobject jobj, jmethodID method,
 	int event, int change, int state )
