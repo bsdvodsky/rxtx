@@ -227,6 +227,7 @@ Linux)
 		JCL_PATH="\$(JPATH)/lib"
 		case $OS_NAME in
 		Linux)
+			if ! grep -q `uname -r` /usr/include/linux/version.h;then echo WARNING:  Kernel include files do not match the current kernel;fi;
 			JCL_PATH="jre/lib/ext"
 			JAVANATINC="\$(JPATH)/include/linux"
 			case $OS_VERSION in
@@ -269,6 +270,7 @@ Linux)
 		JAVA_H_CLASSPATH="\$(JCLASSPATH)"
 		case $OS_NAME in
 		Linux)
+			if ! grep -q `uname -r` /usr/include/linux/version.h;then echo WARNING:  Kernel include files do not match the current kernel;fi;
 			RXTX_PATH="\$(prefix)/lib/"
 			JAVAH_FIX="if [ ! \$(THREADS_FLAG) ] && [ ! -d com ]; then if [ ! -f \$(JPATH)/lib/comm.jar ]; then echo \"Please install comm.jar from CommAPI in \$(JPATH)/java/lib/\"; else \$(JAR) -xf \$(JPATH)/lib/comm.jar;  fi; fi;"
 			JAVANATINC="\$(JPATH)/include/genunix"
