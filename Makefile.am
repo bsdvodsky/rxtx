@@ -89,8 +89,8 @@ $(TOP)/$(target_alias)/libParallel.la: $(TOP)/$(target_alias)/ParallelImp.lo
 $(TOP)/$(target_alias)/ParallelImp.lo: $(srcdir)/src/ParallelImp.c \
                                   $(PARALLEL_HEADER) \
 				  $(TOP)/Makefile
-	(cd $(TOP)/$(target_alias); \
-	$(LIBTOOL) --mode=compile $(CC) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) @VERBOSE_IOEXCEPTIONS@ -c ../$< )
+	(cd $(TOP); \
+	$(LIBTOOL) --mode=compile $(CC) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) @VERBOSE_IOEXCEPTIONS@ -c $< -o $@)
 
 $(TOP)/$(target_alias)/libSerial.la: $(TOP)/$(target_alias)/SerialImp.lo
 	( cd $(TOP)/$(target_alias); \
@@ -100,8 +100,8 @@ $(TOP)/$(target_alias)/libSerial.la: $(TOP)/$(target_alias)/SerialImp.lo
 $(TOP)/$(target_alias)/SerialImp.lo: $(srcdir)/src/SerialImp.c \
                                   $(SERIAL_HEADER) \
 				  $(TOP)/Makefile
-	(cd $(TOP)/$(target_alias); \
-	$(LIBTOOL) --mode=compile $(CC) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) @VERBOSE_IOEXCEPTIONS@ -c ../$< )
+	(cd $(TOP); \
+	$(LIBTOOL) --mode=compile $(CC) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) @VERBOSE_IOEXCEPTIONS@ -c $< -o $@)
 
 $(TOP)/%.class $(TOP)/gnu/io/%.class: $(srcdir)/src/%.java 
 	$(JAVAC) $< 

@@ -56,6 +56,8 @@ String errMessage = "";
 		try {
 			serialPort = (SerialPort) portId.open("SimpleReadApp", 2000);
 		} catch (PortInUseException e) {}
+		serialPort.setInputBufferSize(10000);
+		 System.out.println(serialPort.getInputBufferSize());
 		try {
 			inputStream = serialPort.getInputStream();
 			outputStream = serialPort.getOutputStream();

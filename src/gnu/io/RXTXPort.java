@@ -44,10 +44,12 @@ final class RXTXPort extends SerialPort {
 
 
 	/** Open the named port */
-	public RXTXPort( String name ) throws IOException {
-		fd = open( name );
+	public RXTXPort( String name ) {
+		try {
+			fd = open( name );
+		} catch ( PortInUseException e ){}
 	}
-	private native int open( String name ) throws IOException;
+	private native synchronized int open( String name ) throws PortInUseException;
 
 
 	/** File descriptor */

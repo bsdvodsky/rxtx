@@ -152,7 +152,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_open(
 	return (jint)fd;
 
 fail:
-	throw_java_exception( env, IO_EXCEPTION, "open", strerror( errno ) );
+	throw_java_exception( env, PORT_IN_USE_EXCEPTION, "open", strerror( errno ) );
 	return -1;
 }
 
