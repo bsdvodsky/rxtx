@@ -157,15 +157,19 @@ JNIEXPORT void JNICALL RXTXPort(Initialize)(
 
 	/* POSIX signal handling functions */
 #if !defined(WIN32)
-	struct sigaction handler, ignorer;
-
-	ignorer.sa_handler = SIG_IGN;
-
-	sigaction( SIGIO, NULL, &handler );
-	sigaction( SIGINT, NULL, NULL );
-	signal( SIGIO, SIG_IGN );
-
-	if( !handler.sa_handler ) signal( SIGIO, SIG_IGN );
+	struct sigaction old_action;
+	sigaction(SIGIO, NULL, &old_action);
+	/* green threads already has handler, no touch */
+	if (old_action.sa_handler == NULL) {
+		/* no handler when using native threads, set to ignore */
+		struct sigaction new_action;
+		sigset_t block_mask;
+		sigemptyset(&block_mask);
+		new_action.sa_handler = SIG_IGN;
+		new_action.sa_flags = SA_RESTART;
+		new_action.sa_mask = block_mask;
+		sigaction(SIGIO, &new_action, NULL);
+	} 
 #endif /* !WIN32 */
 #if defined(DEBUG) && defined(__linux__)
 	/* Lets let people who upgraded kernels know they may have problems */
