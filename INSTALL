@@ -69,6 +69,8 @@ A.  Japanese
 
 	Instructions are available in Japanese at
 
+	The instructions are fairly old but should help.
+
 	http://www.geocities.co.jp/Technopolis/4789/settei.htm#id1
 	Thanks to Masayuki "Tencho" Yamashita <tencho@venus.kanazawa-it.ac.jp>
 	home page http://www.geocities.co.jp/Technopolis/4789/ 
@@ -105,7 +107,9 @@ A.  Japanese
 		$ make install
 		Read "T.  How can I use Lock Files with rxtx?"
 
-
+	One catch that has showed up... you cannot have spaces in the path.
+	for instance:  /home/jarvi/test build/rxtx/... will cause problems.
+                                   ----^
 	If that does not work or you do not want a script messing with the 
 	system, read on..
 
