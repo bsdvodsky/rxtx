@@ -2449,8 +2449,17 @@ int fhs_lock( const char *filename )
 
 	i = strlen( filename );
 	p = ( char * ) filename + i;
-	/*  FIXME  need to handle subdirectories /dev/cua/... */
-	while( *( p - 1 ) != '/' && i-- != 1 ) p--;
+	/*  FIXME  need to handle subdirectories /dev/cua/... 
+	    SCO Unix use lowercase all the time
+			taj
+	*/
+	while( *( p - 1 ) != '/' && j-- != 1 )
+	{
+#if defined ( __unixware__ )
+		*p = tolower( *p );
+#endif /* __unixware__ */
+		p--;
+	}
 	sprintf( file, "%s/LCK..%s", LOCKDIR, p );
 	if ( check_lock_status( filename ) )
 	{
@@ -2846,16 +2855,14 @@ int is_device_locked( const char *filename )
 				p = ( char *  ) filename + j;
 				
 		/*
-		   FIXME
 		   SCO Unix use lowercase all the time
-		   I'm not sure if the define is correct
 			taj
 		*/
-				while( *( p-1 ) != '/' && j-- != 1 )
+				while( *( p - 1 ) != '/' && j-- != 1 )
 				{
-#if defined ( __sco__ )
-					*p = tolower(*p);
-#endif /* __sco__ */
+#if defined ( __unixware__ )
+					*p = tolower( *p );
+#endif /* __unixware__ */
 					p--;
 				}
 				k=0;

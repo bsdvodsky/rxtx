@@ -1069,6 +1069,30 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 		throws UnsupportedCommOperationException;
 	private native boolean nativeGetCallOutHangup()
 		throws UnsupportedCommOperationException;
+
+	/**
+	*  Extension to CommAPI
+	*  This is an extension to CommAPI.  It may not be supported on
+	*  all operating systems.
+	*  @return int the Parity Error Character
+	*  @throws UnsupportedCommOperationException;
+	*
+	*  Anyone know how to do this in Unix?
+	*/
+
+	int getParityErrorChar( )
+		throws UnsupportedCommOperationException
+	{
+		int ret;
+		if ( debug )
+			System.out.println( "getParityErrorChar()" );
+		ret = nativeGetParityErrorChar();
+		if ( debug )
+			System.out.println( "getParityErrorChar() returns " +
+						ret );
+		return( ret );
+	}
+
 	/**
 	*  Extension to CommAPI
 	*  This is an extension to CommAPI.  It may not be supported on
@@ -1086,6 +1110,29 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 		if ( debug )
 			System.out.println( "setParityErrorChar(" + b + ")" );
 		return( nativeSetParityErrorChar( b ) );
+	}
+
+	/**
+	*  Extension to CommAPI
+	*  This is an extension to CommAPI.  It may not be supported on
+	*  all operating systems.
+	*  @return int the End of Input Character
+	*  @throws UnsupportedCommOperationException;
+	*
+	*  Anyone know how to do this in Unix?
+	*/
+
+	int getEndOfInputChar( )
+		throws UnsupportedCommOperationException
+	{
+		int ret;
+		if ( debug )
+			System.out.println( "getEndOfInputChar()" );
+		ret = nativeGetEndOfInputChar();
+		if ( debug )
+			System.out.println( "getEndOfInputChar() returns " +
+						ret );
+		return( ret );
 	}
 
 	/**
