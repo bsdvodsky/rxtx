@@ -27,6 +27,8 @@ import javax.comm.*;
 public class RXTXCommDriver implements CommDriver {
 
 
+	//public static final int PORT_SERIAL=1;
+	//public static final int PORT_PARALLEL=2;
 	/** Serial port prefixes to check for */
 	private static final String[] portPrefix = {
 		"modem",	// modem ports
@@ -76,10 +78,14 @@ public class RXTXCommDriver implements CommDriver {
 	 * <p>From the NullDriver.java CommAPI sample.
 	 */
 	public CommPort getCommPort( String portName, int portType ) {
-		try { return new RXTXPort( portName ); }
-		catch( IOException e ) {
+		try {
+			if (portType==CommPortIdentifier.PORT_SERIAL)
+				return new RXTXPort( portName ); 
+			else if (portType==CommPortIdentifier.PORT_PARALLEL)
+				return new LPRPort( portName ); 
+		} catch( IOException e ) {
 			e.printStackTrace();
-			return null;
 		}
+		return null;
 	}
 }
