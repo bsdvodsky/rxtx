@@ -53,6 +53,8 @@ final class RXTXPort extends SerialPort {
 	/** File descriptor */
 	private int fd;
 
+	/** DSR flag **/
+	static boolean dsrFlag = false;
 
 	/** Output stream */
 	private final SerialOutputStream out = new SerialOutputStream();
@@ -62,6 +64,8 @@ final class RXTXPort extends SerialPort {
 	/** Input stream */
 	private final SerialInputStream in = new SerialInputStream();
 	public InputStream getInputStream() { return in; }
+
+
 
 
 	/** Set the SerialPort parameters */
@@ -247,6 +251,23 @@ final class RXTXPort extends SerialPort {
 			case SerialPortEvent.OUTPUT_BUFFER_EMPTY:
 				if( monThread.Output ) break;
 				return;
+/*
+				if( monThread.DSR ) break;
+				return;
+				if (isDSR())
+				{
+					if (!dsrFlag) 
+					{
+						dsrFlag = true;
+						SerialPortEvent e = new SerialPortEvent(this, SerialPortEvent.DSR, !dsrFlag, dsrFlag );
+					}
+				}
+				else if (dsrFlag)
+				{
+					dsrFlag = false;
+					SerialPortEvent e = new SerialPortEvent(this, SerialPortEvent.DSR, !dsrFlag, dsrFlag );
+				}
+*/
 			case SerialPortEvent.CTS:
 				if( monThread.CTS ) break;
 				return;

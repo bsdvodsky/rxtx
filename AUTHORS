@@ -1,6 +1,11 @@
 This package is not the result of one persons time.  Recognition is given
 to the following people for their assistance.
 
+W. Craig Trader <ct7@vitelinc.com> and Gareth Lee <gareth@ee.uwa.edu.au> Added
+Calls to DeleteLocalRef to functions get_java_var and throw_java_exception to 
+avoid FATAL ERROR in native method: Out of memory when expanding local ref 
+table beyond capacity
+
 Tim Groner <tgroner@cs.umanitoba.ca> Assistance tracking down an open() bug
 that was accidently introduced in rxtx-1.3-10.
 

@@ -224,7 +224,7 @@ final class LPRPort extends ParallelPort {
                         writeArray( b, off, len );
                 }
                 public void flush() throws IOException {
-                        drain();
+                        //drain();
                 }
         }
 

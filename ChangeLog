@@ -1,3 +1,12 @@
+1.3-12 Mar  7, 2000   Added Calls to DeleteLocalRef to functions get_java_var 
+                      and throw_java_exception to avoid FATAL ERROR in native 
+                      method: Outof memory when expanding local ref table 
+		      beyond capacity W. Craig Trader <ct7@vitelinc.com> and
+		      Gareth Lee <gareth@ee.uwa.edu.au>
+                      fixed flush() for printer ports.
+                      Robert Perry <rlperry@paradigmsys.com> 
+                      work around for missed DSR events (incomplete?).
+                      Ken Eisner <devel01@novex.ns.ca> 
 1.3-11 Jan 28, 2000   Added notification of output buffer empty. 
                       Chris Portal <cportal@mathworks.com>
                       tracked down a bug in open() (introduced in rxtx-1.3-10)
@@ -5,6 +14,7 @@
                       Ken Eisner <019769e@dragon.acadiau.ca>
                       Fix for people reporting lost bytes.
                       Wayne Robers <wroberts2@home.com>
+                      Douglas Baker <dbaker@connix.com>
 1.3-10 Jan 16, 2000   Tracked down threshold bugs and Linux configure fixes.  
                       Brent J. Nordquist <bhn@visi.com>
 		      Moxa Driver Support read/write examples libc5 build fixes.

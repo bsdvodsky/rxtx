@@ -935,23 +935,19 @@ RXTXPort.eventLoop
    perform:     periodically check for SerialPortEvents
    return:      none
    exceptions:  none
-   comments:    FIXME This is wrong on bsd.
-                Basically one needs to go through the bsd kernel structs
-                for serial events and implemnt the same as has been done
-                for linux.
+   comments:    FIXME This is probably wrong on bsd.
 ----------------------------------------------------------*/ 
 JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 	jobject jobj )
 {
-	int fd, ret, change, dataAvailable;
+	int fd, ret, change;
 	fd_set rfds;
 	struct timeval tv_sleep;
 	unsigned int mflags;
-#if defined(__linux__)
+#if defined(TIOCGICOUNT)
 	struct serial_icounter_struct sis, osis;
-#else
+#endif /* TIOCGICOUNT */
 	unsigned int omflags;
-#endif
 
 	jmethodID method, interrupt;
 	jboolean interrupted = 0;
@@ -965,16 +961,17 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 	/* Some multiport serial cards do not implement TIOCGICOUNT ... */
 #if defined(TIOCGICOUNT)
 	if( ioctl( fd, TIOCGICOUNT, &osis ) < 0 ) {
-		fprintf( stderr, "Port does not support events\n" );
+		fprintf( stderr, "Port does not support TIOCGICOUNT events\n" );
 		return; 
 	}
 #else
+	fprintf( stderr, "Port does not support all Hardware events\n" );
+#endif /*  TIOCGICOUNT */
+
 	if( ioctl( fd, TIOCMGET, &omflags) <0 ) {
 		fprintf( stderr, "Port does not support events\n" );
  		return;
 	}
-	fprintf( stderr, "Port does not support all Hardware events\n" );
-#endif
 
 	FD_ZERO( &rfds );
 	while( !interrupted ) {
@@ -982,37 +979,35 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 		/* Check every 1 second, or on receive data */
 		tv_sleep.tv_sec = 1; 
 		tv_sleep.tv_usec = 0;
-		dataAvailable = get_java_var(env, jobj, "dataAvailable", "I");
-		if(dataAvailable) usleep(1000); /* select wont block */
 		do {
 			ret=select( fd + 1, &rfds, NULL, NULL, &tv_sleep );
 		}  while (ret < 0 && errno==EINTR);
-		if( ret < 0 ) break; 
+		if( ret < 0 ) {
+			fprintf( stderr, "select() Failed\n" );
+			break; 
+		}
 
 #if defined TIOCSERGETLSR
-		if( ioctl( fd, TIOCSERGETLSR, &change ) ) break;
-		if( change ) {
+		if( ioctl( fd, TIOCSERGETLSR, &change ) ) {
+			fprintf( stderr, "TIOCSERGETLSR Failed\n" );
+			break;
+		}
+		else if( change ) {
 			(*env)->CallVoidMethod( env, jobj, method,
 				(jint)SPE_OUTPUT_BUFFER_EMPTY, JNI_TRUE );
 		}
 #endif /* TIOCSERGETLSR */
 #if defined(TIOCGICOUNT)
-	/*	wait for RNG, DSR, CD or CTS  but not DataAvailable*/
-	/*      The drawback here is it never times out so if someone
+	/*	wait for RNG, DSR, CD or CTS  but not DataAvailable
+	 *      The drawback here is it never times out so if someone
 	 *      reads there will be no chance to try again.
 	 *      This may make sense if the program does not want to 
 	 *      be notified of data available or errors.
-		fprintf(stderr,"native dataAvailable = %i\n",dataAvailable);
-		if ( dataAvailable )  
-		{
-			ret=ioctl(fd,TIOCMIWAIT);
-		}
-	*/
-		if( ioctl( fd, TIOCGICOUNT, &sis ) ) break;
-#if defined(FULL_EVENT)
-		if( sis.rx != osis.rx ) 
-		{
-			(*env)->CallVoidMethod( env, jobj, method, (jint)SPE_DATA_AVAILABLE, JNI_TRUE );
+	 *	ret=ioctl(fd,TIOCMIWAIT);
+	 */
+		if( ioctl( fd, TIOCGICOUNT, &sis ) ) {
+			fprintf( stderr, "TIOCGICOUNT Failed\n" );
+			break; 
 		}
 		while( sis.frame != osis.frame ) {
 			(*env)->CallVoidMethod( env, jobj, method, (jint)SPE_FE, JNI_TRUE );
@@ -1030,28 +1025,14 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 			(*env)->CallVoidMethod( env, jobj, method, (jint)SPE_BI, JNI_TRUE );
 			osis.brk++;
 		}
-#else
-		if( ioctl( fd, FIONREAD, &change ) ) break;
-		if( change ) (*env)->CallVoidMethod( env, jobj, method,
-			(jint)SPE_DATA_AVAILABLE, JNI_TRUE );
-#endif /* FULL_EVENT */
-		if( ioctl( fd, TIOCMGET, &mflags ) ) break;
-		change = sis.cts - osis.cts;
-		if( change ) send_modem_events( env, jobj, method, SPE_CTS, abs(change),
-			mflags & TIOCM_CTS );
-		change = sis.dsr - osis.dsr;
-		if( change ) send_modem_events( env, jobj, method, SPE_DSR, abs(change),
-			mflags & TIOCM_DSR );
-		change = sis.rng - osis.rng;
-		if( change ) send_modem_events( env, jobj, method, SPE_RI, change,
-			mflags & TIOCM_RNG );
-		change = sis.dcd - osis.dcd;
-		if( change ) send_modem_events( env, jobj, method, SPE_CD, abs(change),
-			mflags & TIOCM_CD );
 		osis = sis;
+#endif /*  TIOCGICOUNT */
+		if( ioctl( fd, TIOCMGET, &mflags ) ) {
+			fprintf( stderr, "TIOCMGET Failed\n" );
+			break; 
+		}
 		interrupted = (*env)->CallStaticBooleanMethod( env, jthread, interrupt );
-#else /*  TIOCGICOUNT */
-	       /* A Portable non-linux implementation */
+	       /* A Portable implementation */
 		change = (mflags&TIOCM_CTS) - (omflags&TIOCM_CTS);
 		if( change ) {
 			fprintf(stderr, "Sending SPE_CTS\n");
@@ -1077,12 +1058,14 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 				(jint)SPE_CD, JNI_TRUE );
 		}
 		omflags = mflags;
-		if( ioctl( fd, FIONREAD, &change ) ) break;
-		if( change ) {
+		if( ioctl( fd, FIONREAD, &change ) ) {
+			fprintf( stderr, "FIONREAD Failed\n" );
+		}
+		else if( change ) {
 			(*env)->CallVoidMethod( env, jobj, method,
 				(jint)SPE_DATA_AVAILABLE, JNI_TRUE );
+			usleep(1000); /* select wont block */
 		}
-#endif /* TIOCGICOUNT */
 	}
 	return;
 }
@@ -1127,14 +1110,18 @@ get_java_fd
 ----------------------------------------------------------*/ 
 int get_java_var( JNIEnv *env, jobject jobj, char *id, char *type )
 {
+	int result = 0;
 	jclass jclazz = (*env)->GetObjectClass( env, jobj );
 	jfieldID jfd = (*env)->GetFieldID( env, jclazz, id, type );
 	if( !jfd ) {
 		(*env)->ExceptionDescribe( env );
 		(*env)->ExceptionClear( env );
-		return 0;
+		return result;
 	}
-	return (int)( (*env)->GetIntField( env, jobj, jfd ) );
+	result = (int)( (*env)->GetIntField( env, jobj, jfd ) );
+/* ct7 & gel * Added DeleteLocalRef */
+	(*env)->DeleteLocalRef( env, jclazz );
+	return result;
 }
 
 /*----------------------------------------------------------
@@ -1164,6 +1151,8 @@ void throw_java_exception( JNIEnv *env, char *exc, char *foo, char *msg )
 	sprintf( buf,"%s in %s", msg, foo );
 #endif /* _GNU_SOURCE */
 	(*env)->ThrowNew( env, clazz, buf );
+/* ct7 * Added DeleteLocalRef */
+	(*env)->DeleteLocalRef( env, clazz );
 }
 
 JNIEXPORT jboolean  JNICALL Java_gnu_io_RXTXCommDriver_IsDeviceGood(JNIEnv *env,
@@ -1213,7 +1202,7 @@ JNIEXPORT jboolean  JNICALL Java_gnu_io_RXTXCommDriver_IsDeviceGood(JNIEnv *env,
 		)
 	{
 #ifdef DEBUG
-		fprintf(stderr,"DEBUG: Ignoring Port %s\*\n",name);
+		fprintf(stderr,"DEBUG: Ignoring Port %s*\n",name);
 #endif
 		return(JNI_FALSE);
 	}
