@@ -19,7 +19,25 @@
 --------------------------------------------------------------------------*/
 #include "StdAfx.h"
 #include "rxtxHelpers.h"
-#include "gnu_io_RXTXCommDriver.h"
+
+/*
+nativeGetVersion
+
+   accept:      none
+   perform:     return the current version 
+   return:      version
+   exceptions:  none
+   comments:    This is used to avoid mixing versions of the .jar and
+		native library.
+		First introduced in rxtx-1.5-9
+ * Class:     gnu_io_RXTXCommDriver
+ * Method:    nativeGetVersion
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_gnu_io_RXTXCommDriver_nativeGetVersion(JNIEnv *env, jclass cls)
+{
+  return env->NewStringUTF("RXTX-2.0-1");
+}
 
 /*
  registerKnownPorts
