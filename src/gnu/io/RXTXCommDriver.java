@@ -31,16 +31,14 @@ public class RXTXCommDriver implements CommDriver {
         static 
 	{ 
 		OS = System.getProperty("os.name");
-		if(OS.equals("Linux") || OS.equals("FreeBSD"))
-		{
-			System.loadLibrary( "Serial" ); 
-		}
-		else if(OS.equals("Win95"))
+		if(OS.equals("Win95"))
 		{
 			System.loadLibrary("SerialW95");
 		}
-		else System.out.println("OOPS :) Check RXTXCommDriver.java"+OS);
-		//...  propably not needed.  hmm.
+		else 
+		{
+			System.loadLibrary( "Serial" ); 
+		}
 	}
 
 	/** Get the Serial port prefixes for the running OS */

@@ -1166,7 +1166,7 @@ JNIEXPORT jboolean  JNICALL Java_gnu_io_RXTXCommDriver_IsDeviceGood(JNIEnv *env,
 		)
 	{
 #ifdef DEBUG
-		printf("DEBUG: Ignoring Port %s\*\n",name);
+		printf("DEBUG: Ignoring Port %s*\n",name);
 #endif
 		return(JNI_FALSE);
 	}
@@ -1180,7 +1180,23 @@ JNIEXPORT jboolean  JNICALL Java_gnu_io_RXTXCommDriver_IsDeviceGood(JNIEnv *env,
 		)
 	{
 #ifdef DEBUG
-		printf("DEBUG: Ignoring Port %s\*\n",name);
+		printf("DEBUG: Ignoring Port %s*\n",name);
+#endif
+		return(JNI_FALSE);
+	}
+#endif
+#if defined(__NetBSD__)
+	if(     !strcmp(name,"ttyd")||
+		!strcmp(name,"ttyq")|| !strcmp(name,"ttym")||
+		!strcmp(name,"ttyf")|| !strcmp(name,"ttyS")||
+		!strcmp(name,"ttyI")|| !strcmp(name,"ttyW")||
+		!strcmp(name,"ttyq")|| !strcmp(name,"ttym")||
+		!strcmp(name,"ttyf")|| !strcmp(name,"cuaa")||
+		!strcmp(name,"ttyC")|| !strcmp(name,"ttyR")
+		)
+	{
+#ifdef DEBUG
+		printf("DEBUG: Ignoring Port %s*\n",name);
 #endif
 		return(JNI_FALSE);
 	}
