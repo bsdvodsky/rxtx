@@ -1,0 +1,20 @@
+This is MacOSX.  Last modified: Thu Sep 20 09:22:17 MDT 2001
+
+If you are going to try building rxtx on Mac OS X, we recommend you use
+rxtx 1.5.   1.4 would require substantial modification to the Makefile to
+get the build to work.
+
+Mac OS X has some issues with libtool at this time.  This makes building
+rxtx much more difficult.
+
+The current solution is to take an automatically generated Makefile and then
+manually edit it.
+
+One such Makefile is provided to help build rxtx.  The file will probably
+need to be edited to match your system configuration.  If you would like to
+add more information for other Mac OS X users please email
+
+	trentjarvi@yahoo.com
+
+We are sorry the build process is not easier.  A great deal of effort was
+put into trying to automate the builds without luck.
