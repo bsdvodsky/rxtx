@@ -23,7 +23,7 @@ Win95/98 with mingw32
 	95% there but needs work.
 	for starters look at select()
 	http://msdn.microsoft.com/library/techart/msdn_serial.htm
-	for documentation.
+	for documentation.   WaitForSingleObject() may be of use.
 
 RXTXPort.java
 	framing control -?-

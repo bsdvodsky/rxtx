@@ -2643,6 +2643,145 @@ check_prefix()
 		read  REPLY
 	fi
 }
+# an attempt to compile on libc5 linux machines
+check_java_headers()
+{
+
+cat > conftest.c << EOF
+#include <features.h>
+int main(int argc, char *argv)
+{
+#if defined (__GLIBC__)
+        printf("%i\n",__GLIBC__);
+#else
+	printf("0\n");
+#endif
+	
+	exit(0);
+}
+EOF
+	cc conftest.c -o conftest
+	if  test `./conftest` -lt 2 ;then 
+		echo 1>&2
+		echo "       WARNING:  Older libc on linux detected.  Patching a local copy of jni_md.h" 1>&2
+		echo 1>&2
+		ln -s `find $JPATH/include -name jni.h` .
+		cp `find $JPATH/include -name typedefs_md.h` .
+		# not pretty.  could be cleaned up
+		patch << EOF
+--- typedefs_md.h	Tue Jan 11 14:17:08 2000
++++ typedefs_md.h.patchtaj	Tue Jan 11 14:15:53 2000
+@@ -17,9 +17,6 @@
+  */
+ 
+ /* sbb: Johan Vos, why isn't this #ifndef inside the solaris header guard? */
+-#ifndef BITSPERCHAR
+-#define BITSPERCHAR 8
+-#endif
+ 
+ #ifndef _SOLARIS_TYPES_MD_H_
+ #define _SOLARIS_TYPES_MD_H_
+@@ -28,50 +25,19 @@
+ #include <sys/stat.h>
+ #include "bool.h"
+ 
+-#if defined(__alpha__)
+-typedef unsigned long ptr_int;
+-#define PTR_IS_64 1
+-#define LONG_IS_64 1
+-#else
+ typedef unsigned int ptr_int;
+ #define PTR_IS_32 1
+-#endif
+ 
+ /* don't redefine typedef's on Solaris 2.6 or Later */
+ 
+-#if !defined(_ILP32) && !defined(_LP64)
+-
+-#ifndef	_UINT64_T
+-#define	_UINT64_T
+-#ifdef LONG_IS_64
+-typedef unsigned long uint64_t;
+-#else
+ typedef unsigned long long uint64_t;
+-#endif
+-#define _UINT32_T
+ typedef unsigned int uint32_t;
+-#if defined(__linux__)
+ typedef unsigned int uint_t;
+-#endif
+-#endif
+ 
+-#ifndef __BIT_TYPES_DEFINED__
+-#ifdef (__i386__)
+-/* that should get Linux, at least */
+ #ifndef	_INT64_T
+ #define	_INT64_T
+-#ifdef LONG_IS_64
+-typedef long int64_t;
+-#else
+ typedef long long int64_t;
+-#endif
+-#define _INT32_T
+-typedef int int32_t;
+-#if defined(__linux__)
+-typdef int int_t;
+-#endif
+-#endif
+-#endif /* i386 */
++typedef int int_t;
+ #endif /* __BIT_TYPES_DEFINED__ */
+ 
+ #endif	/* !defined(_ILP32) && !defined(_LP64) */
+@@ -110,27 +76,15 @@
+ #endif
+ 
+ 
+-/* On Intel these conversions have to be method calls and not typecasts.
+-   See the win32 typedefs_md.h file */
+-#if ((defined(i386) || defined (__i386)) && defined(__solaris__)) || defined(__powerpc__)
+-
+-extern int32_t float2l(float f);
+-extern int32_t double2l(double d);
+-extern int64_t float2ll(float f);
+-extern int64_t double2ll(double d);
+-
+-#else /* not solaris x386 or linux powerpc*/
+-
+ #define float2l(f)	(f)
+ #define double2l(f)	(f)
+ #define float2ll(f)	((int64_t) (f))
+ #define double2ll(f)	((int64_t) (f))
+ 
+-#endif /* i386 */
+-
+ 
+ #define ll2float(a)	((float) (a))
+ #define ll2double(a)	((double) (a))
++#define double2ll(f)    ((int64_t) (f))
+ 
+ /* comparison operators */
+ #define ll_ltz(ll)	((ll)<0)
+@@ -148,13 +102,7 @@
+ 
+ extern void ll2str(int64_t a, char *s, char *limit);
+ 
+-#if defined(ppc) || defined(__ppc__) || defined(__alpha__) || defined(__sparc__)
+-#ifndef HAVE_ALIGNED_DOUBLES
++#if defined(ppc) || defined(__ppc__) || defined(__alpha__)
+ #define HAVE_ALIGNED_DOUBLES
+-#endif
+-#ifndef HAVE_ALIGNED_LONGLONGS
+ #define HAVE_ALIGNED_LONGLONGS
+ #endif
+-#endif
+-
+-#endif /* !_SOLARIS_TYPES_MD_H_ */
+EOF
+	fi
+	rm -f conftest.c
+	rm -f conftest
+}
 check_kernel_headers()
 {
 	cat > conftest.c << EOF
@@ -2662,7 +2801,7 @@ EOF
 		echo 1>&2
 		echo "                 Press enter to continue." 
 		read REPLY
-	fi 1>&2
+	fi
 	rm -f conftest.c
 	rm -f conftest
 }
@@ -2727,6 +2866,7 @@ fi
  case $OS_NAME in 
 Linux)
 	check_kernel_headers
+	check_java_headers
 	case $JAVA_VERSION in
 	1.2*) 
 		fix_parameters $JPATH/jre/lib/javax.comm.properties
