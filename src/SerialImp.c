@@ -136,6 +136,7 @@ extern int errno;
 
 #include "SerialImp.h"
 
+JavaVM *javaVM = NULL;
 
 struct preopened *preopened_port = NULL;
 
@@ -208,6 +209,42 @@ struct timeval snow, enow, seloop, eeloop;
 
 
 struct event_info_struct *master_index = NULL;
+
+
+/*----------------------------------------------------------
+build_threadsafe_eis
+
+   accept:      The JNIEnv and jobj of the thread, the original eis.
+   perform:     fill in the needed variables with this threads values
+   return:      none
+   exceptions:  none
+   comments:    java variables (especially JNIEnv) should not be shared
+		between threads.  Right now we build a local struct with
+		the thread's info before using the variabls.  This is
+		especially true for send_event.
+
+		See also JNI_OnLoad() if the thread does not have the values
+----------------------------------------------------------*/
+struct event_info_struct build_threadsafe_eis(
+	JNIEnv *env,
+	jobject *jobj,
+	struct event_info_struct *eis
+)
+{
+	struct event_info_struct myeis = *eis;
+
+	myeis.env = env;
+	myeis.jclazz = (*env)->GetObjectClass( env, *jobj );
+	myeis.jobj = jobj;
+	myeis.fd = get_java_var( env, *jobj, "fd", "I" );
+	myeis.send_event = (*env)->GetMethodID(
+		env,
+		myeis.jclazz,
+		"sendEvent",
+		"(IZ)Z"
+	);
+	return( myeis );
+}
 
 /*----------------------------------------------------------
 RXTXPort.Initialize
@@ -1569,7 +1606,8 @@ JNIEXPORT jboolean JNICALL RXTXPort (nativeDrain) (JNIEnv * env,
 #endif /* !TIOCSERGETLSR !WIN32 */
   if (eis && eis->eventflags[SPE_OUTPUT_BUFFER_EMPTY])
     {
-      send_event (eis, SPE_OUTPUT_BUFFER_EMPTY, 1);
+      struct event_info_struct myeis = build_threadsafe_eis( env, &jobj, eis );
+      send_event( &myeis, SPE_OUTPUT_BUFFER_EMPTY, 1 );
     }
   report_time_end ();
   return (JNI_FALSE);
@@ -3734,10 +3772,10 @@ void
 unlock_monitor_thread (struct event_info_struct *eis)
 {
   JNIEnv *env = eis->env;
+  object jobj = *(eis->jobj);
 
-  jfieldID jfid = (*env)->GetFieldID (env, eis->jclazz,
-				      "MonitorThreadLock", "Z");
-  (*env)->SetBooleanField (env, *eis->jobj, jfid, JNI_FALSE);
+  jfieldID jfid = (*env)->GetFieldID( env, (*env)->GetObjectClass( env, jobj ), "MonitorThreadLock", "Z" );
+  (*env)->SetBooleanField( env, jobj, jfid, (jboolean) 0 );
 }
 
 /*----------------------------------------------------------
@@ -4204,13 +4242,13 @@ RXTXPort.eventLoop
 JNIEXPORT void JNICALL RXTXPort (eventLoop) (JNIEnv * env, jobject jobj)
 {
   struct event_info_struct eis;
-#ifdef WIN32
-  int i = 0;
-#endif /* WIN32 */
   eis.jclazz = (*env)->GetObjectClass (env, jobj);
   eis.env = env;
   eis.jobj = &jobj;
   eis.initialised = 0;
+#ifdef WIN32
+  int i = 0;
+#endif /* WIN32 */
 
   ENTER ("eventLoop\n");
   if (!initialise_event_info_struct (&eis))
@@ -5986,6 +6024,77 @@ int different_from_LOCKDIR(const char* ld)
     fprintf (stderr, "\n");
 #endif /* DEBUG */
   }
+
+/*----------------------------------------------------------
+get_java_environment
+
+   accept:      pointer to the virtual machine
+		flag to know if we are attached
+   return:      pointer to the Java Environment
+   exceptions:  none
+   comments:    see JNI_OnLoad.  For getting the JNIEnv in the thread
+		used to monitor for output buffer empty.
+----------------------------------------------------------*/
+JNIEnv *get_java_environment(JavaVM *java_vm,  jboolean *was_attached){
+	void **env = NULL;
+	jint err_get_env;
+	if(java_vm == NULL) return (JNIEnv *) *env;
+	*was_attached = JNI_FALSE;
+
+	err_get_env = (*java_vm)->GetEnv(
+		java_vm,
+		env,
+		JNI_VERSION_1_2
+	);
+	if(err_get_env == JNI_ERR) return NULL;
+	if(err_get_env == JNI_EDETACHED){
+		(*java_vm)->AttachCurrentThread(
+			java_vm,
+			env,
+			(void **) NULL
+		);
+		if(*env != NULL) *was_attached = JNI_TRUE;
+	}else if(err_get_env != JNI_OK) return (JNIEnv *) NULL;
+	return (JNIEnv *) *env;
+}
+
+/*----------------------------------------------------------
+JNI_OnLoad
+
+   accept:      JavaVM pointer to the Vertial Machine
+		void * reserved ???
+   return:      jint JNI version used.
+   exceptions:  none
+   comments:    http://java.sun.com/j2se/1.4.2/docs/guide/jni/jni-14.html
+		http://java.sun.com/j2se/1.4.2/docs/guide/jni/jni-12.html
+		grab the Java VM pointer when the library loads for later use
+		in the drain thread.  Also lets Java know we are using the
+		1.4 API so we can get pointers later.
+----------------------------------------------------------*/
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *java_vm, void *reserved)
+{
+	javaVM = java_vm;
+	printf("Experimental:  JNI_OnLoad called.\n");
+	return JNI_VERSION_1_2;  /* JNI API used */
+}
+
+/*----------------------------------------------------------
+JNI_OnUnload
+
+   accept:      JavaVM pointer to the Vertial Machine
+		void * reserved ???
+   return:      none
+   exceptions:  none
+   comments:    http://java.sun.com/j2se/1.4.2/docs/guide/jni/jni-14.html
+		http://java.sun.com/j2se/1.4.2/docs/guide/jni/jni-12.html
+		final library cleanup here.  
+----------------------------------------------------------*/
+JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved)
+{
+	/* never called it appears */
+	printf("Experimental:  JNI_OnUnload called.\n");
+}
+
 #ifdef asdf
 /*----------------------------------------------------------
 printj
