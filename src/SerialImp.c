@@ -91,6 +91,9 @@
 #	include <IOKit/serial/IOSerialKeys.h>
 #	include <IOKit/IOBSD.h>
 #endif /* __APPLE__ */
+#ifdef __unixware__
+#	include  <sys/filio.h>
+#endif /* __unixware__ */
 #ifdef HAVE_PWD_H
 #include	<pwd.h>
 #endif /* HAVE_PWD_H */
