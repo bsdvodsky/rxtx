@@ -492,7 +492,7 @@ final class RXTXPort extends SerialPort
 	*  @param state
 	*  @return boolean true if the port is closing
 	*/
-	public synchronized boolean sendEvent( int event, boolean state )
+	public boolean sendEvent( int event, boolean state )
 	{
 
 		if (debug)
@@ -513,7 +513,8 @@ final class RXTXPort extends SerialPort
 				break;
 			case SerialPortEvent.OUTPUT_BUFFER_EMPTY:
 				if( debug )
-					System.out.println( "OUTPUT_BUF_EMPTY " +
+					System.out.println(
+						"OUTPUT_BUF_EMPTY " +
 						monThread.Output + ")" );
 				break;
 			case SerialPortEvent.CTS:
@@ -558,7 +559,7 @@ final class RXTXPort extends SerialPort
 				break;
 			default:
 				if( debug )
-					System.out.println( "XXXXXXXXXXXXXXXX " +
+					System.out.println( "XXXXXXXXXXXXXX " +
 						event + ")" );
 				break;
 		}
@@ -571,23 +572,6 @@ final class RXTXPort extends SerialPort
 			case SerialPortEvent.OUTPUT_BUFFER_EMPTY:
 				if( monThread.Output ) break;
 				return(false);
-/*
-				if( monThread.DSR ) break;
-				return(false);
-				if (isDSR())
-				{
-					if (!dsrFlag)
-					{
-						dsrFlag = true;
-						SerialPortEvent e = new SerialPortEvent(this, SerialPortEvent.DSR, !dsrFlag, dsrFlag );
-					}
-				}
-				else if (dsrFlag)
-				{
-					dsrFlag = false;
-					SerialPortEvent e = new SerialPortEvent(this, SerialPortEvent.DSR, !dsrFlag, dsrFlag );
-				}
-*/
 			case SerialPortEvent.CTS:
 				if( monThread.CTS ) break;
 				return(false);
@@ -613,7 +597,7 @@ final class RXTXPort extends SerialPort
 				if( monThread.BI ) break;
 				return(false);
 			default:
-				System.err.println("unknown event:"+event);
+				System.err.println("unknown event: " + event);
 				return(false);
 		}
 		SerialPortEvent e = new SerialPortEvent(this, event, !state,
@@ -636,7 +620,7 @@ final class RXTXPort extends SerialPort
 	*  @param lsnr SerialPortEventListener
 	*  @throws TooManyListenersException
 	*/
-	public synchronized void addEventListener(
+	public void addEventListener(
 		SerialPortEventListener lsnr ) throws TooManyListenersException
 	{
 		if (debug)
@@ -654,8 +638,7 @@ final class RXTXPort extends SerialPort
 	/**
 	*  Remove the serial port event listener
 	*/
-
-	public synchronized void removeEventListener()
+	public void removeEventListener()
 	{
 		if (debug)
 			System.out.println("RXTXPort:removeEventListener()");
@@ -681,7 +664,7 @@ final class RXTXPort extends SerialPort
 			}
 			while( monThread.isAlive() )
 			{
-				System.out.println("MonThread is stillalive!");
+				System.out.println("MonThread is still alive!");
 				try {
 					Thread.sleep( 2 );
 				} catch( Exception e ){} 
@@ -696,7 +679,7 @@ final class RXTXPort extends SerialPort
 	/**
 	*  @param enable
 	*/
-	public synchronized void notifyOnDataAvailable( boolean enable )
+	public void notifyOnDataAvailable( boolean enable )
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnDataAvailable()");
@@ -706,7 +689,7 @@ final class RXTXPort extends SerialPort
 	/**
 	*  @param enable
 	*/
-	public synchronized void notifyOnOutputEmpty( boolean enable )
+	public void notifyOnOutputEmpty( boolean enable )
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnOutputEmpty()");
@@ -716,7 +699,7 @@ final class RXTXPort extends SerialPort
 	/**
 	*  @param enable
 	*/
-	public synchronized void notifyOnCTS( boolean enable )
+	public void notifyOnCTS( boolean enable )
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnCTS()");
@@ -725,7 +708,7 @@ final class RXTXPort extends SerialPort
 	/**
 	*  @param enable
 	*/
-	public synchronized void notifyOnDSR( boolean enable )
+	public void notifyOnDSR( boolean enable )
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnDSR()");
@@ -734,7 +717,7 @@ final class RXTXPort extends SerialPort
 	/**
 	*  @param enable
 	*/
-	public synchronized void notifyOnRingIndicator( boolean enable )
+	public void notifyOnRingIndicator( boolean enable )
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnRingIndicator()");
@@ -743,7 +726,7 @@ final class RXTXPort extends SerialPort
 	/**
 	*  @param enable
 	*/
-	public synchronized void notifyOnCarrierDetect( boolean enable )
+	public void notifyOnCarrierDetect( boolean enable )
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnCarrierDetect()");
@@ -752,7 +735,7 @@ final class RXTXPort extends SerialPort
 	/**
 	*  @param enable
 	*/
-	public synchronized void notifyOnOverrunError( boolean enable )
+	public void notifyOnOverrunError( boolean enable )
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnOverrunError()");
@@ -761,7 +744,7 @@ final class RXTXPort extends SerialPort
 	/**
 	*  @param enable
 	*/
-	public synchronized void notifyOnParityError( boolean enable )
+	public void notifyOnParityError( boolean enable )
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnParityError()");
@@ -770,7 +753,7 @@ final class RXTXPort extends SerialPort
 	/**
 	*  @param enable
 	*/
-	public synchronized void notifyOnFramingError( boolean enable )
+	public void notifyOnFramingError( boolean enable )
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnFramingError()");
@@ -779,7 +762,7 @@ final class RXTXPort extends SerialPort
 	/**
 	*  @param enable
 	*/
-	public synchronized void notifyOnBreakInterrupt( boolean enable )
+	public void notifyOnBreakInterrupt( boolean enable )
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnBreakInterrupt()");
@@ -791,10 +774,10 @@ final class RXTXPort extends SerialPort
 	private native void nativeClose( String name );
 	/**
 	*/
-	public synchronized void close()
+	public void close()
 	{
 		if (debug)
-			System.out.println("RXTXPort:close(" + this.name + " )"); 
+			System.out.println("RXTXPort:close( " + this.name + " )"); 
 		if ( fd <= 0 )
 		{
 			System.out.println( "RXTXPort:close detected bad File Descriptor" );
@@ -830,7 +813,7 @@ final class RXTXPort extends SerialPort
 	*  @param b
 	*  @throws IOException
 	*/
-		public synchronized void write( int b ) throws IOException
+		public void write( int b ) throws IOException
 		{
 			if (debug)
 				System.out.println("RXTXPort:SerialOutputStream:write(int)");
@@ -841,17 +824,16 @@ final class RXTXPort extends SerialPort
 	*  @param b[]
 	*  @throws IOException
 	*/
-		public synchronized void write( byte b[] ) throws IOException
+		public void write( byte b[] ) throws IOException
 		{
 			if (debug)
 			{
-				System.out.println("::::: Entering RXTXPort:SerialOutputStream:write(" +b.length +")" );
-				System.out.println("RXTXPort:SerialOutputStream:write() data = " + new String(b) );
+				System.out.println("Entering RXTXPort:SerialOutputStream:write(" + b.length + ") " + new String(b) );
 			}
 			if ( fd == 0 ) throw new IOException();
 				writeArray( b, 0, b.length );
 			if (debug)
-				System.out.println("::::: Leaving RXTXPort:SerialOutputStream:write(" +b.length +")");
+				System.out.println("Leaving RXTXPort:SerialOutputStream:write(" +b.length +")");
 		}
 	/**
 	*  @param b[]
@@ -859,7 +841,7 @@ final class RXTXPort extends SerialPort
 	*  @param len
 	*  @throws IOException
 	*/
-		public synchronized void write( byte b[], int off, int len )
+		public void write( byte b[], int off, int len )
 			throws IOException
 		{
 			if( off + len  > b.length )
@@ -873,13 +855,12 @@ final class RXTXPort extends SerialPort
 			System.arraycopy( b, off, send, 0, len );
 			if (debug)
 			{
-				System.out.println("::::: Entering RXTXPort:SerialOutputStream:write(" + send.length + " " + off + " " + len + " " +")" +  new String(send) );
-				System.out.println("RXTXPort:SerialOutputStream:write() data = " +  new String(send) );
+				System.out.println("Entering RXTXPort:SerialOutputStream:write(" + send.length + " " + off + " " + len + " " +") " +  new String(send) );
 			}
 			if ( fd == 0 ) throw new IOException();
 				writeArray( send, 0, len );
 			if( debug )
-				System.out.println("::::: Leaving RXTXPort:SerialOutputStream:write(" + send.length + " " + off + " " + len + " " +")" +  new String(send) );
+				System.out.println("Leaving RXTXPort:SerialOutputStream:write(" + send.length + " " + off + " " + len + " " +") " +  new String(send) );
 		}
 	/**
 	*/
@@ -903,23 +884,30 @@ final class RXTXPort extends SerialPort
 	*  @throws IOException
 	*  @see java.io.InputStream
 	*/
-		public synchronized int read() throws IOException
+		public int read() throws IOException
 		{
 			if (debug)
 				System.out.println("RXTXPort:SerialInputStream:read()");
 			if ( fd == 0 ) throw new IOException();
-			return readByte();
+			int result = readByte();
+			if (debug)
+				System.out.println( "readByte= " + result );
+			return( result );
 		}
 	/**
 	*  @param b[]
 	*  @return int  number of bytes read
 	*  @throws IOException
 	*/
-		public synchronized int read( byte b[] ) throws IOException
+		public int read( byte b[] ) throws IOException
 		{
+			int result;
 			if (debug)
 				System.out.println("RXTXPort:SerialInputStream:read(" + b.length + ")");
-			return read ( b, 0, b.length);
+			result = read( b, 0, b.length);
+			if (debug)
+				System.out.println( "read = " + result );
+			return( result );
 		}
 /*
 read(byte b[], int, int)
@@ -932,11 +920,11 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 	*  @return int  number of bytes read
 	*  @throws IOException
 	*/
-		public synchronized int read( byte b[], int off, int len )
+		public int read( byte b[], int off, int len )
 			throws IOException
 		{
 			if (debug)
-				System.out.println("RXTXPort:SerialInputStream:read(" + b.length + " " + off + " " + len + ")");
+				System.out.println("RXTXPort:SerialInputStream:read(" + b.length + " " + off + " " + len + ") " + new String(b) );
 			int result;
 			/*
 			 * Some sanity checks
@@ -1073,6 +1061,7 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 		throws UnsupportedCommOperationException;
 	private native boolean nativeGetCallOutHangup()
 		throws UnsupportedCommOperationException;
+
 	/**
 	*  Extension to CommAPI
 	*  This is an extension to CommAPI.  It may not be supported on
