@@ -100,6 +100,9 @@ public class RXTXCommDriver implements CommDriver {
          * Bencom
 
     */
+    /*
+	See SerialImp.c's *KnownPorts[] when adding ports 
+    */
 	public void initialize() {
 		File dev = new File( "/dev" );
 		String[] devs = dev.list();
@@ -140,7 +143,10 @@ public class RXTXCommDriver implements CommDriver {
 
 			"cuaa", // FreeBSD Serial Ports
 
-			"tty0" // netbsd serial ports 
+			"tty0", // netbsd serial ports 
+
+			"tty0p",// HP-UX serial ports
+			"tty1p" // HP-UX serial ports
 		};
 	/** Get the Parallel port prefixes for the running os
 	* Holger Lehmann

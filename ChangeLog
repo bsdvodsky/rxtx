@@ -1,3 +1,10 @@
+1.4-1  Jun  6, 2000   hpux build fixes (still a messed up compile flag I think)
+                      redo of RXTXPort's read()
+		      Many println's replaced with appropriate exceptions
+		      Suse build fixes.
+                      jdk-1.3 build fix
+		      took out extra code from 1.5 developement to simplify 
+		      the package.
 1.3-13 Mar 26, 2000   patches for Cyclades support and other multi-port cards
                       that do not support TIOCGICOUNT or TIOCSERGETLSR
 		      Jac Kersing <J.Kersing@the-box.com>

@@ -17,6 +17,14 @@
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
 
+INSTALL:  install instructions
+CommAPI:  Problems often encountered when trying to use RXTX with CommAPI
+BUGS:     Additions build/run problems often encountered.  Directions for
+          submitting bugs.
+TODO:     Comments for developers
+Win32:    Help for building win32 libraries.
+RMISecurityManager.html:  Comments for people using RMISecurityManager 
+
 There are numerous possibilities for projects that involve serial communication.
 Java is an excellent language for putting GUI apps together.  Well have fun.  
 Send back stories. 
