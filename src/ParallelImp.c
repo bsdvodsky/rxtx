@@ -58,6 +58,7 @@ LPRPort.getOutputBufferFree
 ----------------------------------------------------------*/ 
 JNIEXPORT jint JNICALL Java_gnu_io_LPRPort_getOutputBufferFree(JNIEnv *env,
         jclass jclazz) {
+	printf("getOutputBufferFree is not implemented yet\n");
 
 	return(0);
 
@@ -164,6 +165,7 @@ LPRPort.isPrinterTimedOut
                  wise JNI_TRUE.
    exceptions:   none
    comments:     Is this documented right in the javadocs?
+	         not sure this is correct FIXME
 ----------------------------------------------------------*/ 
 JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isPrinterTimedOut(JNIEnv *env,
 	jobject jobj){
@@ -180,7 +182,7 @@ LPRPort.Initialize
    accept:      none
    perform:     Initialize the native library
    return:      none
-   comments:    lots of reading to do here. 
+   comments:    lots of reading to do here. FIXME
 ----------------------------------------------------------*/ 
 JNIEXPORT void JNICALL Java_gnu_io_LPRPort_Initialize( JNIEnv *env,
 	jclass jclazz )
@@ -318,7 +320,9 @@ int read_byte_array( int fd, unsigned char *buffer, int length, int threshold,
             other OSes will need to update it manually if they want to have
             the same behavior.  For those OSes, timeouts will occur after no
             data AT ALL is received for the timeout duration.  No big deal. */
-			ret = select( fd + 1, &rfds, NULL, NULL, &sleep );
+			do {
+				ret=select( fd + 1, &rfds, NULL, NULL, &sleep );
+			} while(ret < 0 && errno ==EINTR);
 			if( ret == 0 ) break;
 			if( ret < 0 ) return -1;
 		}
@@ -489,7 +493,9 @@ JNIEXPORT void JNICALL Java_gnu_io_LPRPort_eventLoop( JNIEnv *env,
 		FD_SET( fd, &rfds );
 		sleep.tv_sec = 1;	/* Check every 1 second, or on receive data */
 		sleep.tv_usec = 0;
-		ret = select( fd + 1, &rfds, NULL, NULL, &sleep );
+		do { 
+			ret = select( fd + 1, &rfds, NULL, NULL, &sleep );
+		while (ret < 0 && errno == EINTR);
 		if( ret < 0 ) break;
 		if( ioctl( fd, LPGETSTATUS, &pflags ) ) break;
 

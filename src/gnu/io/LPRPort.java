@@ -197,8 +197,14 @@ final class LPRPort extends ParallelPort {
 	/** Note: these have to be separate boolean flags because the
 	   ParallelPortEvent constants are NOT bit-flags, they are just
 	   defined as integers from 1 to 10  -DPL */
-	public void notifyOnError( boolean enable ) { monThread.monError = enable; }
-	public void notifyOnBuffer( boolean enable ) { monThread.monBuffer = enable; }
+	public void notifyOnError( boolean enable ) { 
+		System.out.println("notifyOnError is not implemented yet");
+		monThread.monError = enable; 
+	}
+	public void notifyOnBuffer( boolean enable ) { 
+		System.out.println("notifyOnBuffer is not implemented yet");
+		monThread.monBuffer = enable; 
+	}
 
 
 	/** Finalize the port */

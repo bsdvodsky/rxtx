@@ -109,7 +109,12 @@ final class RXTXPort extends SerialPort {
 	native void setflowcontrol( int flowcontrol ) throws IOException;
 
 
-	/** Receive framing control */
+	/*
+	linux/drivers/char/n_hdlc.c? FIXME
+		jarvi@ezlink.com
+	*/
+	/** Receive framing control 
+	*/
 	public void enableReceiveFraming( int f )
 		throws UnsupportedCommOperationException
 	{
@@ -120,7 +125,11 @@ final class RXTXPort extends SerialPort {
 	public int getReceiveFramingByte() { return 0; }
 
 
-	/** Receive timeout control */
+	/** Receive timeout control 
+	stubs?
+		jarvi@ezlink.com
+	 */
+
 	private int timeout = 0;
 	public void enableReceiveTimeout( int t ) {
 		if( t > 0 ) timeout = t;
@@ -143,12 +152,22 @@ final class RXTXPort extends SerialPort {
 
 
 	/** Input/output buffers */
-	public void setInputBufferSize( int size ) {}
+	/** FIXME I think this refers to 
+		FOPEN(3)/SETBUF(3)/FREAD(3)/FCLOSE(3) 
+		jarvi@ezlink.com
+	*/
+	public void setInputBufferSize( int size ) {
+		System.out.println("setInputBufferSize is not implemented");
+	}
 	public int getInputBufferSize() {
+		System.out.println("getInputBufferSize is not implemented");
 		return 1;
 	}
-	public void setOutputBufferSize( int size ) {}
+	public void setOutputBufferSize( int size ) {
+		System.out.println("setOutputBufferSize is not implemented");
+	}
 	public int getOutputBufferSize() {
+		System.out.println("getOutputBufferSize is not implemented");
 		return 1;
 	}
 
