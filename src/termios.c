@@ -1911,18 +1911,65 @@ int tcdrain ( int fd )
 /*----------------------------------------------------------
 tcflush()
 
-   accept:      
-   perform:     
-   return:      
-   exceptions:  
-   win32api:     None
+   accept:       file descriptor, 
+   perform:      discard data not transmitted or read
+		 TCIFLUSH:  flush data not read
+		 TCOFLUSH:  flush data not transmitted
+		 TCIOFLUSH: flush both
+   return:       0 on success, -1 on error
+   exceptions:   none
+   win32api:     PurgeComm
    comments:    
 ----------------------------------------------------------*/
 
 int tcflush( int fd, int queue_selector )
 {
-	/* FIXME clear input & output queues */
-	return 1;
+	struct termios_list *index;
+	char message[80];
+
+	index = find_port( fd );
+
+	if ( !index )
+	{
+		sprintf( message, "No info known about the port. ioctl %i\n",
+			fd );
+		report_error( message );
+		return -1;
+	}
+
+	switch( queue_selector )
+	{
+		case TCIFLUSH:
+			if ( PurgeComm( index->hComm, PURGE_RXABORT ) )
+			{
+				YACK();
+				return -1;
+			}
+			break;
+		case TCOFLUSH:
+			if ( PurgeComm( index->hComm, PURGE_TXABORT ) )
+			{
+				YACK();
+				return -1;
+			}
+			break;
+		case TCIOFLUSH:
+			if ( PurgeComm( index->hComm, PURGE_TXABORT ) )
+			{
+				YACK();
+				return -1;
+			}
+			if ( PurgeComm( index->hComm, PURGE_RXABORT ) )
+			{
+				YACK();
+				return -1;
+			}
+			break;
+		default:
+			report( "tcflush: Unknown queue_selector\n" );
+			return -1;
+	}
+	return( 0 );
 }
 
 /*----------------------------------------------------------
@@ -2001,7 +2048,8 @@ int ioctl( int fd, int request, ... )
 	index = find_port( fd );
 	if ( !index )
 	{
-		sprintf( message, "No info known about the port. ioctl %i\n", fd );
+		sprintf( message, "No info known about the port. ioctl %i\n",
+			fd );
 		report_error( message );
 		return -1;
 	}
