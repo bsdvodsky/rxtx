@@ -86,10 +86,7 @@ AC_ARG_ENABLE(EVENT,
 AC_ARG_ENABLE(FULL_EVENT,
    [  --enable-FULL_EVENT     Experimental event notification (linux 2.2)],
    if test x$enable_FULL_EVENT = xyes; then 
-   	if test x$enable_EVENT = xno; then 
-		CFLAGS="$CFLAGS -DEVENTNOTIFICATION"
-	fi
-	CFLAGS="$CFLAGS -DFULL_EVENT"
+	CFLAGS="$CFLAGS -DEVENTNOTIFICATION -DFULL_EVENT"
 	THREADS_FLAG="native"
    fi
    )
@@ -125,7 +122,7 @@ if test "$JPATH" = ""; then
    fi
 fi
 TARGETLIB="libSerial.la"
-JAVANATINC="\$(JPATH)`cd $JPATH; find . -name jni_md.h|sed s#jni_md\\\\.h##|sed s#\\\\.\\\\/##`"
+JAVANATINC="\$(JPATH)`cd $JPATH; find ./include -name jni_md.h|sed s#jni_md\\\\.h##|sed s#\\\\.\\\\/##`"
 JAVAINCLUDE="\$(JPATH)include"
-JCLASSPATH="-classpath \$(TOP):\$(TOP)/src:\$(JPATH)lib/classes.zip:\$(JPATH)/bin/comm.jar:\$(JPATH)/bin/jcl.jar.:$CLASSPATH"
+JCLASSPATH="-classpath \$(TOP):\$(TOP)/src:\$(JPATH)lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar.:$CLASSPATH"
 AC_OUTPUT(Makefile)

@@ -42,7 +42,7 @@ install: all jcl install-lib
 install-lib:
 	( cd $(TOP)/$(target_alias) ; \
 	$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) libSerial.la $(libdir));\
-	$(INSTALL_PROGRAM) jcl.jar $(JPATH)bin/
+	$(INSTALL_PROGRAM) jcl.jar $(JPATH)lib/
 run: $(TOP)/test.class all jcl
 	(cd $(TOP)/;chmod 755 *.class;\
 	set THREADS_FLAG="$(THREADS_FLAG)";export THREADS_FLAG;\
