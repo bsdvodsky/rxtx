@@ -1,8 +1,14 @@
-This is ChangeLog Sun Oct 14 14:13:12 MDT 2001
+This is ChangeLog Thu Oct 18 14:08:20 MDT 2001
 
 rxtx-1.5 and rxtx-1.4 changes are kept in the same file.  skip to the version
 you downloaded.
 
+1.5-6  Oct 18, 2001   UnixWare and OpenUNIX ports
+		      Jonathan Schilling <jls@caldera.com>
+		      autotool support for Mac OS X
+		      Dmitry Markman <dmarkman@mac.com>
+		      Asynch write fixes
+		      setParityErrorChar() and setEndOfInputChar() added 
 1.5-6  Oct 14, 2001   Mac OS X port to Code Warrier
 		      Documentation of the above
 		      possible double deletion fix
@@ -76,6 +82,7 @@ you downloaded.
 		      Stallion Card support
 		      Greg Luck <gluck@tempo-services.com.au>
 		      CommPort enumeration with rxtx's comm.jar
+1.4-14 Oct 18, 2001   see rxtx-1.5-7
 1.4-13 Oct 14, 2001   see rxtx-1.5-6
 1.4-12 Oct 10, 2001   see rxtx-1.5-6
 1.4-11 Oct  4, 2001   see rxtx-1.5-6

@@ -1,7 +1,9 @@
-This is AUTHORS Thu Oct  4 19:34:31 MDT 2001
+This is AUTHORS Thu Oct 18 14:04:43 MDT 2001
 
 This package is not the result of one persons time.  Recognition is given
 to the following people for their assistance.
+
+Jonathan Schilling <jls@caldera.com> UnixWare and OpenUNIX ports
 
 Dmitry Markman <dimitry.markman@verizon.net> Mac OS X builds with CW lots of
 fixes
