@@ -383,9 +383,12 @@ public class RXTXCommDriver implements CommDriver
 	System.getProperty ("file.separator");
       FileInputStream rxtx_prop =
 	new FileInputStream (ext_dir + "javax.comm.rxtx.properties");
-      Properties p = new Properties (System.getProperties ());
+      Properties p = new Properties();
       p.load (rxtx_prop);
-      System.setProperties (p);
+      for (Iterator it = p.keySet().iterator(); it.hasNext();) {
+         String key = (String) it.next();
+         System.setProperty(key, p.getProperty(key));
+       }
     } catch (Exception e)
     {
       if (debug)
