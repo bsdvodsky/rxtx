@@ -1218,7 +1218,7 @@ final public class RXTXPort extends SerialPort
 *0       >0      Blocks until 1 byte, magnitude of  threshold doesn't
 *                play a role
 	*/
-		public int read() throws IOException
+		public synchronized int read() throws IOException
 		{
 			if (debug_read)
 				z.reportln( "RXTXPort:SerialInputStream:read() called");
@@ -1244,7 +1244,7 @@ final public class RXTXPort extends SerialPort
                  returns 0 on timeout
 *0       >0      blocks until reads threshold bytes
 	*/
-		public int read( byte b[] ) throws IOException
+		public synchronized int read( byte b[] ) throws IOException
 		{
 			int result;
 			if (debug_read)
@@ -1281,7 +1281,7 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 *0       >0      blocks until either threshold # of bytes or len bytes,
                  whichever was lower.
 	*/
-		public int read( byte b[], int off, int len )
+		public synchronized int read( byte b[], int off, int len )
 			throws IOException
 		{
 			if (debug_read)
@@ -1358,7 +1358,7 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 	*  @return int bytes available
 	*  @throws IOException
 	*/
-		public int available() throws IOException
+		public synchronized int available() throws IOException
 		{
 	/* hmm this turns out to be a very bad idea
 			if ( monThreadisInterrupted == true )
