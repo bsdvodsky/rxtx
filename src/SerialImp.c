@@ -2443,12 +2443,12 @@ int fhs_lock( const char *filename )
 	 * Problem lockfiles will be dealt with.  Some may not even be in use.
 	 *
 	 */
-	int fd,i;
+	int fd,j;
 	char lockinfo[12], message[80];
 	char file[80], *p;
 
-	i = strlen( filename );
-	p = ( char * ) filename + i;
+	j = strlen( filename );
+	p = ( char * ) filename + j;
 	/*  FIXME  need to handle subdirectories /dev/cua/... 
 	    SCO Unix use lowercase all the time
 			taj
