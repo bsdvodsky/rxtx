@@ -112,12 +112,12 @@ AC_ARG_ENABLE(JDK_HOME,
    fi
    )
 
-#AC_ARG_ENABLE(DEBUG,
-#   [  --enable-DEBUG          Print debugging info from SerialImp.c],
-#   if test x$enable_DEBUG = xyes; then 
-#      CFLAGS="$CFLAGS -DDEBUG"
-#   fi
-#   )
+AC_ARG_ENABLE(DEBUG,
+   [  --enable-DEBUG          Print debugging info from SerialImp.c],
+   if test x$enable_DEBUG = xyes; then 
+      CFLAGS="$CFLAGS -DDEBUG"
+   fi
+   )
 if test "$JPATH" = ""; then
    JPATH="`which java | sed s#/\bin\/java##`"
    if test x$JPATH = x; then
