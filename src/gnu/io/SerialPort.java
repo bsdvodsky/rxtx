@@ -35,20 +35,22 @@ public abstract class SerialPort extends CommPort {
 	public static final int  PARITY_MARK            =3;
 	public static final int  PARITY_SPACE           =4;
 	public static final int  STOPBITS_1             =1;
-	public static final int  STOPBITS_1_5           =0; //wrong
 	public static final int  STOPBITS_2             =2;
+	public static final int  STOPBITS_1_5           =3;
 	public static final int  FLOWCONTROL_NONE       =0;
 	public static final int  FLOWCONTROL_RTSCTS_IN  =1;
 	public static final int  FLOWCONTROL_RTSCTS_OUT =2;
 	public static final int  FLOWCONTROL_XONXOFF_IN =4;
 	public static final int  FLOWCONTROL_XONXOFF_OUT=8;
 
-	public abstract void setSerialPortParams( int b, int d, int s, int p ) throws UnsupportedCommOperationException;
+	public abstract void setSerialPortParams( int b, int d, int s, int p ) 
+		throws UnsupportedCommOperationException;
 	public abstract int getBaudRate();
 	public abstract int getDataBits();
 	public abstract int getStopBits();
 	public abstract int getParity();
-	public abstract void setFlowControlMode( int flowcontrol ) throws UnsupportedCommOperationException;
+	public abstract void setFlowControlMode( int flowcontrol ) 
+		throws UnsupportedCommOperationException;
 	public abstract int getFlowControlMode();
 	public abstract boolean isDTR();
 	public abstract void setDTR( boolean state );
@@ -59,7 +61,8 @@ public abstract class SerialPort extends CommPort {
 	public abstract boolean isRI();
 	public abstract boolean isRTS();
 	public abstract void sendBreak( int duration );
-	public abstract void addEventListener( SerialPortEventListener lsnr ) throws TooManyListenersException;
+	public abstract void addEventListener( SerialPortEventListener lsnr ) 
+		throws TooManyListenersException;
 	public abstract void removeEventListener();
 	public abstract void notifyOnDataAvailable( boolean enable );
 	public abstract void notifyOnOutputEmpty( boolean enable );

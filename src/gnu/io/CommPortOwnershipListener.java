@@ -27,4 +27,3 @@ public interface CommPortOwnershipListener extends EventListener
 
 	public abstract void ownershipChange( int type );
 }
-

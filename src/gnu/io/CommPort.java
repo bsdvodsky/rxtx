@@ -18,15 +18,17 @@
 --------------------------------------------------------------------------*/
 package javax.comm;
 
-import java.io.*;
-import java.util.*;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.IOException;
+
 
 /**
   * CommPort
   */
 public abstract class CommPort extends Object {
 	protected String name;
-	private static boolean debug = true;
+	private static boolean debug = false;
 
 	public abstract void enableReceiveFraming( int f ) throws UnsupportedCommOperationException;
 	public abstract void disableReceiveFraming();
@@ -44,7 +46,21 @@ public abstract class CommPort extends Object {
 	public abstract int getInputBufferSize();
 	public abstract void setOutputBufferSize( int size );
 	public abstract int getOutputBufferSize();
-	public void close() {};
+	public void close() 
+	{
+		if (debug) System.out.println("CommPort:close()");
+
+		try
+		{
+			CommPortIdentifier cp = 
+				CommPortIdentifier.getPortIdentifier(this);
+			if ( cp != null )
+				cp.getPortIdentifier(this).internalClosePort();
+		}
+		catch (NoSuchPortException e)
+		{
+		}
+	};
 
 	public abstract InputStream getInputStream() throws IOException;
 	public abstract OutputStream getOutputStream() throws IOException;
