@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
-|   Copyright 1997, 1998, 1999 by Trent Jarvi trentjarvi@yahoo.com
+|   Copyright 1997-2000 by Trent Jarvi trentjarvi@yahoo.com
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Library General Public
@@ -988,11 +988,13 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 		}  while (ret < 0 && errno==EINTR);
 		if( ret < 0 ) break; 
 
+#if defined TIOCSERGETLSR
 		if( ioctl( fd, TIOCSERGETLSR, &change ) ) break;
 		if( change ) {
 			(*env)->CallVoidMethod( env, jobj, method,
 				(jint)SPE_OUTPUT_BUFFER_EMPTY, JNI_TRUE );
 		}
+#endif /* TIOCSERGETLSR */
 #if defined(TIOCGICOUNT)
 	/*	wait for RNG, DSR, CD or CTS  but not DataAvailable*/
 	/*      The drawback here is it never times out so if someone

@@ -1,3 +1,15 @@
+1/
+The system crashes with a NullPointException if you enable notifications
+before your register a listener.
+ 
+Example:
+    notifyOnDataAvailable(true);
+    addEventListener( this );
+ 
+It is ok if you first register the listener, then enable notifications
+(which is probably the best thing to do anyway).
+
+
 There appears to be an off by one read()/dataavailable error when switching 
 timeouts/thresholds.  a read() fires up and waits without timeout/x bytes.  After the first read everything is ok.
 
