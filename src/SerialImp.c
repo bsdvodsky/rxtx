@@ -1380,18 +1380,52 @@ void report(char *msg)
 int fhs_lock(const char *filename)
 {
 #ifdef LOCKFILES
-	int i,fd, pid;
+	int i,j,fd, pid;
 	char lockinfo[12], file[80], pid_buffer[20], message[80],*p;
 	struct stat buf;
+	const char *lockdirs[]={ "/etc/locks", "/usr/spool/kermit", 
+		"/usr/spool/locks", "/usr/spool/uucp", "/usr/spool/uucp/",
+		"/usr/spool/uucp/LCK", "/var/lock", "/var/lock/modem", 
+		"/var/spool/lock", "/var/spool/locks", "/var/spool/uucp",NULL
+	};
 
 	/* no lock dir? just return success */
 
 	if (stat(LOCKDIR,&buf)!=0)
 	{
-		printf("could not find lock directory.\n");
+		report("could not find lock directory.\n");
 		return 1;
 	}
 
+	/* 
+	 * There is a zoo of lockdir possibilities
+	 * Its possible to check for stale processes with most of them.
+	 * for now we will just check for the lockfile on most
+	 * Problem lockfiles will be dealt with.  Some may not even be in use.
+	 */
+
+	j=0;
+	while(lockdirs[j])
+	{
+		if(strncmp(lockdirs[j],LOCKDIR,strlen(lockdirs[j])))
+		{
+			i=strlen(filename);
+			p=(char *) filename+i;
+			while(*(p-1)!='/' && i-- !=1) p--;
+			sprintf(file,"%s/LCK..%s",lockdirs[j],p);
+			if(stat(file,&buf)==0)
+			{
+				printf("-----------------------------------\n");
+				printf("RXTX Error:  Unexpected lock file: %s\n Please report to the RXTX developers\n", file);
+				printf("-----------------------------------\n");
+				return 0;
+				
+			}
+			
+		}
+		j++;
+	}
+	
 	/* 
 	check if the device is already locked
 
@@ -1409,11 +1443,12 @@ int fhs_lock(const char *filename)
 		6) there are other Lock conventions that use Major and Minor
 		   numbers...
 		7) Stevens recommends LCK..<pid>
+	most are caught above.  If they turn out to be problematic rather than
+	an exercise, we will handle them.
 	*/
 
 	i=strlen(filename);
 	p=(char *) filename+i;
-	/* Yikes FIXME */
 	while(*(p-1)!='/' && i-- !=1) p--;
 	sprintf(file,"%s/LCK..%s",LOCKDIR,p);
 
@@ -1477,7 +1512,6 @@ void fhs_unlock(const char *filename)
 
 	i=strlen(filename);
 	p=(char *) filename+i;
-	/* Yikes FIXME */
 	while(*(p-1)!='/' && i-- !=0) p--;
 	sprintf(file,"%s/LCK..%s",LOCKDIR,p);
 

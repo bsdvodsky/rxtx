@@ -55,11 +55,12 @@
 #	define DEVICEDIR "/dev/"
 #	define LOCKDIR "/var/lock"
 #endif
-#if defined(__sgi__)
+#if defined(__sgi__) || defined(sgi)
+#error test
 #	define DEVICEDIR "/dev/"
 /* see SerialImp.c fhs_lock() & fhs_unlock() */
 #	define LOCKDIR ""
-#endif
+#endif /* __sgi__ || sgi */
 #if defined(__FreeBSD__)
 #	define DEVICEDIR "/dev/"
 /* see SerialImp.c fhs_lock() & fhs_unlock() */

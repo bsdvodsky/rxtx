@@ -276,7 +276,7 @@ public class RXTXCommDriver implements CommDriver
 			AllKnownSerialPorts=Temp;
 		}
 
-		else if(osName.equals("irix")) // FIXME this is probably wrong
+		else if(osName.equals("Irix"))
 		{
 			String[] Temp = {
 			"ttyc", // irix raw character devices
