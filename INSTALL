@@ -1,11 +1,17 @@
 
 This is the INSTALL file for RXTX.  If while following the instructions you
 find it unclear or incorrect please make a note and email the details to
-jarvi@ezlink.com.
+jarvi@ezlink.com.  
+
+This is a developers release.  Current focus is on linux-2.2.  Lots of work 
+is required to port this to other OS's.
 
 For the impatient:
 
    ./configure
+# jdk-1.2 users may do ./configure --libpath=/usr/local/java/jre/lib/i386
+# otherwise set LD_LIBRARY_PATH to the dir the .so's are put in (/usr/local/lib
+# by default)
    make
    make install
 
@@ -57,7 +63,7 @@ For the methodical:
       for initial ports.  
   
     linux-2.2 glibc users can do 
-	 ../configure --enable-EVENT
+	 ../configure --enable-FULL_EVENT
     and have full functionality of the package.  Event notification is very
     OS dependent.  Expect it to break on non linux systems at this point.
 
@@ -122,9 +128,9 @@ For the methodical:
        2. in the rxtx directory type cvs login.
           there is no password.  hit return when prompted for one.
        3. type cvs update.
-
        4. if your interested in contributing please email jarvi@ezlink.com
           to obtain an account with write permission.
+       5.  The latest development is held in the rxtx-devel module.
 
 7) Where does everything go?
 
@@ -133,22 +139,6 @@ For the methodical:
     > somewhere else ?  This is not include in your documentation.
 
     make install should handle this now.
-
-8)  Threads, read() and timeouts.
-
-    The following is intended for typically more advanced use of serial
-    communications.  If your just playing with serial comm its probably not
-    important.
-
-    ok...  Lets say your a lucky person and have a jdk with native threads.
-
-    export THREADS_FLAG=native should allow timeouts to work.  Timeouts will not
-    work with green threads.  It is possible to bypass the green threads (in 
-    linux) with __open() and __read() in src/SerialImp.c.  We ran into problems 
-    on BSD (probably others) when trying to use them though.  Bypassing the 
-    green threads allowed timeouts to work.  --enable-GREENTHREADS does the 
-    __open trick.  
-
 
 9) If you found that the package did not work after all this its probably a
    bug.  Please follow the procedure in BUGS for reporting problems.  Known

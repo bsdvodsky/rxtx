@@ -1,6 +1,9 @@
 
-add ParallelPort support.
+add ParallelPort support.  (shell is in.  just needs some code )
+	./configure --enable-PRINTER will create a Makefile that uses it.
+CommPortIdentifier support. (shell is in.  just needs some code )
+	./configure --enable-RXTXIDENT will create a Makefile that uses it.
 ------------------
-non linux specific implementation
+non linux specific implementations
 ------------------
 Add more documentation.

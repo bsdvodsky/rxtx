@@ -57,7 +57,7 @@ run: $(TOP)/test.class all jcl
 	export LD_LIBRARY_PATH;\
 	$(JAVA) test)
 
-all: @TARGETLIB@ 
+all: @IDENTIFIERS@ @TARGETLIB@
 	@echo ""
 	@echo "If you have javax.comm.* and java.comm.* in your CLASSPATH, type make jcl to"
 	@echo "build the javacomm20-x86.tar.Z supporting classes."
@@ -67,7 +67,7 @@ all: @TARGETLIB@
 	@echo "configure or editing the Makefile."
 	@echo ""
 
-jcl:  $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class $(TOP)/gnu/io/RXTXPort.class
+jcl:  $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class $(TOP)/gnu/io/RXTXPort.class @IDENTIFIERS@
 	$(JAR) jcl.jar gnu/io/*
 
 $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class \
