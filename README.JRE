@@ -1,0 +1,59 @@
+README.JRE for rxtx . $Id: README.JRE,v 1.1 2002-05-30 08:04:37 jarvi Exp $
+
+This Document Covers how to install RXTX into a JRE installation of Java.
+Any errors, clarifications or flames should be directed at pete_cain@bigpond.com
+
+Introduction
+-------------
+This document was developed using:
+The Sun JRE 1.4.0 for Linux.
+The Sun JDK 1.4.0 for Linux (during development)
+rxtx-1.4-16pre2
+On a RedHat7.1 and RedHat6.2.
+
+However the procedure should work for any versions of Java produces by Sun or IBM.  This document based around using rxtx on Linux systems but developeres using RXTX on other platforms should be able to derive 'what files should go where' for their particular platform.
+
+Installation
+------------
+
+First you need to have a SDK into which you have successfully compiled, installed and test rxtx see the INSTALL file on how to do this.
+
+Install the JRE, for the purpose of this document assume that the jre and sdk have been installed under /usr/local
+
+For rxtx-1.4
+Assuming we are in /usr/local
+cp j2sdk1.4.0/jre/lib/javax.comm.properties j2re1.4.0/lib/
+cp j2sdk1.4.0/jre/lib/ext/comm.jar j2re1.4.0/lib/ext/
+cp j2sdk1.4.0/jre/lib/ext/jcl.jar j2re1.4.0/lib/ext/
+cp j2sdk1.4.0/jre/lib/ext/i386/librxtx* j2re1.4.0/lib/ext/i386
+
+For rxtx-1.5
+You need not copy the javax.comm.properties, in which case you would:
+cp j2sdk1.4.0/jre/lib/ext/comm.jar j2re1.4.0/lib/ext/
+cp j2sdk1.4.0/jre/lib/ext/jcl.jar j2re1.4.0/lib/ext/
+cp j2sdk1.4.0/jre/lib/ext/i386/librxtx* j2re1.4.0/lib/ext/i386
+
+
+Library Path Configuration.
+---------------------------
+I have observed on a fresh RedHat6.2 installation into which Sun's java 1.4 was installed that it was not necessary to configure the library path to the rxtx libraries in lib/ext/i386/.  However this doesn't hold for IBM's 1.3 SDK and JRE in which case you will have to point the JVM toward the right directories.  It is obvious when the library path that rxtx uses doesn't include the librxtx*.so files, when you run an application using the comm API you will see a message like:
+
+Exception in thread "main" java.lang.UnsatisfiedLinkError: no Serial in java.library.path
+
+One way to determine what the library path that java is using you can compile and run the following class.
+public class GetLibraryPath {
+    public static void main(String args[]) {
+	System.out.println("java.library.path="+ System.getProperty("java.library.path"));
+    }
+}
+
+To fix any library path problems you can:
+
+* Specify library path on the java command line
+java -Djava.library.path=/usr/local/jre/lib my.app.using.rxtx.MyApp
+
+* Use ldconfig
+As root issue the command.
+ldconfig -n /usr/local/jre/lib/i386
+
+* Or consult the 'COMMON PROBLEMS' section of the INSTALL file in the rxtx source directory.
