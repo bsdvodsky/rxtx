@@ -117,10 +117,6 @@ Dmitry Markman, PhD
 
 --------------------- GNU Tool Builds -----------------------
 
-install libtoolize utility (glibtoolize utility that Apple provides 
-doesn't work)
-
-after that
 ./autogen.sh
 ./configure
 sudo make install

@@ -16,9 +16,6 @@ DIE=0
 }
 
 /* avoid libtool on Mac OS X codename Darwin Dmitry */
-if test `uname` != "Darwin"; then
-	libtoolize --copy --force; \
-fi
 
 
 if test `uname` != "Darwin"; then
@@ -78,7 +75,9 @@ do
     	    if test -d $k; then aclocalinclude="$aclocalinclude -I $k"; \
     	    else echo "**Warning**: No such directory \`$k'.  Ignored."; fi; \
     	done; \
-    	libtoolize --copy --force; \
+	if test `uname` != "Darwin"; then
+    		libtoolize --copy --force;
+	fi
     	aclocal $aclocalinclude; \
     	autoheader; automake --add-missing --gnu; autoheader; autoconf)
     fi
