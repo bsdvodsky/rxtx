@@ -1409,16 +1409,16 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 	}
 
 	/* CLOCAL eliminates open blocking on modem status lines */
-/*
 	if ((fd = OPEN(name, O_RDONLY | CLOCAL)) <= 0) {
 		report_error( "testRead() open failed\n" );
 		ret = JNI_FALSE;
 		goto END;
 	}
-*/
+/*
 	do {
 		fd=OPEN ( name, O_RDWR | O_NOCTTY | O_NONBLOCK );
 	}  while ( fd < 0 && errno==EINTR );
+*/
 	if( fd < 0 )
 	{
 		ret = JNI_FALSE;
