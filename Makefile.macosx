@@ -1,13 +1,6 @@
-#  This file is actually for rxtx-1.5.  Its added to help get started if
-#  somebody wants to get rxtx working on 1.4.
-#  There are problems with the gnu tool chain when trying to generate a
-#  Makefile.  We are trying to get the issues resolved.
-#
-#  Some obvious breakage is
-#	there is no fuser.c in 1.4
-#	an entire comm.jar can not be built with 1.4
-#	this file does not generate the jcl.jar
 
+#  We are having problems with GNU tools generating good Makefiles.  Here
+#  Is a Makefile that works for Joseph.
 
 # Generated automatically from Makefile.in by configure.
 # Makefile.in generated automatically by automake 1.4 from Makefile.am
@@ -24,50 +17,21 @@
 
 #-------------------------------------------------------------------------
 #   rxtx is a native interface to serial ports in java.
-#   Copyright 1997-2001 by Trent Jarvi taj@www.linux.org.uk.
+#   Copyright 1997-2002 by Trent Jarvi taj@www.linux.org.uk.
 #
 #   This library is free software; you can redistribute it and/or
-#   modify it under the terms of the GNU Lesser General Public
+#   modify it under the terms of the GNU Library General Public
 #   License as published by the Free Software Foundation; either
-#   version 2.1 of the License, or (at your option) any later version.
+#   version 2 of the License, or (at your option) any later version.
 #
 #   This library is distributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#   Lesser General Public License for more details.
+#   Library General Public License for more details.
 #
-#   The following has been added to allow RXTX to be distributed with Sun
-#   Microsystem's CommAPI library as suggested by the FSF.
-#
-#   http://www.fsf.org/licenses/gpl-faq.html#LinkingOverControlledInterface
-#
-#   A program that contains no derivative of any portion of RXTX, but
-#   is designed to work with RXTX by being compiled or linked with it,
-#   is considered a "work that uses the Library" subject to the terms and
-#   conditions of the GNU Lesser General Public License.
-#
-#   As a special exception, the copyright holders of RXTX give you
-#   permission to link RXTX with independent modules that communicate with
-#   RXTX solely through the Sun Microsytems CommAPI interface, regardless of
-#   the license terms of these independent modules, and to copy and distribute
-#   the resulting combined work under terms of your choice, provided that
-#   every copy of the combined work is accompanied by a complete copy of
-#   the source code of RXTX (the version of RXTX used to produce the
-#   combined work), being distributed under the terms of the GNU Lesser General
-#   Public License plus this exception.  An independent module is a
-#   module which is not derived from or based on RXTX.
-#
-#   Note that people who make modified versions of RXTX are not obligated
-#   to grant this special exception for their modified versions; it is
-#   their choice whether to do so.  The GNU Lesser General Public License
-#   gives permission to release a modified version without this exception; this
-#   exception also makes it possible to release a modified version which
-#   carries forward this exception.
-#
-#   You should have received a copy of the GNU Lesser General Public
+#   You should have received a copy of the GNU Library General Public
 #   License along with this library; if not, write to the Free
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-#-------------------------------------------------------------------------
 #-------------------------------------------------------------------------
 
 
@@ -125,7 +89,7 @@ CATALOGS = @CATALOGS@
 CATOBJEXT = @CATOBJEXT@
 CC = cc
 CFLAGS = -g -O2 -D_BSD_SOURCE -bundle
-CLASSPATH = -classpath .:$(TOP):$(TOP)/src:$(JPATH)/lib/ext/comm.jar:.:
+CLASSPATH = -classpath .:$(TOP):$(TOP)/src:$(JPATH)/lib/ext/RXTXcomm.jar:.:
 DATADIRNAME = @DATADIRNAME@
 DLLTOOL = @DLLTOOL@
 EXTENSION = c
@@ -186,14 +150,14 @@ srcdir = .
 AUTOMAKE_OPTIONS = foreign
 INCLUDES = -I $(TOP) -I $(DEST) -I . $(JAVAINCLUDE) $(JAVANATINC)
 ####################### vars for rxtx-1.4->1.5 transition
-JARTARGET = comm.jar
-CLASSDIR = javax.comm
-CLASSTOP = javax
-CLASSDEST = javax/comm
+JARTARGET = RXTXcomm.jar
+CLASSDIR = gnu.io
+CLASSTOP = gnu
+CLASSDEST = gnu/io
 ####################### tools
 LIBTOOLC = $(TOP)/libtool --mode=compile $(CC) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(VERBOSE_IOEXCEPTIONS) -c
 LIBTOOL_INST = $(TOP)/libtool --mode=install $(INSTALL_PROGRAM)
-LINK = $(TOP)/libtool --mode=link $(CC) $(CFLAGS) $(LDFLAGS) -version-info 1:0:1 -o librxtx$*la  -rpath $(RXTX_PATH)
+LINK = $(TOP)/libtool --mode=link $(CC) $(CFLAGS) $(LDFLAGS) -version-info 1:0:1
 ####################### dirs
 SPATH = $(srcdir)/src
 DEST = $(target_alias)
@@ -393,11 +357,13 @@ mostlyclean distclean maintainer-clean
 #		$(LINK) -o lib$*.la -rpath $(RXTX_PATH)		\
 #			$(TOP)/$(DEST)/$*Imp.lo $(TOP)/$(DEST)/fuserImp.lo; \
 
-$(target_alias)/lib%rxtx.la: $(SPATH)/%Imp.c $(CLASSES) $(SPATH)/%Imp.h
+$(target_alias)/lib%.la: $(SPATH)/%Imp.c $(CLASSES) $(SPATH)/%Imp.h
 	@(							\
 	$(LIBTOOL_FIX)						\
 	cd $(DEST); 						\
+        touch it1; \
 	$(LIBTOOLC) ../$(SPATH)/$*Imp.c -o $(TOP)/$(DEST)/$*Imp.lo; \
+        touch it2; \
 	if [ "$*" = "rxtxSerial" ]; then 				\
 		$(LIBTOOLC) ../$(SPATH)/fuserImp.c		\
 			-o $(TOP)/$(DEST)/fuserImp.lo;		\
@@ -407,29 +373,29 @@ $(target_alias)/lib%rxtx.la: $(SPATH)/%Imp.c $(CLASSES) $(SPATH)/%Imp.h
 		$(TOP)/$(DEST)/SerialImp.lo                  \
 		$(TOP)/$(DEST)/fuserImp.lo                   \
 		-framework JavaVM -framework IOKit;          \
-		echo "# libSerial.la - a libtool library file" > $(TOP)/$(DEST)/libSerial.la; \
-		echo "# libSerial.la - a libtool library file" > $(TOP)/$(DEST)/.libs/libSerial.lai; \
-		echo "# Generated by ltmain.sh - GNU libtool 1.3.5 (1.3 2000/11/22 00:47:10)" >> $(TOP)/$(DEST)/libSerial.la; \
-		echo "# Generated by ltmain.sh - GNU libtool 1.3.5 (1.3 2000/11/22 00:47:10)" >> $(TOP)/$(DEST)/.libs/libSerial.lai; \
-		echo "dlname='librxtxSerial.jnilib'"        >> $(TOP)/$(DEST)/libSerial.la; \
-		echo "dlname='librxtxSerial.jnilib'"        >> $(TOP)/$(DEST)/.libs/libSerial.lai; \
-		echo "library_names='librxtxSerial.jnilib'" >> $(TOP)/$(DEST)/libSerial.la; \
-		echo "library_names='librxtxSerial.jnilib'" >> $(TOP)/$(DEST)/.libs/libSerial.lai; \
-		echo "old_library=''"                   >> $(TOP)/$(DEST)/libSerial.la; \
-		echo "old_library=''"                   >> $(TOP)/$(DEST)/.libs/libSerial.lai; \
-		echo "dependency_libs=''"               >> $(TOP)/$(DEST)/libSerial.la; \
-		echo "dependency_libs=''"               >> $(TOP)/$(DEST)/.libs/libSerial.lai; \
-		echo "current=1"                        >> $(TOP)/$(DEST)/libSerial.la; \
-		echo "current=1"                        >> $(TOP)/$(DEST)/.libs/libSerial.lai; \
-		echo "age=1"                            >> $(TOP)/$(DEST)/libSerial.la; \
-		echo "age=1"                            >> $(TOP)/$(DEST)/.libs/libSerial.lai; \
-		echo "revision=0"                       >> $(TOP)/$(DEST)/libSerial.la; \
-		echo "revision=0"                       >> $(TOP)/$(DEST)/.libs/libSerial.lai; \
-		echo "installed=yes"                    >> $(TOP)/$(DEST)/libSerial.la; \
-		echo "installed=yes"                    >> $(TOP)/$(DEST)/.libs/libSerial.lai; \
-		echo "libdir='/usr/lib/java'"           >> $(TOP)/$(DEST)/libSerial.la; \
-		echo "libdir='/usr/lib/java'"           >> $(TOP)/$(DEST)/.libs/libSerial.lai; \
-		(cd .libs && rm -f libSerial.la && ln -s ../libSerial.la libSerial.la); \
+		echo "# librxtxSerial.la - a libtool library file" > $(TOP)/$(DEST)/librxtxSerial.la; \
+		echo "# librxtxSerial.la - a libtool library file" > $(TOP)/$(DEST)/.libs/librxtxSerial.lai; \
+		echo "# Generated by ltmain.sh - GNU libtool 1.3.5 (1.3 2000/11/22 00:47:10)" >> $(TOP)/$(DEST)/librxtxSerial.la; \
+		echo "# Generated by ltmain.sh - GNU libtool 1.3.5 (1.3 2000/11/22 00:47:10)" >> $(TOP)/$(DEST)/.libs/librxtxSerial.lai; \
+		echo "dlname='librxtxSerial.jnilib'"        >> $(TOP)/$(DEST)/librxtxSerial.la; \
+		echo "dlname='librxtxSerial.jnilib'"        >> $(TOP)/$(DEST)/.libs/librxtxSerial.lai; \
+		echo "library_names='librxtxSerial.jnilib'" >> $(TOP)/$(DEST)/librxtxSerial.la; \
+		echo "library_names='librxtxSerial.jnilib'" >> $(TOP)/$(DEST)/.libs/librxtxSerial.lai; \
+		echo "old_library=''"                   >> $(TOP)/$(DEST)/librxtxSerial.la; \
+		echo "old_library=''"                   >> $(TOP)/$(DEST)/.libs/librxtxSerial.lai; \
+		echo "dependency_libs=''"               >> $(TOP)/$(DEST)/librxtxSerial.la; \
+		echo "dependency_libs=''"               >> $(TOP)/$(DEST)/.libs/librxtxSerial.lai; \
+		echo "current=1"                        >> $(TOP)/$(DEST)/librxtxSerial.la; \
+		echo "current=1"                        >> $(TOP)/$(DEST)/.libs/librxtxSerial.lai; \
+		echo "age=1"                            >> $(TOP)/$(DEST)/librxtxSerial.la; \
+		echo "age=1"                            >> $(TOP)/$(DEST)/.libs/librxtxSerial.lai; \
+		echo "revision=0"                       >> $(TOP)/$(DEST)/librxtxSerial.la; \
+		echo "revision=0"                       >> $(TOP)/$(DEST)/.libs/librxtxSerial.lai; \
+		echo "installed=yes"                    >> $(TOP)/$(DEST)/librxtxSerial.la; \
+		echo "installed=yes"                    >> $(TOP)/$(DEST)/.libs/librxtxSerial.lai; \
+		echo "libdir='/usr/lib/java'"           >> $(TOP)/$(DEST)/librxtxSerial.la; \
+		echo "libdir='/usr/lib/java'"           >> $(TOP)/$(DEST)/.libs/librxtxSerial.lai; \
+		(cd .libs && rm -f librxtxSerial.la && ln -s ../librxtxSerial.la librxtxSerial.la); \
 	else							\
 		$(LINK) -o lib$*.la -rpath $(RXTX_PATH)		\
 			$(TOP)/$(DEST)/$*Imp.lo $(FUSER);	\
@@ -448,7 +414,7 @@ $(CLASSES): $(javafiles) $(TOP)/Makefile
 	done)`
 	$(JAR) cf $(JARTARGET) $(CLASSTOP)/*
 
-#  install librxtxSerial.so into the proper directory and copy $(JARTARGET) to its
+#  install libSerial.so into the proper directory and copy $(JARTARGET) to its
 #  proper location
 install: all
 	@$(LIBTOOL_INST) \

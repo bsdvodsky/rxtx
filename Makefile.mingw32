@@ -41,7 +41,7 @@ JDKHOME=C:/jdk13
 #path to mingw32
 MINGHOME="D:/mingw"
 
-# path to install jcl.jar DOS style path
+# path to install RXTXcomm.jar DOS style path
 COMMINSTALL="C:\jdk13\lib"
 
 # path to install the shared libraries DOS style path
@@ -66,7 +66,7 @@ DLLTOOL=dlltool
 # this looks like a nice tool but I was not able to get symbols in the dll.
 DLLWRAP=dllwrap
 
-CLASSPATH=-classpath ".;C:\jdk13\lib\jcl.jar;c:\BlackBox.jar;c:\jdk13\lib\classes.zip"
+CLASSPATH=-classpath ".;C:\jdk13\lib\RXTXcomm.jar;c:\BlackBox.jar;c:\jdk13\lib\classes.zip"
 JAVAH=javah $(CLASSPATH)
 JAR=jar 
 JAVAC=javac $(CLASSPATH)
@@ -80,7 +80,7 @@ CFLAGS= -O2 $(INCLUDE) -mno-cygwin -DWIN32 -D __int64="long long" -mno-fp-ret-in
 #CFLAGS= -O2 $(INCLUDE) -mno-cygwin -DWIN32 -D __int64="long long" -mno-fp-ret-in-387 -Wall -D TRENT_IS_HERE_DEBUGGING_ENUMERATION -DTRENT_IS_HERE_DEBUGGING_THREADS
 INCLUDE= -I c:\matlab6p5/extern/include/ -I . -I $(JDKINCLUDE) -I $(JDKINCLUDE)/win32 -I $(SRC) -I include -I $(MINGINCLUDE)
 JAVAHFLAGS= -jni -d include
-LIBS=-L . -L $(LIBDIR) -LC:/tmp/rxtx-devel/build -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmoldname -lcrtdll
+LIBS=-L . -L $(LIBDIR) -LC:/tmp/rxtx5/build -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmoldname -lcrtdll
 # -lmex
 
 # path to the java native interface headers (directory with jni.h)
@@ -90,13 +90,13 @@ JAVAFILES = $(wildcard $(SRC)/*.java)
 CFILES=$(wildcard $(SRC)/*.c) $(wildcard $(SRC)/*.cc)
 TARGETLIBS= rxtxSerial.dll rxtxParallel.dll
 #TARGETLIBS= rxtxSerial.dll rxtxParallel.dll rxtxZystem.dll
-DLLOBJECTS= fixup.o SerialImp.o termios.o init.o
+DLLOBJECTS= fixup.o SerialImp.o termios.o init.o fuserImp.o
 PARALLELOBJECTS= ParallelImp.o termios.o init.o
 
 all:  $(TARGETLIBS) # rebuild  rebuild will force everything to be built.
 
 rebuild:
-	rm -rf gnu include jcl.jar Serial.* rxtxSerial.* * *.O.o *.O gnutimestamp 
+	rm -rf gnu include RXTXcomm.jar Serial.* rxtxSerial.* * *.O.o *.O gnutimestamp 
 
 include:
 	mkdir include
@@ -123,6 +123,9 @@ fixup.o:
 
 SerialImp.o:  include/config.h
 	$(CC) $(CFLAGS) -c $(SRC)/SerialImp.c -o SerialImp.o
+
+fuserImp.o:
+	$(CC) $(CFLAGS) -c $(SRC)/fuserImp.c -o fuserImp.o
 
 termios.o:
 	$(CC) $(CFLAGS) -c $(SRC)/$*.c -o termios.o
@@ -151,11 +154,11 @@ $(SRC)/Parallel.def:	$(PARALLELOBJECTS)
 #	echo EXPORTS >$(SRC)/Parallel.def;for i in `nm rxtxParallel.dll | grep "T _Java"|cut -b 13-`;do echo -n $$i|sed s#@.*##;echo "="$$i;done >> $(SRC)/Parallel.def
 
 
-rxtxZystem.dll:	jcl.jar $(DLLOBJECTS) #ZystemImp.o $(SRC)/Zystem.def
+rxtxZystem.dll:	RXTXcomm.jar $(DLLOBJECTS) #ZystemImp.o $(SRC)/Zystem.def
 	gcc  -c -DBUILDING_DLL=1 -D_DLL=1  -I. -Ic:/jdk13/include -Ic:/jdk13/include/win32  -Wall -O2 -D __int64="long long" -o ZystemImp.o $(SRC)/ZystemImp.c
-	dllwrap --verbose --no-default-excludes --export-all-symbols --output-exp Zystem.exp --output-def Zystem.def --add-stdcall-alias --driver-name gcc  -o rxtxZystem.dll ZystemImp.o libmex.dll -Wl,-e,__cygwin_noncygwin_dll_entry@12 -s
+	dllwrap --verbose --no-default-excludes --export-all-symbols --output-exp Zystem.exp --output-def Zystem.def --add-stdcall-alias --driver-name gcc  -o rxtxZystem.dll ZystemImp.o -Wl,-e,__cygwin_noncygwin_dll_entry@12 -s
 
-#rxtxZystem.dll:	jcl.jar $(DLLOBJECTS) ZystemImp.o $(SRC)/Zystem.def
+#rxtxZystem.dll:	RXTXcomm.jar $(DLLOBJECTS) ZystemImp.o $(SRC)/Zystem.def
 	#$(LD) --base-file Zystem.base --dll -o rxtxZystem.dll $(DLLOBJECTS) \
 		#ZystemImp.o _divdi3.o $(LIBS) -lcygwin -e _dll_entry@12
 	#$(DLLTOOL) --as=$(AS) --dllname rxtxZystem.dll --def $(SRC)/Zystem.def \
@@ -167,7 +170,7 @@ rxtxZystem.dll:	jcl.jar $(DLLOBJECTS) #ZystemImp.o $(SRC)/Zystem.def
 	#$(LD) --base-file Zystem.base Zystem.exp -dll -o rxtxZystem.dll \
 		#$(DLLOBJECTS) ZystemImp.o _divdi3.o $(LIBS) -lcygwin -e _dll_entry@12
 
-rxtxSerial.dll:	jcl.jar $(DLLOBJECTS)  $(SRC)/Serial.def
+rxtxSerial.dll:	RXTXcomm.jar $(DLLOBJECTS)  $(SRC)/Serial.def
 	$(LD) --base-file Serial.base --dll -o rxtxSerial.dll $(DLLOBJECTS) \
 		$(LIBS) -lmingw32 -e _dll_entry@12
 	$(DLLTOOL) --as=$(AS) --dllname rxtxSerial.dll --def $(SRC)/Serial.def \
@@ -198,9 +201,9 @@ rxtxParallel.dll: $(PARALLELOBJECTS)
 	$(LD) --base-file Parallel.base Parallel.exp -dll -o rxtxParallel.dll \
 		$(PARALLELOBJECTS) $(LIBS) -lmingw32 -e _dll_entry@12
 
-jcl.jar:	gnutimestamp
+RXTXcomm.jar:	gnutimestamp
 	$(JAVAC) gnu\\io\\*.java
-	$(JAR) -cf jcl.jar gnu\\io\\*.class
+	$(JAR) -cf RXTXcomm.jar gnu\\io\\*.class
 	$(JAVAH) $(JAVAHFLAGS) $(patsubst gnu/io/%.java,gnu.io.%,$(wildcard gnu/io/*.java))
 
 include/config.h:  gnutimestamp
@@ -212,16 +215,16 @@ include/config.h:  gnutimestamp
 	echo "#undef HAVE_TERMIOS_H" >> include\\\config.h
 
 install: all
-	xcopy jcl.jar $(COMMINSTALL)
-	xcopy jcl.jar "e:\matlab~1\java\jarext\commapi\win32"
+	xcopy RXTXcomm.jar $(COMMINSTALL)
+	xcopy RXTXcomm.jar "e:\matlab~1\java\jarext\commapi\win32"
 	xcopy $(TARGETLIBS) $(LIBINSTALL)
 	xcopy $(TARGETLIBS) "e:\matlab~1\bin\win32"
 
 uninstall:
-	del $(COMMINSTALL)\\\jcl.jar
+	del $(COMMINSTALL)\\\RXTXcomm.jar
 	del $(LIBINSTALL)\\\$(TARGETLIBS)
 
 clean:
 	deltree gnu\\\io\\\*.*
 	deltree include
-	del Serial.* gnutimestamp *.o *.O jcl.jar rxtxSerial.*
+	del Serial.* gnutimestamp *.o *.O RXTXcomm.jar rxtxSerial.*

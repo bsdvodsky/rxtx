@@ -3,53 +3,34 @@
 |   Copyright 1997-2002 by Trent Jarvi taj@www.linux.org.uk
 |
 |   This library is free software; you can redistribute it and/or
-|   modify it under the terms of the GNU Lesser General Public
+|   modify it under the terms of the GNU Library General Public
 |   License as published by the Free Software Foundation; either
-|   version 2.1 of the License, or (at your option) any later version.
+|   version 2 of the License, or (at your option) any later version.
 |
 |   This library is distributed in the hope that it will be useful,
 |   but WITHOUT ANY WARRANTY; without even the implied warranty of
 |   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-|   Lesser General Public License for more details.
+|   Library General Public License for more details.
 |
-|   The following has been added to allow RXTX to be distributed with Sun
-|   Microsystem's CommAPI library as suggested by the FSF.
-|
-|   http://www.fsf.org/licenses/gpl-faq.html#LinkingOverControlledInterface
-|
-|   A program that contains no derivative of any portion of RXTX, but
-|   is designed to work with RXTX by being compiled or linked with it,
-|   is considered a "work that uses the Library" subject to the terms and
-|   conditions of the GNU Lesser General Public License.
-|
-|   As a special exception, the copyright holders of RXTX give you
-|   permission to link RXTX with independent modules that communicate with
-|   RXTX solely through the Sun Microsytems CommAPI interface, regardless of
-|   the license terms of these independent modules, and to copy and distribute
-|   the resulting combined work under terms of your choice, provided that
-|   every copy of the combined work is accompanied by a complete copy of
-|   the source code of RXTX (the version of RXTX used to produce the
-|   combined work), being distributed under the terms of the GNU Lesser General
-|   Public License plus this exception.  An independent module is a
-|   module which is not derived from or based on RXTX.
-|
-|   Note that people who make modified versions of RXTX are not obligated
-|   to grant this special exception for their modified versions; it is
-|   their choice whether to do so.  The GNU Lesser General Public License
-|   gives permission to release a modified version without this exception; this
-|   exception also makes it possible to release a modified version which
-|   carries forward this exception.
-|
-|   You should have received a copy of the GNU Lesser General Public
+|   You should have received a copy of the GNU Library General Public
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
-
---------------------------------------------------------------------------*/
-This is the INSTALL file for RXTX.  Tue Aug 13 20:42:11 MDT 2002
+This is the INSTALL file for RXTX.  Fri Aug 23 15:49:49 MDT 2002
 
 If, while following the instructions, you find this file unclear or incorrect 
 please make a note and email the details to taj@www.linux.org.uk.
+
+A note about rxtx 2.1:
+
+rxtx 2.1 replaces the entire CommAPI.  Every effort is made to conform to
+CommAPI but out of respect for our friends at Sun the package name of 2.1 has
+been moved to gnu.io.  A script is offered in contrib/ChangePackage.sh that
+will switch source tree's between javax.comm and gnu.io.
+
+See Sun's CommAPI license for more details on why this decision was made.
+
+If you would like to use javax.comm, use rxtx 1.4 with Sun's CommAPI.
 
 A note on Mac OS X:
 
@@ -62,13 +43,12 @@ A note on Mac OS X:
 2.  BUILDING COMMAPI SUPPORT
 
 	A.  Quick Install
-	B.  Installing Sun's comm.jar
+	B.  Uninstalling Sun's comm.jar
 	C.  installing javax.comm.properties.
-	D.  Add comm.jar to your CLASSPATH.
+	D.  Add RXTXcomm.jar to your CLASSPATH.
 	E.  Build and Install the jar.
-	F.  Add jcl.jar to your CLASSPATH
-	G.  Where did everything end up?
-	H.  Cross Compiling for Win32 support
+	F.  Where did everything end up?
+	G.  Compiling for Win32 support
 
 3.  COMMON PROBLEMS
 
@@ -76,27 +56,30 @@ A note on Mac OS X:
 	    gnu.io.RXTXCommDriver
 	B.  Exception in thread "main" java.lang.UnsatisfiedLinkError: 
 	    no rxtxSerial in java.library.path
-	C.  No serial ports found!
-	D.  I Can Not Open the Port.
-	E.  java.lang.NoClassDefFoundError: javax/comm/CommPort
-	F.  The Compiler Cannot Find Java Include Files
-	G.  Configure says 'unterminated sed command' and stops 
-	H.  Java Can Not Find libstdc++-libc6.0-1.so.2 
-	I.  BlackBox Can Not Handle all the ports!
-	J.  Illegal use of nonvirtal function call!
-	K.  My libc5 Linux system is generating SIGSEGV
-	L.  AM_PROG_LIBTOOL not found in library
-	M.  Problems with RMISecurityManager()
-	O.  Which Wires Should be Connected?
-	P.  Which Device Should be Used?
-	Q.  It Did Not Work! 
-	R.  Which jdk should be used? 
-	S.  How does rxtx detect ports?  Can I override it?
-	T.  How can I use Lock Files with rxtx?
-	U.  How can I tell which version of rxtx is installed?
-	V.  What Type of Latency can I expect with RXTX
-	W.  I got rxtx working on a new OS but I can't read from the port
-	X.  My ThinkPad is Not Working!
+	C.  I Can Not Open the Port.
+	D.  java.lang.NoClassDefFoundError: gnu/io/CommPort
+	E.  The Compiler Cannot Find Java Include Files
+	F.  Configure says 'unterminated sed command' and stops 
+	G.  Java Can Not Find libstdc++-libc6.0-1.so.2 
+	H.  BlackBox Can Not Handle all the ports!
+	I.  Illegal use of nonvirtal function call!
+	J.  My libc5 Linux system is generating SIGSEGV
+	K.  AM_PROG_LIBTOOL not found in library
+	L.  Problems with RMISecurityManager()
+	M.  Which Wires Should be Connected?
+	N.  Which Device Should be Used?
+	O.  It Did Not Work! 
+	P.  Which jdk should be used? 
+	Q.  How does rxtx detect ports?  Can I override it?
+	R.  How can I use Lock Files with rxtx?
+	S.  How can I tell which version of rxtx is installed?
+	T.  What Type of Latency can I expect with RXTX
+	U.  I got rxtx working on a new OS but I can't read from the port
+	V.  My ThinkPad is Not Working!
+
+4)  APPLETS
+
+	A.  Using Applets
 
 -------------------------------------------------------------------------------
 1.  INSTALL INSTRUCTIONS IN OTHER LANGUAGES
@@ -133,15 +116,14 @@ A.  Japanese
 					called gmake
 		jdk 1.1 or newer	Preferably the native threads version of
 		                        jdk. 
-		commapi 2.0             the x86 Solaris version
 
 	With the packages installed, proceed to build and install rxtx.
 
-		$ tar -xzvf rxtx-2.0-1.tar.gz
-		$ cd rxtx-2.0-1
+		$ tar -xzvf rxtx-2.1.tar.gz
+		$ cd rxtx-2.1
 		$ ./configure  (follow the instructions)
 		$ make install (gmake if your system uses that convention)
-		Read "T.  How can I use Lock Files with rxtx?"
+		Read "R.  How can I use Lock Files with rxtx?"
 
 	One catch that has showed up... you cannot have spaces in the path.
 	for instance:  /home/jarvi/test build/rxtx/... will cause problems.
@@ -149,68 +131,29 @@ A.  Japanese
 	If that does not work or you do not want a script messing with the 
 	system, read on..
 
-	B.  Installing Sun's comm.jar
+	B.  Uninstalling Sun's comm.jar
+
+		Sun's comm.jar is not required.  It is a valid option on
+		some platforms.  IT WILL CREATE CHAOS if you have it installed
+		while trying to build rxtx 2.1.
 
 		http://java.sun.com/products/javacomm/index.html
 		
-		Obtain javacomm20-x86.tar.Z from Sun.
-
-		This is the x86 Solaris version of commapi.
-		Do not try to use the win32 version.  It will not work.
-
-		extract the files from the archive
-
-		$ tar -xzvf javacomm20-x86.tar.Z
-
-		Place comm.jar in the proper directory.  Everyone likes to 
-		put Java in different locations.  I'll use /usr/local/java
-		throughout this document.
-
-		jdk-1.1:
-
-			/usr/local/java/lib/comm.jar
-
-		jdk-1.2 and newer:
-
-			/usr/local/java/jre/lib/ext/comm.jar
-
-		IBM's comm.jar remaps 'COM1' to '/dev/ttyS0.'  It is not
-		recommended to try mixing IBM's comm.jar and rxtx-2.0-1 at
-		this time.  If you do try it, Watch out for the above.
-
 	C.  Installing javax.comm.properties.
 
-		javax.comm.properties needs the following text in it:
+		javax.comm.properties is not currently required by rxtx-2.1
 
-		Driver=gnu.io.RXTXCommDriver
-
-		Some people have said it requires a blank line after the text.
-
-		The file goes in different locations depending upon your jdk
-		version
+	D.  Add RXTXcomm.jar to your CLASSPATH.
 
 		jdk-1.1:
 
-			/usr/local/java/lib
-
-		jdk-1.2 and newer:
-
-			/usr/local/java/jre/lib
-	
-		SEE: commapi/PlatformSpecific.html from Sun's commapi package 
-		for details.
-
-	D.  Add comm.jar to your CLASSPATH.
-
-		jdk-1.1:
-
-			make sure /usr/local/java/lib/comm.jar is in your
+			make sure /usr/local/java/lib/RXTXcomm.jar is in your
 			CLASSPATH.  If you want to use apps that require
-			comm.jar.
+			RXTXcomm.jar.
 
 			in bash:
 
-			$ export CLASSPATH=/usr/local/java/lib/comm.jar:.
+			$ export CLASSPATH=/usr/local/java/lib/RXTXcomm.jar:.
 
 		jdk-1.2 and newer:
 
@@ -222,7 +165,7 @@ A.  Japanese
 				configure requires javac in its path or
 				JAVA_HOME set to grab some java system
 				properties.
-		make 	 	to build jcl.jar and the libraries
+		make    	to build RXTXcomm.jar and the libraries
 		make install 	to place the jar and libraries in the correct 
 				location
 
@@ -231,53 +174,29 @@ A.  Japanese
 			export JAVA_HOME=/usr/local/java
 		Otherwise, configure grabs the JDK from your PATH.
 
-	F.  Add jcl.jar to your CLASSPATH
-		
-		jdk-1.1:
-
-			make sure /usr/local/java/lib/jcl.jar is in your
-			CLASSPATH. 
-
-			in bash:
-
-			$ export CLASSPATH=/usr/local/java/lib/comm.jar: \
-				/usr/local/java/jcl.jar:.
-
-
-		jdk-1.2 and newer:
-
-			No changes are needed.
-		
-		This completes the process.  You will need to read the Section
-		on Lock Files to make sure the user can create a Lock File.
-		"T.  How can I use Lock Files with rxtx?"
-
-	G.  Where did everything end up?
+	F.  Where did everything end up?
 
 		Lets assume the top java directory is /usr/local/java
 
 		jdk-1.2 the files go in
 		
-			/usr/local/java/jre/lib/ext/jcl.jar
-			/usr/local/java/jre/lib/ext/comm.jar
+			/usr/local/java/jre/lib/ext/RXTXcomm.jar
 			/usr/local/java/jre/lib/$(ARCH)/librxtxSerial.so.
 			/usr/local/java/jre/lib/$(ARCH)/librxtxParallel.so.
-			/usr/local/java/jre/lib/javax.comm.properties
+			/usr/local/java/jre/lib/$(ARCH)/lib/...
 
 		jdk-1.1.* the files go in 
 
-			/usr/local/java/lib/jcl.jar
-			/usr/local/java/lib/comm.jar
+			/usr/local/java/lib/RXTXcomm.jar
 			/usr/lib/librxtxSerial.so.
 			/usr/lib/librxtxParallel.so.
-			/usr/local/java/lib/javax.comm.properties
+			/usr/lib/...
 
 			The librxtxSerial.so librxtxParallel.so are placed in 
 			/usr/lib so people don't have to change with their 
 			LD_LIBRARY_PATH.
 
-	H.  Cross Compiling for Win32 support
-
+	G.  Compiling for Win32 support
 
 		Get the Sun CommAPI if you want a plug-in solution.  The code 
 		is provided for people that may have demanding needs and coding
@@ -397,9 +316,9 @@ A.  I get java.lang.UnsatisfiedLinkError: nSetOwner while loading driver
 
 	SetOwner appears to be some win32 call.
 	Do not use Sun's win32 CommAPI files.  Get the Solaris version.
-	"javacomm20-x86.tar.Z" 
+	"javacomm20-x86.tar.Z" and rxtx-1.4 if you want Sun's solution.
 
-	See Also: 2-B.  Installing Sun's comm.jar
+	See Also: 2-B.  Installing Sun's comm.jar (IE its not needed at all)
 
 B.  Exception in thread "main" java.lang.UnsatisfiedLinkError: no rxtxSerial in 
     java.library.path
@@ -408,15 +327,15 @@ B.  Exception in thread "main" java.lang.UnsatisfiedLinkError: no rxtxSerial in
 
 	$ mv /usr/local/java/jre/lib/i386/librxtxSerial* /usr/local/lib
 	$ java BlackBox
-	Exception in thread "main" java.lang.UnsatisfiedLinkError: no rxtxSerial in
-	java.library.path
+	Exception in thread "main" java.lang.UnsatisfiedLinkError: no rxtxSerial
+	in java.library.path
 		at java.lang.ClassLoader.loadLibrary(Compiled Code)
 		at java.lang.Runtime.loadLibrary0(Compiled Code)
 		at java.lang.System.loadLibrary(Compiled Code)
 		at gnu.io.NativePort.<clinit>(NativePort.java:32)
 		at gnu.io.RXTXPort.<init>(Compiled Code)
 		at gnu.io.RXTXCommDriver.getCommPort(Compiled Code)
-		at javax.comm.CommPortIdentifier.open(Compiled Code)
+		at gnu.io.CommPortIdentifier.open(Compiled Code)
 		at SerialPortDisplay.openBBPort(Compiled Code)
 		at SerialPortDisplay.<init>(Compiled Code)
 		at BlackBox.addPort(Compiled Code)
@@ -436,66 +355,9 @@ B.  Exception in thread "main" java.lang.UnsatisfiedLinkError: no rxtxSerial in
 
          $ java -Djava.library.path=/usr/local/lib/ ...
 
+C.  I Can Not Open the Port.
 
-C.  No serial ports found!
-
-	There are three ways this can be generated.  
-
-		1.  deleting or misplacing javax.comm.properties
-		2.  a typo in javax.comm.properties
-		3.  forgetting to put jcl.jar in CLASSPATH
-
-	see also D.  I Can Not Open the Port.
-
-	now for an example of each.
-
-	1. deleting or misplacing javax.comm.properties
-
-	assume the following is working:
-
-	/usr/local/java/jre/lib/ext/comm.jar
-	/usr/local/java/jre/lib/ext/jcl.jar
-	/usr/local/java/jre/lib/ext/BlackBox.jar
-	/usr/local/java/jre/lib/javax.comm.properties
-
-	Deleting javax.comm.properties or placing it in 
-	/usr/local/java/lib/javax.comm.properties results in
-
-	$ java BlackBox
-	No serial ports found!
-
-	2.  a typo in javax.comm.properties
-
-	lets break the properties files
-	$ vi /usr/local/java/lib/javax.comm.properties
-	>place intentional typo in the file<
-	$ java BlackBox
-	Caught java.lang.ClassNotFoundException: gnu.io.rXTXCommDriver 
-	while loading driver gnu.io.rXTXCommDriver
-	No serial ports found!
-	      note------------------^
-
-	$ vi /usr/local/java/lib/javax.comm.properties
-	>fix typo<
-
-	--
-	For some, it is not clear what was being done here.  There is a single
-	line in the file javax.comm.properties that contains
-	"gnu.io.RXTXCommDriver" when properly installed.  We replaced the R with
-	r in "gnu.io.RXTXCommDriver" to force an error.  After seeing the error
-	we replaced the r with an R to fix it.
-
-	3.  forgetting to put jcl.jar in CLASSPATH
-
-	export CLASSPATH=./java/lib/comm.jar:.:./java/lib/classes.zip
-	$ java BlackBox
-	Caught java.lang.ClassNotFoundException: gnu.io.RXTXCommDriver 
-	while loading driver gnu.io.RXTXCommDriver
-	No serial ports found!
- 
-D.  I Can Not Open the Port.
-
-	If you're not able to open the port (read the errors carefully) then you
+	If you're not able to open the port (read the errors carefully) then you 
 	may not have permission to use the device.  Redhat Linux ships with the
 	following permissions:
 
@@ -508,20 +370,20 @@ D.  I Can Not Open the Port.
 	should fix the problem.  Be sure to check the file CommAPI for common 
 	mistakes.
 
-	see also: C.  No serial ports found!
+	Make sure that the user can create lock files see R.
 
-E.  java.lang.NoClassDefFoundError: javax/comm/CommPort
+D.  java.lang.NoClassDefFoundError: gnu/io/CommPort
 
-	comm.jar is probably not in your classpath or not located in
+	RXTXcomm.jar is probably not in your classpath or not located in
 	the proper directory.
 
-	for example, lets not include comm.jar
+	for example, lets not include RXTXcomm.jar
 
-	export CLASSPATH=..java/lib/jcl.jar:.:../java/lib/classes.zip
+	export CLASSPATH=../java/lib/classes.zip
 	$ java BlackBoxException in thread "main"
-	java.lang.NoClassDefFoundError: javax/comm/CommPort
+	java.lang.NoClassDefFoundError: gnu/io/CommPort
 
-F.  The Compiler Cannot Find Java Include Files
+E.  The Compiler Cannot Find Java Include Files
 
 	Check to top of the Makefile to make sure we agree on the location of
 	the include files that came with the jdk.  Specifically:
@@ -531,14 +393,13 @@ F.  The Compiler Cannot Find Java Include Files
 	also check the classpath
 	CLASSPATH = ...
 
-G. Configure says 'unterminated sed command' and stops 
+F. Configure says 'unterminated sed command' and stops 
 
 	Unterminated sed command errors usually result from `find` producing 
 	unexpected results.   If you are unsure remove all comm.jar and 
-	javax.comm.properties files and use configure to place them in the 
-	correct place. 
+	configure to place in in the correct place. 
 
-H.  Java Can Not Find libstdc++-libc6.0-1.so.2 
+G.  Java Can Not Find libstdc++-libc6.0-1.so.2 
 
 	jdk-1.2 on redhat systems may note that Java complains about not being
 	able to find libstdc++-libc6.0-1.so.2.  A symbolic link can be used to 
@@ -548,7 +409,7 @@ H.  Java Can Not Find libstdc++-libc6.0-1.so.2
 	ls -l /usr/lib/libstdc++-libc6.0-1.so.2
  	/usr/lib/libstdc++-libc6.0-1.so.2 -> libstdc++.so.2.8.0
 
-I.  BlackBox Can Not Handle all the ports!
+H.  BlackBox Can Not Handle all the ports!
 
 	BlackBox has a hard coded limit in BlackBox.java that prevents it from 
 	running if you don't specify a port.  We are considering alternative 
@@ -561,13 +422,13 @@ I.  BlackBox Can Not Handle all the ports!
 		
 	just change 50 to say 256.
 
-J.  Illegal use of nonvirtal function call!
+I.  Illegal use of nonvirtal function call!
 
 	Exception in thread "main" java.lang.VerifyError: (class: 
 	gnu/io/RXTXPort$SerialOutputStream, method: flush signature: ()V) 
 	Illegal use of nonvirtual function call
 		at gnu.io.RXTXCommDriver.getCommPort(Compiled Code)
-		at javax.comm.CommPortIdentifier.open(Compiled Code)
+		at gnu.io.CommPortIdentifier.open(Compiled Code)
 		at SerialPortDisplay.openBBPort(Compiled Code)
 		at SerialPortDisplay.<init>(Compiled Code)
 		at BlackBox.addPort(Compiled Code)
@@ -584,14 +445,14 @@ J.  Illegal use of nonvirtal function call!
 	In other words start with a fresh build directory, rebuild, and 
 	reinstall to avoid the problem.
 
-K.  My libc5 Linux system is generating SIGSEGV
+J.  My libc5 Linux system is generating SIGSEGV
 
 	Older Linux Systems (libc5) should upgrade to a glibc system with 
 	libpthread-0.7 or newer.  We have run into many problems with older 
 	libraries.  SIGSEGV was the most common symptom.  Reported by  Peter 
 	Bennett <bencom@bencom.co.nz>
 
-L.  AM_PROG_LIBTOOL not found in library
+K.  AM_PROG_LIBTOOL not found in library
 
 	cd. && aclocal
 	aclocal:configure.in: 23: macro 'AM_PROG_LIBTOOL' not found in library
@@ -600,18 +461,18 @@ L.  AM_PROG_LIBTOOL not found in library
 	If you're positive things are setup right you may try the autogen.sh 
 	script to try regenerating the scripts with your tools.
 
-M.  Problems with RMISecurityManager()
+L.  Problems with RMISecurityManager()
 
 	Please see the file RMISecurityManager.html 
 
-O.  Which Wires Should be Connected?
+M.  Which Wires Should be Connected?
 
 	With the DB25 use 2 (TX), 3 (RX) and 7 (GD) to connect to the device.
 	With the DB9  use 2 (RX), 3 (TX) and 5 (GD) to connect to the device.
 
 	You will need to hook up more than that for hardware flow control.
 
-P.  Which Device Should be Used?
+N.  Which Device Should be Used?
 
 	Linux serial ports should use /dev/ttyS?
 	specialx, cyclades and isdn4 linux have been reported to work.
@@ -623,7 +484,7 @@ P.  Which Device Should be Used?
 	BeOS uses /dev/ports/serial?
 	Win32 uses COM?
   
-Q.  It Did Not Work! 
+O.  It Did Not Work! 
 
 	There are sure to be bugs.  The goal is to make the install as painless
 	as possible.  Send back comments if something could be easier.
@@ -649,13 +510,11 @@ make --version
 		autoconf-2.53
 		automake-1.6.3
 		libtool-1.4.2
-		gnu make-3.79.1         On some systems like FreeBSD this is
-
+		gnu make-3.79.1  
 
 	mail any bugs to taj@www.linux.org.uk.
 
-
-R.  Which jdk should be used? 
+P.  Which jdk should be used? 
 
 	Ideally any jdk would be fine.  Here is a list of jdk's tried on
 	RedHat 6.0/kernel 2.2.17pre13 with various versions of glibc.
@@ -686,8 +545,8 @@ version GLIBC_2.1 not defined in file libpthread.so.0 with link time reference"
 
 Conclusion?  Avoid Sun's native threads unless you can figure out whats going
 wrong.
-
-S.  How does rxtx detect ports?  Can I override it?
+ 
+Q.  How does rxtx detect ports?  Can I override it?
 
 rxtx tries to detect ports on by scanning /dev for files matching any
 of a set of known-good prefixes, such as 'ttyS', 'ttym', and so on.
@@ -715,14 +574,15 @@ all made little sense.  Look in RXTXCommDriver.java and search for Linux.
 You will see that only /dev/ttyS* is searched but the possible addition ports
 that can be used are listed under it.  Just copy the few you need.
 
-T.  How can I use Lock Files with rxtx?
+R.  How can I use Lock Files with rxtx?
 
 Redhat users.  Note that Redhat changed group uucp to group lock with Redhat
 7.2.
 
 Mandrake users.  Note that /var/lock needs to be group uucp for this to work.
- 
-Mac OS X users.  Note that you may need to create the lock directory with group uucp ownership.
+
+Mac OS X users.  Note that you may need to create the lock directory with group uucp ownership.  There is a script in contrib called fixperm.sh to help with
+this on Mac OS X.
 
 RXTX uses lock files by default.  configure --disable-lockfiles to generate
 rxtx libraries without lock files.  Its strongly recommended that you do
@@ -775,7 +635,7 @@ found in src/lfd.  RXTX will need to be configured to use the server:
 
 Any user can then lock the ports if they are not already locked.
 
-U.  How can I tell which version of rxtx is installed?
+S.  How can I tell which version of rxtx is installed?
 
 Version information is not documented in Sun's CommAPI so this is probably
 unique to RXTX.
@@ -802,7 +662,7 @@ PATCH is used to differentiate incremental releases of the MINOR releases.
 
 CommPortIdentifier is expected to support getVersion() in the RXTX-1.5 series.
 
-V.  What Type of Latency can I expect with RXTX
+T.  What Type of Latency can I expect with RXTX
 
 	frantz <fcapiez@club-internet.fr> put RXTX under a scope and found
 	the following:
@@ -816,7 +676,7 @@ V.  What Type of Latency can I expect with RXTX
 
 	He is going to look at this further.  He needs 20 ms or less latency.
 	
-W.  I got rxtx working on a new OS but I can't read from the port
+U.  I got rxtx working on a new OS but I can't read from the port
 
 > Now my java program starts up nicely without complaining. However, it does
 > never read any data from the serial port. It looks like it can write data,
@@ -891,7 +751,7 @@ on linux.  I'm not positive what is normal on other OS's.
                 Prentice-Hall, 1990, pages 96-101.
                 more reading:
 
-X.  My ThinkPad is Not Working!
+V.  My ThinkPad is Not Working!
 
 	Scott Burleigh <Scott.Burleigh@jpl.nasa.gov> writes:
 
@@ -909,6 +769,44 @@ X.  My ThinkPad is Not Working!
 
 		Until you do, "setserial -ga /dev/ttyS0" will always tell you
 		the UART is unknown.  
+
+
+
+4.  APPLETS
+
+More info is needed on signing applets.  This is an exchange from the rxtx mail-
+list.
+
+A.  Using Applets
+
+prashantg10@yahoo.com asked:
+
+	Hi All !
+
+	I am trying to use applet on thin terminal which has
+	Linux base Kernel.For testing I am using Linux
+	machine.I have install all the required components.
+	e.g. JDK, RXTX. Everthing is fine. BlackBox runs ,even
+	my application runs. When It comes to applet,
+	everything is halts. It does not even show the listing
+	of ports. Is it because applet can't run under root
+	account or what might be the reasons. Can anybody tell
+	me solution.
+
+Son To <son@openbx.net> replied:
+
+	Java applets run withing the sandbox of the security manager.
+	Applets must be signed to access the com port, but for development 
+	purposes you can put
+
+	user_pref("signed.applets.codebase_principal_support", true);
+
+	in your prefs.js located in ~/.mozilla/default/XYYrandomDirName
+	
+	I didn't use Java applet for my application. I used XUL and CSS for
+	the GUI development and used mozilla Javascript SOAP library to
+	communicate with apache Axis webservice backend which uses RXTX to
+	access the com port.
 
 -- 
 Trent Jarvi

@@ -1,46 +1,18 @@
 #-------------------------------------------------------------------------
 #   rxtx is a native interface to serial ports in java.
-#   Copyright 1997-2002 by Trent Jarvi taj@www.linux.org.uk.
+#   Copyright 1997-2003 by Trent Jarvi taj@www.linux.org.uk.
 #
 #   This library is free software; you can redistribute it and/or
-#   modify it under the terms of the GNU Lesser General Public
+#   modify it under the terms of the GNU Library General Public
 #   License as published by the Free Software Foundation; either
-#   version 2.1 of the License, or (at your option) any later version.
+#   version 2 of the License, or (at your option) any later version.
 #
 #   This library is distributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#   Lesser General Public License for more details.
+#   Library General Public License for more details.
 #
-#   The following has been added to allow RXTX to be distributed with Sun
-#   Microsystem's CommAPI library as suggested by the FSF.
-#
-#   http://www.fsf.org/licenses/gpl-faq.html#LinkingOverControlledInterface
-#
-#   A program that contains no derivative of any portion of RXTX, but
-#   is designed to work with RXTX by being compiled or linked with it,
-#   is considered a "work that uses the Library" subject to the terms and
-#   conditions of the GNU Lesser General Public License.
-#
-#   As a special exception, the copyright holders of RXTX give you
-#   permission to link RXTX with independent modules that communicate with
-#   RXTX solely through the Sun Microsytems CommAPI interface, regardless of
-#   the license terms of these independent modules, and to copy and distribute
-#   the resulting combined work under terms of your choice, provided that
-#   every copy of the combined work is accompanied by a complete copy of
-#   the source code of RXTX (the version of RXTX used to produce the
-#   combined work), being distributed under the terms of the GNU Lesser General
-#   Public License plus this exception.  An independent module is a
-#   module which is not derived from or based on RXTX.
-#
-#   Note that people who make modified versions of RXTX are not obligated
-#   to grant this special exception for their modified versions; it is
-#   their choice whether to do so.  The GNU Lesser General Public License
-#   gives permission to release a modified version without this exception; this
-#   exception also makes it possible to release a modified version which
-#   carries forward this exception.
-#
-#   You should have received a copy of the GNU Lesser General Public
+#   You should have received a copy of the GNU Library General Public
 #   License along with this library; if not, write to the Free
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #-------------------------------------------------------------------------
@@ -51,7 +23,7 @@ VPATH = @srcdir@
 AUTOMAKE_OPTIONS = foreign
 INCLUDES= -I$(TOP) -I$(DEST) -I. $(JAVAINCLUDE) $(JAVANATINC)
 ####################### vars for rxtx-1.4->1.5 transition
-JARTARGET=jcl.jar
+JARTARGET=RXTXcomm.jar
 CLASSDIR=gnu.io
 CLASSTOP=gnu
 CLASSDEST=gnu/io
@@ -84,7 +56,14 @@ $(target_triplet)/librxtx%.@LIB_EXTENSION@: $(SPATH)/%Imp.c $(CLASSES) $(SPATH)/
 	cd $(DEST); 						\
 	$(LIBTOOLC) $(SPATH)/$*Imp.@EXTENSION@ -o		\
 		$(TOP)/$(DEST)/$*Imp.@OBJECT_EXTENSION@;	\
-	@LINK@ $(TOP)/$(DEST)/$*Imp.lo				\
+	if [ "$*" = "rxtxSerial" ]; then 				\
+		$(LIBTOOLC) ../$(SPATH)/fuserImp.@EXTENSION@	\
+			-o $(TOP)/$(DEST)/fuserImp.@OBJECT_EXTENSION@;\
+		@LINK@ $(TOP)/$(DEST)/$*Imp.@OBJECT_EXTENSION@	\
+			$(TOP)/$(DEST)/fuserImp.@OBJECT_EXTENSION@;\
+	else							\
+		@LINK@ $(TOP)/$(DEST)/$*Imp.@OBJECT_EXTENSION@ $(FUSER);\
+	fi;							\
 	)
 
 #  compile src/RXTXPort.java and similar files into classes
@@ -124,14 +103,15 @@ docs: $(CLASSES)
 
 $(DEST)/rxtxSerial.dll: $(CLASSES) $(TOP)/Makefile
 	gcc -DWIN32 -D __int64="long long" -mno-fp-ret-in-387 -b$(target_alias) -I $(TOP) -I $(DEST) -I . $(WINDOWS_JAVA_INCLUDE) -I $(SPATH) -Wall -c $(SPATH)/SerialImp.c -o $(DEST)/SerialImp.o
+	gcc -DWIN32 -D __int64="long long" -mno-fp-ret-in-387 -b$(target_alias) -I $(TOP) -I $(DEST) -I . $(WINDOWS_JAVA_INCLUDE) -I $(SPATH) -Wall -c $(SPATH)/fuserImp.c -o $(DEST)/fuserImp.o
 	gcc -DWIN32 -D __int64="long long" -mno-fp-ret-in-387 -b$(target_alias) -I $(TOP) -I $(DEST) -I . $(WINDOWS_JAVA_INCLUDE) -I $(SPATH) -Wall -c $(SPATH)/termios.c -o $(DEST)/termios.o
 	gcc -DWIN32 -D __int64="long long" -mno-fp-ret-in-387 -b$(target_alias) -I $(TOP) -I $(DEST) -I . $(WINDOWS_JAVA_INCLUDE) -I $(SPATH) -Wall -c $(SPATH)/fixup.c -o $(DEST)/fixup.o
 	gcc -DWIN32 -D __int64="long long" -mno-fp-ret-in-387 -b$(target_alias) -I $(TOP) -I $(DEST) -I . $(WINDOWS_JAVA_INCLUDE) -I $(SPATH) -Wall -c $(SPATH)/init.cc -o $(DEST)/init.o
-	ld --base-file $(DEST)/Serial.base --dll -o $(DEST)/rxtxSerial.dll $(DEST)/termios.o $(DEST)/SerialImp.o $(DEST)/fixup.o $(DEST)/init.o -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmingw32 -lmoldname -lcrtdll -e _dll_entry@12 --base-file $(DEST)/Serial.base
+	ld --base-file $(DEST)/Serial.base --dll -o $(DEST)/rxtxSerial.dll $(DEST)/termios.o $(DEST)/SerialImp.o $(DEST)/fuserImp.o $(DEST)/fixup.o $(DEST)/init.o -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmingw32 -lmoldname -lcrtdll -e _dll_entry@12 --base-file $(DEST)/Serial.base
 	 echo EXPORTS >$(DEST)/Serial.def;for i in `nm i386-mingw32/rxtxSerial.dll | grep "T _Java"|cut -b 13-`;do echo -n $$i|sed s#@.*##;echo "="$$i;done >> $(DEST)/Serial.def
 	dlltool -b$(DEST) --as=as --dllname $(DEST)/rxtxSerial.dll --def $(DEST)/Serial.def --base-file $(DEST)/Serial.base --output-exp $(DEST)/Serial.exp
-	ld --base-file $(DEST)/Serial.base $(DEST)/Serial.exp -dll -o $(target_triplet)/rxtxSerial.dll $(DEST)/termios.o $(DEST)/SerialImp.o $(DEST)/fixup.o $(DEST)/init.o -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmingw32 -lmoldname -lcrtdll -e _dll_entry@12 --base-file $(target_triplet)/Serial.base
-		dlltool -b$(DEST) --as=as --dllname $(DEST)/rxtxSerial.dll --def $(DEST)/Serial.def --base-file $(DEST)/Serial.base --output-exp $(DEST)/Serial.exp
-		ld $(DEST)/Serial.exp -dll -o $(DEST)/rxtxSerial.dll $(DEST)/termios.o $(DEST)/SerialImp.o $(DEST)/fixup.o $(DEST)/init.o -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmingw32 -lmoldname -lcrtdll -e _dll_entry@12 --base-file $(DEST)/Serial.base
+	ld --base-file $(DEST)/Serial.base $(DEST)/Serial.exp -dll -o $(DEST)/rxtxSerial.dll $(DEST)/termios.o $(DEST)/SerialImp.o $(DEST)/fuserImp.o $(DEST)/fixup.o $(DEST)/init.o -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmingw32 -lmoldname -lcrtdll -e _dll_entry@12 --base-file $(DEST)/Serial.base
+	dlltool -b$(DEST) --as=as --dllname $(DEST)/rxtxSerial.dll --def $(DEST)/Serial.def --base-file $(DEST)/Serial.base --output-exp $(DEST)/Serial.exp
+	ld $(DEST)/Serial.exp -dll -o $(DEST)/rxtxSerial.dll $(DEST)/termios.o $(DEST)/SerialImp.o $(DEST)/fuserImp.o $(DEST)/fixup.o $(DEST)/init.o -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmingw32 -lmoldname -lcrtdll -e _dll_entry@12 --base-file $(DEST)/Serial.base
 
 # END
