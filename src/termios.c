@@ -1,5 +1,7 @@
+#ifdef TRENT_IS_HERE
 #define TRACE
 #define DEBUG_MW
+#endif /* TRENT_IS_HERE */
 #ifdef DEBUG_MW
 	extern void mexWarMsgTxt( const char * );
 	extern void mexPrintf( const char *, ... );
@@ -427,7 +429,7 @@ BOOL FillDCB( DCB *dcb, HANDLE hCommPort, COMMTIMEOUTS Timeout )
 	ENTER( "FillDCB" );
 	dcb->DCBlength = sizeof( dcb );
 	if ( !GetCommState( hCommPort, dcb ) )
-{
+	{
 		report( "GetCommState\n" );
 		return( -1 );
 	}
@@ -507,6 +509,7 @@ int serial_close( int fd )
 		return -1;
 	}
 
+	/* WaitForSingleObject( index->wol.hEvent, INFINITE ); */
 	if ( index->hComm != INVALID_HANDLE_VALUE )
 	{
 		if ( !SetCommMask( index->hComm, EV_RXCHAR ) )
@@ -740,7 +743,7 @@ int open_port( struct termios_list *port )
 	if ( port->hComm == INVALID_HANDLE_VALUE )
 	{
 		YACK();
-		errno = EINVAL;
+		set_errno( EINVAL );
 		//printf( "open failed %s\n", port->filename );
 		return -1;
 	}
@@ -1104,7 +1107,6 @@ int serial_write( int fd, char *Str, int length )
 	if ( fd <= 0 )
 		return 0;
 	index = find_port( fd );
-	report("1\n");
 	if ( !index )
 	{
 		sprintf( message,
@@ -1118,7 +1120,6 @@ int serial_write( int fd, char *Str, int length )
 	/* FIXME: OXTABS: convert tabs to spaces */
 	/* FIXME: ONOEOT: discard ^D (004) */
 
-	report("2\n");
 	if ( !WriteFile( index->hComm, Str, length, &nBytes, &index->wol ) )
 	{
 		if ( GetLastError() != ERROR_IO_PENDING )
@@ -1129,7 +1130,6 @@ int serial_write( int fd, char *Str, int length )
 			goto end;
 		}
 	}
-	report("3\n");
 	//pendingResult = WaitForSingleObject( index->wol.hEvent, INFINITE );
 	switch( pendingResult )
 	{
@@ -1142,9 +1142,7 @@ int serial_write( int fd, char *Str, int length )
 	}
 	
 			//if ( 	( pendingResult !=  WAIT_OBJECT_0 ) ||
-	report("4\n");
 	GetOverlappedResult( index->hComm, &index->wol, &nBytes, FALSE );
-	report("5\n");
 	FlushFileBuffers( index->hComm );
 	/*
 		I'm sure there is a better way to do this but write() will
@@ -1153,7 +1151,6 @@ int serial_write( int fd, char *Str, int length )
 		I think what we really want to wait for is the other process's
 		read thread.
 	*/
-	report("6\n");
 	Sleep( 50 );
 end:
 	sprintf( message, "serial_write returns: %i\n", (int) nBytes );
@@ -1238,6 +1235,7 @@ int serial_read( int fd, void *vb, int size )
 							&nBytes,
 							FALSE ) )
 			{
+				YACK();
 				report( "read error\n" );
 			}
 			else
@@ -2510,6 +2508,7 @@ fail:
 		"nativeSetSerialPortParams", strerror( errno ) );
 }
 #endif
+#ifdef asdf
 int main( int argc, char *argv[] )
 {
 	struct termios ttyset;
@@ -2622,6 +2621,7 @@ END:
 	close(fd[3]);
 	return ret;
 }
+#endif /* asdf */
 #ifdef asdf
 int main( int argc, char *argv[] )
 {
