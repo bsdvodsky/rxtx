@@ -46,6 +46,7 @@ public class RXTXCommDriver implements CommDriver
 	private String deviceDirectory;
 	private String osName;
 	private native boolean isDeviceGood(String dev);
+	private native boolean testRead(String dev, int type);
 	private native String getDeviceDirectory();
 
 	private final String[] getPortPrefixes(String AllKnownPorts[])
@@ -101,53 +102,6 @@ public class RXTXCommDriver implements CommDriver
 		return returnArray;
 	}
 
-
-   /*
-    * A primitive test of whether a specified device is available or
-    * not.
-    *
-    * FIXME: This is actually a pretty poor test.  These Java calls
-    * map in the 1.2.2 Unix JDK into calls to access(2), which checks
-    * the permission bits on the file.  There are at least two
-    * problems with this, however.
-    *
-    * Firstly, in Linux 2.2 it will fail with EROFS for a device node
-    * on a read-only device, even though you're allowed to write to
-    * them.  This is fixed in Linux 2.4, but may exist on other
-    * systems as well.
-    *
-    * Secondly and more importantly, simply being permitted to access
-    * the device doesn't mean that it physically exists, and therefore
-    * that an attempt to use it will succeed.
-    *
-    * One alternative approach would be to try to actually open the
-    * device for read/write, but that's not a good idea because
-    * opening a device can affect the control pins, etc.
-    *
-    * Even better might be to return all possible devices for this
-    * operating system or hardware without trying to check that
-    * they're usable, and then letting the application cope with ones
-    * that actually turn out not to work.
-    *
-    * @author Martin Pool
-    */
-	private boolean accessReadWrite(String portName)
-	{
-		final File port = new File(portName);
-		if(osName.toLowerCase().indexOf("windows") != -1 )
-		{
-			if(debug)
-			{
-				System.out.println(portName + ": canRead="+port.canRead());
-				System.out.println(portName + ": canWrite="+port.canWrite());
-			}
-			/* ? its always false */
-			return(true);
-		}
-		return port.canRead() && port.canWrite();
-	}
-
-
 	private void registerValidPorts(
 		String devs[],
 		String Prefix[],
@@ -160,16 +114,18 @@ public class RXTXCommDriver implements CommDriver
 		if ( devs==null || Prefix==null) return;
 		for( i = 0;i<devs.length; i++ ) {
 			for( p = 0;p<Prefix.length; p++ ) {
-				String portName = new String(deviceDirectory + devs[ i ]);
+				String PortName = new String(deviceDirectory + devs[ i ]);
 				if( devs[ i ].startsWith( Prefix[ p ] ) ) {
-					if (accessReadWrite(portName))
+					if (testRead(PortName, PortType))
+					{
 						CommPortIdentifier.addPortName(
-							portName,
+							PortName,
 							PortType,
 							this
 						);
 				}
 			}
+		}
 		}
 		if (debug)
 			System.out.println("Leaving registerValidPorts()");
@@ -197,6 +153,7 @@ public class RXTXCommDriver implements CommDriver
 	* Bencom
 
     */
+
 	/**
 	*  Determine the OS and where the OS has the devices located
 	*/
@@ -216,18 +173,18 @@ public class RXTXCommDriver implements CommDriver
 			registerScannedPorts();
 	}
 
-	private void addSpecifiedPorts(String names, int type)
+	private void addSpecifiedPorts(String names, int PortType)
 	{
 		final String pathSep = System.getProperty("path.separator", ":");
 		final StringTokenizer tok = new StringTokenizer(names, pathSep);
 
 		while (tok.hasMoreElements())
 		{
-			String portName = tok.nextToken();
+			String PortName = tok.nextToken();
 
-			if (accessReadWrite(portName))
-				CommPortIdentifier.addPortName(portName,
-					type, this);
+			if (testRead(PortName, PortType))
+				CommPortIdentifier.addPortName(PortName,
+					PortType, this);
 		}
 	}
 
@@ -281,8 +238,6 @@ public class RXTXCommDriver implements CommDriver
 			String[] temp = dev.list();
 			devs=temp;
 		}
-		File dev = new File( deviceDirectory );
-		String[] devs = dev.list();
 		String[] AllKnownSerialPorts;
 		if(osName.equals("Linux"))
 		{
@@ -441,26 +396,26 @@ public class RXTXCommDriver implements CommDriver
 	 * <p>From the NullDriver.java CommAPI sample.
 	 */
 	/**
-	*  @param portName The name of the port the OS recognizes
+	*  @param PortName The name of the port the OS recognizes
 	*  @param portType CommPortIdentifier.PORT_SERIAL or PORT_PARALLEL
 	*  @returns CommPort
 	*  getCommPort() will be called by CommPortIdentifier from its
-	*  openPort() method. portName is a string that was registered earlier
+	*  openPort() method. PortName is a string that was registered earlier
 	*  using the CommPortIdentifier.addPortName() method. getCommPort()
 	*  returns an object that extends either SerialPort or ParallelPort.
 	*/
-	public CommPort getCommPort( String portName, int portType )
+	public CommPort getCommPort( String PortName, int portType )
 	{
 		if (debug) System.out.println("RXTXCommDriver:getCommPort("
-			+portName+","+portType+")");
+			+PortName+","+portType+")");
 		try {
 			if (portType==CommPortIdentifier.PORT_SERIAL)
 			{
-				return new RXTXPort( portName );
+				return new RXTXPort( PortName );
 			}
 			else if (portType==CommPortIdentifier.PORT_PARALLEL)
 			{
-				return new LPRPort( portName );
+				return new LPRPort( PortName );
 			}
 		} catch( PortInUseException e ) {
 			if (debug)

@@ -276,6 +276,7 @@ LPRPort.open
    comments:    Very often people complain about not being able to get past
                 this function and it turns out to be permissions on the
                 device file or bios has the device disabled.
+		FIXME  Lock Files?
 ----------------------------------------------------------*/
 JNIEXPORT jint JNICALL LPRPort(open)( JNIEnv *env, jobject jobj,
 	jstring jstr )

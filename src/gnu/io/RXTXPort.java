@@ -44,7 +44,6 @@ final class RXTXPort extends SerialPort
 
 	/** Initialize the native library */
 	private native static void Initialize();
-	private static boolean debug = false;
 
 	/** 
 	*  Open the named port

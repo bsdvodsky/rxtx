@@ -1104,6 +1104,54 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 	}
 	return;
 }
+/*----------------------------------------------------------
+RXTXCommDriver.testRead
+
+   accept:      tty_name The device to be tested
+   perform:     test if the device can be read from
+   return:      JNI_TRUE if the device can be read from
+   exceptions:  none
+   comments:    From Wayne Roberts wroberts1@home.com
+   		check tcget/setattr returns.
+		support for non serial ports Trent
+----------------------------------------------------------*/
+
+JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(JNIEnv *env,
+	jobject jobj, jstring tty_name, jint port_type )
+{
+	struct termios ttyset;
+	char c;
+	int fd;
+	const char *name = (*env)->GetStringUTFChars(env, tty_name, 0);
+	int ret = JNI_TRUE;
+
+	if (!fhs_lock(name))
+		return JNI_FALSE;
+
+	if ((fd = open(name, O_RDONLY | O_NONBLOCK)) < 0) {
+		ret = JNI_FALSE;
+		goto END;
+	}
+
+	if ( port_type == PORT_SERIAL )
+	{
+		if (tcgetattr(fd, &ttyset) < 0) {
+			ret=JNI_FALSE;
+			goto END;
+		}
+		ttyset.c_cc[VMIN] = ttyset.c_cc[VTIME] = 0;
+		if (tcsetattr(fd, TCSANOW, &ttyset) < 0) {
+			ret=JNI_FALSE;
+			goto END;
+		}
+		if (read(fd, &c, 1) < 0)
+			ret = JNI_FALSE;
+	}
+END:
+	fhs_unlock(name);
+	close(fd);
+	return ret;
+}
 
 /*----------------------------------------------------------
  isDeviceGood
@@ -1502,14 +1550,15 @@ int fhs_lock(const char *filename)
 
 		if( kill((pid_t) pid, 0) && errno==ESRCH )
 		{
-			report("RXTX Warning:  Removing stale lock file.\n");
+			fprintf(stderr, 
+				"RXTX Warning:  Removing stale lock file.\n");
 			if(unlink(file) != 0)
 			{
 				snprintf(message, 80, "RXTX Error:  Unable to \
 					remove stale lock file: %s\n",
 					file
 				);
-				report(message);
+				fprintf(stderr, message);
 				return 0;
 			}
 		}
@@ -1520,7 +1569,7 @@ int fhs_lock(const char *filename)
 	{
 		snprintf(message, 80,
 			"RXTX Error: Unable to create lock file: %s\n\n", file);
-		report(message);
+		fprintf(stderr, message);
 		return 0;
 	}
 	sprintf(lockinfo,"%10d\n",getpid());

@@ -50,6 +50,12 @@
 #define SPE_FE                   9
 #define SPE_BI                  10
 
+#define PORT_SERIAL		 1
+#define PORT_PARALLEL		 2
+#define PORT_I2C		 3
+#define PORT_RS485		 4
+#define PORT_RAW		 5
+
 /*  Ports known on the OS */
 #if defined(__linux__)
 #	define DEVICEDIR "/dev/"
