@@ -140,7 +140,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_open(
 	if( cfsetispeed( &ttyset, B9600 ) < 0 ) goto fail;
 	if( cfsetospeed( &ttyset, B9600 ) < 0 ) goto fail;
 #endif
-	if( tcsetattr( fd, TCSAFLUSH, &ttyset ) < 0 ) goto fail;
+	if( tcsetattr( fd, TCSANOW, &ttyset ) < 0 ) goto fail;
 
 #ifndef WIN32
 	fcntl( fd, F_SETOWN, getpid() );
@@ -200,7 +200,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_nativeSetSerialPortParams(
 	if( cfsetispeed( &ttyset, cspeed ) < 0 ) goto fail;
 	if( cfsetospeed( &ttyset, cspeed ) < 0 ) goto fail;
 #endif
-	if( tcsetattr( fd, TCSAFLUSH, &ttyset ) < 0 ) goto fail;
+	if( tcsetattr( fd, TCSANOW, &ttyset ) < 0 ) goto fail;
 	/* dump_termios("set",*ttyset); */
 	return;
 
@@ -778,7 +778,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_NativeEnableReceiveTimeoutThreshold(
 	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
 	ttyset.c_cc[ VMIN ] = threshold;
 	ttyset.c_cc[ VTIME ] = vtime/100;
-	if( tcsetattr( fd, TCSAFLUSH, &ttyset ) < 0 ) goto fail;
+	if( tcsetattr( fd, TCSANOW, &ttyset ) < 0 ) goto fail;
 
 	return;
 fail:
@@ -919,7 +919,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setflowcontrol( JNIEnv *env,
 		ttyset.c_iflag |= IXON;
 	else ttyset.c_iflag &= ~IXON;
 
-	if( tcsetattr( fd, TCSAFLUSH, &ttyset ) ) goto fail;
+	if( tcsetattr( fd, TCSANOW, &ttyset ) ) goto fail;
 	return;
 fail:
 	throw_java_exception( env, IO_EXCEPTION, "setHWFC",
