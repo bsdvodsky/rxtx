@@ -962,7 +962,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 	interrupt = (*env)->GetStaticMethodID( env, jthread, "interrupted", "()Z" );
 
 	/* Some multiport serial cards do not implement TIOCGICOUNT ... */
-#if defined(__linux__)
+#if defined(TIOCGICOUNT)
 	if( ioctl( fd, TIOCGICOUNT, &osis ) < 0 ) {
 		fprintf( stderr, "Port does not support events\n" );
 		return; 
@@ -993,7 +993,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 			(*env)->CallVoidMethod( env, jobj, method,
 				(jint)SPE_OUTPUT_BUFFER_EMPTY, JNI_TRUE );
 		}
-#if defined(__linux__)
+#if defined(TIOCGICOUNT)
 	/*	wait for RNG, DSR, CD or CTS  but not DataAvailable*/
 	/*      The drawback here is it never times out so if someone
 	 *      reads there will be no chance to try again.
@@ -1047,7 +1047,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 			mflags & TIOCM_CD );
 		osis = sis;
 		interrupted = (*env)->CallStaticBooleanMethod( env, jthread, interrupt );
-#else /*  __linux__ */
+#else /*  TIOCGICOUNT */
 	       /* A Portable non-linux implementation */
 		change = (mflags&TIOCM_CTS) - (omflags&TIOCM_CTS);
 		if( change ) {
@@ -1079,7 +1079,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 			(*env)->CallVoidMethod( env, jobj, method,
 				(jint)SPE_DATA_AVAILABLE, JNI_TRUE );
 		}
-#endif /* __linux__ */
+#endif /* TIOCGICOUNT */
 	}
 	return;
 }
