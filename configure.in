@@ -193,7 +193,7 @@ rm -f conftest.class
 #/usr/local/jdk/jre/lib/i386, which is searched automatically for native libs.
 #This seems to be the 'standard' way of doing things in 1.2.  Do you think it's
 #a good idea?
-function fix_parameters()
+fix_parameters()
 {
 	if [ ! grep  "Driver=gnu.io.RXTXCommDriver" $1 &> /dev/null ]; then 
 		echo "------------------------------------------------------" 1>&2
@@ -214,7 +214,7 @@ function fix_parameters()
 		fi;
 	fi;
 }
-function check_prefix()
+check_prefix()
 {
 	if test $prefix != "/usr";then 
 		echo 1>&2
@@ -226,7 +226,7 @@ function check_prefix()
 		read 
 	fi
 }
-function check_kernel_headers()
+check_kernel_headers()
 {
 	if ! grep -q `uname -r` /usr/include/linux/version.h;then 
 		echo 1>&2
@@ -236,7 +236,7 @@ function check_kernel_headers()
 		read
 	fi 1>&2
 }
-function fix_comm_jar()
+fix_comm_jar()
 {
 	if ! test -f $1;then
 		echo "------------------------------------------------------" 1>&2
