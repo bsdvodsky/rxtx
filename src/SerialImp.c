@@ -1223,7 +1223,7 @@ JNIEXPORT jint JNICALL RXTXPort(readArray)( JNIEnv *env,
 		return -1;
 	}
 	body = (*env)->GetByteArrayElements( env, jbarray, 0 );
-	bytes = read_byte_array( fd, body, length, timeout );
+	bytes = read_byte_array( fd, (unsigned char *)body, length, timeout );
 	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
 	if( bytes < 0 ) {
 		report("RXTXPort:readArray bytes < 0");
