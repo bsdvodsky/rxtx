@@ -470,6 +470,7 @@ final class RXTXPort extends SerialPort
 	*  @return boolean  true if monitor thread is interrupted
 	*/
 	boolean monThreadisInterrupted=true;
+	private native void interruptEventLoop( );
 	public boolean checkMonitorThread()
 	{
 		if (debug)
@@ -663,6 +664,12 @@ final class RXTXPort extends SerialPort
 			if (debug)
 				System.out.println("RXTXPort:Interrupt=true");
 			monThreadisInterrupted=true;
+			/*
+			   Notify all threads in this PID that something is up
+			   They will call back to see if its their thread
+			   using isInterrupted().
+			*/
+			interruptEventLoop( );
 			try {
 				monThread.join(1000);
 			} catch (Exception ex) {

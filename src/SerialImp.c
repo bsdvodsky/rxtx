@@ -135,6 +135,8 @@ int cfmakeraw ( struct termios *term )
 }
 #endif /* __sun__ */
 
+int eventloop_interrupted;
+
 /*----------------------------------------------------------
 RXTXPort.Initialize
 
@@ -1730,7 +1732,7 @@ void system_wait()
 		1000000 95%   203 sec	some callback failures sometimes.
 		2000000 0-95% 		callback failures.
 	*/
-	usleep(500000);
+ 	//usleep(500000);
 #endif /* TRENT_IS_HERE_DEBUGGING_THREADS */
 #endif /* __sun__ */
 }
@@ -1830,7 +1832,7 @@ int initialise_event_info_struct( struct event_info_struct *eis )
 	eis->checkMonitorThread = (*env)->GetMethodID( env, eis->jclazz,
 		"checkMonitorThread", "()Z" );
 	if(eis->checkMonitorThread == NULL) goto fail;
-
+	eventloop_interrupted=0;
 
 end:
 	FD_ZERO( &eis->rfds );
@@ -1886,7 +1888,9 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 		if( eis.ret >= 0 )
 			report_serial_events( &eis );
 		initialise_event_info_struct( &eis );
-	} while( !is_interrupted( &eis ) );
+		if( eventloop_interrupted )
+			if( is_interrupted( &eis ) ) break;
+	} while( 1 );
 	finalize_event_info_struct( &eis );
 end:
 	LEAVE( "RXTXPort:eventLoop" );
@@ -2340,6 +2344,21 @@ JNIEXPORT jint JNICALL RXTXPort(getOutputBufferSize)(JNIEnv *env,
 {
 	report( "getOutputBufferSize is not implemented\n" );
 	return(1);
+}
+
+/*----------------------------------------------------------
+ interruptEventLoop
+
+   accept:      nothing
+   perform:     set eventloop_interrupted to true
+   return:      nothing
+   exceptions:  none
+   comments:    The event loop will exit next loop.
+----------------------------------------------------------*/
+JNIEXPORT void JNICALL RXTXPort(interruptEventLoop)(JNIEnv *env,
+	jobject jobj)
+{
+	eventloop_interrupted = 1;
 }
 
 /*----------------------------------------------------------
