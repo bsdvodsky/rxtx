@@ -85,7 +85,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_open( JNIEnv *env, jobject jobj,
 {
 	struct termios ttyset;
 	const char *filename = (*env)->GetStringUTFChars( env, jstr, 0 );
-	int fd = open( filename, O_RDWR | O_NOCTTY | O_NONBLOCK );
+	int fd = TEMP_FAILURE_RETRY (open (filename, O_RDWR | O_NOCTTY | O_NONBLOCK ));
 	(*env)->ReleaseStringUTFChars( env, jstr, NULL );
 	if( fd < 0 ) goto fail;
 
@@ -128,7 +128,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_close( JNIEnv *env,
 {
 	int fd = get_java_fd( env, jobj );
 
-	close( fd );
+	TEMP_FAILURE_RETRY (close (fd));
 	return;
 }
 
@@ -326,7 +326,8 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeByte( JNIEnv *env,
 	unsigned char byte = (unsigned char)ji;
 	int fd = get_java_fd( env, jobj );
 
-	if( write( fd, &byte, sizeof( unsigned char ) ) >= 0 ) return;
+	if (TEMP_FAILURE_RETRY (write (fd, &byte, sizeof( unsigned char))) >= 0)
+		return;
 	IOException( env, strerror( errno ) );
 }
 
@@ -350,7 +351,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeArray( JNIEnv *env,
 	int i;
 	for( i = 0; i < count; i++ ) bytes[ i ] = body[ i + offset ];
 	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
-	if( write( fd, bytes, count ) < 0 )
+	if (TEMP_FAILURE_RETRY (write (fd, bytes, count)) < 0 )
 		IOException( env, strerror( errno ) );
 	free( bytes );
 }
@@ -607,7 +608,7 @@ int read_byte_array( int fd, unsigned char *buffer, int length, int threshold,
             other OSes will need to update it manually if they want to have
             the same behavior.  For those OSes, timeouts will occur after no
             data AT ALL is received for the timeout duration.  No big deal. */
-			ret = select( fd + 1, &rfds, NULL, NULL, &sleep );
+			ret = TEMP_FAILURE_RETRY (select( fd + 1, &rfds, NULL, NULL, &sleep ));
 			if( ret == 0 ) break;
 			if( ret < 0 ) return -1;
 		}
@@ -784,7 +785,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 		FD_SET( fd, &rfds );
 		sleep.tv_sec = 1;	/* Check every 1 second, or on receive data */
 		sleep.tv_usec = 0;
-		ret = select( fd + 1, &rfds, NULL, NULL, &sleep );
+		ret = TEMP_FAILURE_RETRY (select( fd + 1, &rfds, NULL, NULL, &sleep ));
 		if( ret < 0 ) break;
 		if( ioctl( fd, TIOCGICOUNT, &sis ) ) break;
 		if( ioctl( fd, TIOCMGET, &mflags ) ) break;
