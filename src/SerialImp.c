@@ -135,7 +135,7 @@ int cfmakeraw ( struct termios *term )
 }
 #endif /* __sun__ */
 
-int eventloop_interrupted;
+int eventloop_interrupted = 0;
 
 /*----------------------------------------------------------
 RXTXPort.Initialize
@@ -1832,7 +1832,6 @@ int initialise_event_info_struct( struct event_info_struct *eis )
 	eis->checkMonitorThread = (*env)->GetMethodID( env, eis->jclazz,
 		"checkMonitorThread", "()Z" );
 	if(eis->checkMonitorThread == NULL) goto fail;
-	eventloop_interrupted=0;
 
 end:
 	FD_ZERO( &eis->rfds );
@@ -1858,6 +1857,8 @@ finalize_event_info_struct
 void finalize_event_info_struct( struct event_info_struct *eis )
 {
 	(*eis->env)->DeleteLocalRef( eis->env, eis->jclazz );
+	eventloop_interrupted--;
+	mexPrintf("interrupted-- = %i\n", eventloop_interrupted );
 }
 
 /*----------------------------------------------------------
@@ -2194,7 +2195,7 @@ JNIEXPORT jboolean JNICALL RXTXCommDriver(registerKnownPorts)(JNIEnv *env,
 		case PORT_TYPE_RAW:      break;
 		default:
 			sprintf( message, "unknown portType %d handed to \
-				native RXTXCommDriver.registerKnownPorts() \
+				native RXTXCommDriver.registerKnownPorts() \ 
 				 method.\n",
 				(int) portType
 			);
@@ -2350,15 +2351,19 @@ JNIEXPORT jint JNICALL RXTXPort(getOutputBufferSize)(JNIEnv *env,
  interruptEventLoop
 
    accept:      nothing
-   perform:     set eventloop_interrupted to true
+   perform:     increment eventloop_interrupted 
    return:      nothing
    exceptions:  none
-   comments:    The event loop will exit next loop.
+   comments:    all eventloops in this PID will check if their thread
+		is interrupted.  When all the interrupted threads exit
+		they will decrement the var leaving it 0.
+		the remaining threads will continue.
 ----------------------------------------------------------*/
 JNIEXPORT void JNICALL RXTXPort(interruptEventLoop)(JNIEnv *env,
 	jobject jobj)
 {
-	eventloop_interrupted = 1;
+	eventloop_interrupted++;
+	mexPrintf("interrupted++ = %i\n", eventloop_interrupted );
 }
 
 /*----------------------------------------------------------
