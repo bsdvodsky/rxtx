@@ -1113,9 +1113,11 @@ int ioctl(int fd, int request, ...) {
 	struct serial_struct *sstruct;
 	struct async_struct *astruct;
 	struct serial_multiport_struct *mstruct;
-	struct serial_icounter_struct *sistruct;
 	DWORD ErrCode;
 	COMSTAT Stat;
+#ifdef TIOCGICOUNT
+	struct serial_icounter_struct *sistruct;
+#endif 
 
 	va_start(ap, request);
 	
@@ -1213,10 +1215,12 @@ int ioctl(int fd, int request, ...) {
 			On linux this fills a struct with all the line info
 			(data available, bytes sent, ...
 		*/
+#ifdef TIOCGICOUNT
 		case TIOCGICOUNT:
 			sistruct= va_arg(ap, struct  serial_icounter_struct *);
 			goto fail;
 		/* abolete ioctls */
+#endif /* TIOCGICOUNT */
 		case TIOCSERGWILD:
 		case TIOCSERSWILD:
 			fprintf(stderr, "TIOCSER[GS]WILD absolete\n");
@@ -1292,7 +1296,7 @@ serial_select()
 
    accept:      
    perform:     
-   return:      
+   return:      number of fd's changed on success or -1 on error.
    exceptions:  
    comments:    lcc has a select in winsock.h
 		trying to use the select() in wsock32.lib
@@ -1301,7 +1305,29 @@ serial_select()
 
 int  serial_select(int  n,  fd_set  *readfds,  fd_set  *writefds,
 			fd_set *exceptfds, struct timeval *timeout) {
-	return 1;
-	/* FIXME */
+
+	DWORD dwCommEvent;
+	int i;
+
+	printf("> select called  %i\n", n);
+	for( i = 0 ;i < 6; i++ )
+	{
+		if(! tl[i]->filename)
+			break;
+		printf( " %i %s\n", i, tl[i]->filename );
+	}
+	if ( !SetCommMask( tl[n-1]->hComm, EV_RXCHAR ) )
+		goto fail;
+	
+	if ( !WaitCommEvent( tl[ n-1 ]->hComm, &dwCommEvent, NULL ) )
+		goto fail;
+	printf("< select called success %i\n", n);
+	return(1);
+fail:
+
+	printf("< select called error %i\n", n);
+	set_errno( EBADFD );
+	return( -1 );
+	
 }
 #endif
