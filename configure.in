@@ -56,6 +56,7 @@ AC_SUBST(RXTX_PATH)
 JCL_PATH=lib
 TOP="`pwd`"
 
+
 [case "$host_os" in
 	*-gnu)
 	CFLAGS="$CFLAGS -D_POSIX_SOURCE";;
@@ -139,16 +140,16 @@ if test "$JPATH" = ""; then
 fi
 JAVANATINC="\$(JPATH)/`cd $JPATH; find ./include -name jni_md.h|sed s#jni_md\\\\.h##|sed s#\\\\.\\\\/## |head -n1`"
 if [ test `find $JPATH/include -name jni_md.h|wc -l` != "1" ]; then
-	echo
-	echo WARNING:  configure is having a hard time determining which 
-	echo directory contains the file jni_md.h.  Edit Makefile and fix the 
-	echo variable JAVANATINC to point to the correct directory.
-	echo
-	echo The following options are available:
-	find $JPATH/include -name jni_md.h|sed s#jni_md\.h##
-	echo
-	echo If there are more than one option available the first was selected. 
-	echo
+	echo 1>&2
+	echo WARNING:  configure is having a hard time determining which  1>&2
+	echo directory contains the file jni_md.h.  Edit Makefile and fix the  1>&2
+	echo variable JAVANATINC to point to the correct directory. 1>&2
+	echo 1>&2
+	echo The following options are available: 1>&2
+	find $JPATH/include -name jni_md.h|sed s#jni_md\.h## 1>&2
+	echo 1>&2
+	echo If there are more than one option available the first was selected.  1>&2
+	echo 1>&2
 	echo Press enter to continue.
 	read
 fi
@@ -166,22 +167,22 @@ public class conftest
 EOF
 
 $JPATH/bin/javac conftest.java
-echo -n checking os.name  " "
+echo -n checking os.name  " " 1>&6
 OS_NAME=`$JPATH/bin/java conftest "os.name"`
-echo $OS_NAME
-echo -n checking os.arch   " "
+echo $OS_NAME 1>&6
+echo -n checking os.arch   " " 1>&6
 OS_ARCH=`$JPATH/bin/java conftest "os.arch"`
-echo $OS_ARCH
-echo -n checking java.version   " "
+echo $OS_ARCH 1>&6
+echo -n checking java.version   " " 1>&6
 JAVA_VERSION=`$JPATH/bin/java conftest "java.version"`
-echo $JAVA_VERSION
-echo -n checking java.vendor " "
+echo $JAVA_VERSION 1>&6
+echo -n checking java.vendor " " 1>&6
 JAVA_VENDOR=`java conftest "java.vendor"`
-echo $JAVA_VENDOR
+echo $JAVA_VENDOR 1>&6
 
-echo -n checking os.version   " "
+echo -n checking os.version   " " 1>&6
 OS_VERSION=`uname -r`
-echo $OS_VERSION
+echo $OS_VERSION 1>&6
 rm -f conftest.java
 rm -f conftest.class
 
@@ -194,59 +195,58 @@ rm -f conftest.class
 function fix_parameters()
 {
 	if [ ! grep  "Driver=gnu.io.RXTXCommDriver" $1 &> /dev/null ]; then 
-		echo "------------------------------------------------------"
-		echo "RxTx requires the following information in"
-		echo " $1:"
-		echo
-		echo "Driver=gnu.io.RXTXCommDriver"
-		echo
-		echo "The command configure will use to fix this is:"
-		echo
-		echo "echo \"Driver=gnu.io.RXTXCommDriver\" > $1"
-		echo
-		echo "------------------------------------------------------"
+		echo "------------------------------------------------------" 1>&2
+		echo "RxTx requires the following information in" 1>&2
+		echo " $1:" 1>&2
+		echo 1>&2
+		echo "Driver=gnu.io.RXTXCommDriver" 1>&2
+		echo 1>&2
+		echo "The command configure will use to fix this is:" 1>&2
+		echo 1>&2
+		echo "echo \"Driver=gnu.io.RXTXCommDriver\" > $1" 1>&2
+		echo 1>&2
+		echo "------------------------------------------------------" 1>&2
 		echo -n "Is it ok to place it there now? [[y/n]] "
 		read REPLY
-		if [ test "$REPLY" = "y" || test "$REPLY" = "Y" ];then
-			echo "Driver=gnu.io.RXTXCommDriver" > $1;
+		if [ test "$REPLY" = "y" || test "$REPLY" = "Y" ];then 1>&2
+			echo "Driver=gnu.io.RXTXCommDriver" > $1; 1>&2
 		fi;
-
 	fi;
 }
 function check_prefix()
 {
 	if test $prefix != "/usr";then 
-		echo
-		echo "WARNING:  configure was not run with option --prefix=/usr"
-		echo "          Unless /usr/local/lib or the specified prefix is in" 
-		echo "          the linkers path this will cause problems later on."
-		echo
+		echo 1>&2
+		echo "WARNING:  configure was not run with option --prefix=/usr" 1>&2
+		echo "          Unless /usr/local/lib or the specified prefix is in"  1>&2
+		echo "          the linkers path this will cause problems later on." 1>&2
+		echo 1>&2
 		echo "          Press enter to continue."
-		read
+		read 
 	fi
 }
 function check_kernel_headers()
 {
 	if ! grep -q `uname -r` /usr/include/linux/version.h;then 
-		echo
-		echo "       WARNING:  Kernel include files do not match the current kernel"
-		echo
+		echo 1>&2
+		echo "       WARNING:  Kernel include files do not match the current kernel" 1>&2
+		echo 1>&2
 		echo "                 Press enter to continue." 
 		read
-	fi
+	fi 1>&2
 }
 function fix_comm_jar()
 {
 	if ! test -f $1;then
-		echo "------------------------------------------------------"
-		echo "The JCL extension to RxTx requires comm.jar"
-		echo "If you intend to use RxTx for commapi support comm.jar"
-		echo "needs to be located in $1"
-		echo
-		echo "You can either quit configure and place the jar in the"
-		echo "correct location or let this script do it."
-		echo 
-		echo "------------------------------------------------------"
+		echo "------------------------------------------------------" 1>&2
+		echo "The JCL extension to RxTx requires comm.jar" 1>&2
+		echo "If you intend to use RxTx for commapi support comm.jar" 1>&2
+		echo "needs to be located in $1" 1>&2
+		echo 1>&2
+		echo "You can either quit configure and place the jar in the" 1>&2
+		echo "correct location or let this script do it." 1>&2
+		echo  1>&2
+		echo "------------------------------------------------------" 1>&2
 		echo -n "Do you wish to [[Q]]uit or use the [[S]]cript? [[Q/S]] "
 		read REPLY
 		if [ test "$REPLY" = "q" || test "$REPLY" = "Q" ];then
@@ -258,6 +258,17 @@ function fix_comm_jar()
 				echo "Please enter the full path to comm.jar (example /home/fred/commapi/comm.jar):"
 				read FILE
 			done;
+			if grep -q Win32 $FILE;then 
+				echo 1>&2
+				echo WARNING: 1>&2
+				echo 1>&2
+				echo "I've detected A Windows version of comm.jar.   This is known to not work with"  1>&2
+				echo "rxtx on UNIX.  Go to  http://java.sun.com/products/javacomm/index.html and " 1>&2
+				echo "get the solaris-x86 CommAPI if your target is unix."  1>&2
+				echo  1>&2
+				echo "Press enter to continue."
+				read
+			fi 
 			echo -n "Is it ok to copy $FILE to $1?[[y/n]] "
 			read REPLY
 			if [ test "$REPLY" = "y" || test "$REPLY" = "Y" ];then
@@ -265,7 +276,7 @@ function fix_comm_jar()
 				return
 			fi;
 		fi;fi;
-		echo "configure is unable to continue.  Please try again or manual fix the problem."
+		echo "configure is unable to continue.  Please try again or manual fix the problem." 1>&2
 		exit
 	
 	fi;
@@ -318,7 +329,7 @@ Linux)
 		JCLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:$CLASSPATH"
 		JAVA_H_CLASSPATH="\$(JCLASSPATH)"
 		RXTX_PATH="\$(prefix)/lib/"
-		JAVAH_FIX="if [ ! \$(THREADS_FLAG) ] && [ ! -d com ]; then if [ ! -f \$(JPATH)/lib/comm.jar ]; then echo \"Please install comm.jar from CommAPI in \$(JPATH)/java/lib/\"; else \$(JAR) -xf \$(JPATH)/lib/comm.jar;  fi; fi;"
+		JAVAH_FIX="if [ ! \$(THREADS_FLAG) ] && [ ! -d com ]; then if [ ! -f \$(JPATH)/lib/comm.jar ]; then echo \"Please install comm.jar from CommAPI in \$(JPATH)/java/lib/ 1>&2\"; else \$(JAR) -xf \$(JPATH)/lib/comm.jar;  fi; fi;"
 		JCL_PATH="lib"
 		case $OS_VERSION in
 		2.2.*|2.3.*)
