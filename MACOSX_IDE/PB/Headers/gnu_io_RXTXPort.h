@@ -69,7 +69,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_open
  * Method:    nativeSetSerialPortParams
  * Signature: (IIII)V
  */
-JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_nativeSetSerialPortParams
+JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_nativeSetSerialPortParams
   (JNIEnv *, jobject, jint, jint, jint, jint);
 
 /*
