@@ -24,13 +24,13 @@ import java.lang.Math;
 
 /**
 * @author Trent Jarvi
-* @version %I%, %G%
+* @version $Name:  $
 * @since JDK1.0
 */
 
 final class Raw  extends  RawPort {
 
-	static String Version=$Name:  $;
+	static String Version=$Id: Raw.java,v 1.1.2.4 2000-09-20 00:24:12 jarvi Exp $;
 	static 
 	{
 		System.loadLibrary( "Raw" );
