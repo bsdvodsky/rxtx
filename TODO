@@ -11,6 +11,7 @@ ParallelPort support.  Needs some code.
 	The SerialPort code should help one get up to speed on implementing
 	files:
 		ParallelImp.c stubs + a copy of SerialImp.c
+                      A  large fraction of the stubs are filled in now.
 		ParallelImp.h
 		LPRPort.java simular to RXTXPort.java + stubs.
 
@@ -35,5 +36,8 @@ CommPortIdentifier support. Needs some code.
 backwards compatibility for older linux systems.
 ------------------
 non linux specific implementations
+------------------
+allow the library to catch sigint so it can shut down the port properly when
+sent
 ------------------
 Add more documentation.

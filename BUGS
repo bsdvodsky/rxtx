@@ -21,7 +21,7 @@ with the bug report.
    which machine type are you running on?  'uname -a'
    which jdk version.
        Linux users:  If your trying to use event notification, make sure
-       your using the latest native thread package and linux-2.2 kernel.
+       your using the native thread package and linux-2.2 kernel.
    which rxtx version.
    what version of libc are you using
    what cc are you using
@@ -39,8 +39,8 @@ not present please install them.
 
 Here's whats on my system for comparison.  Correct versions are important.
 
-   autoconf 2.12
-   automake 1.3
+   autoconf 2.13
+   automake 1.4
    libtool 1.2b
    make 3.76.1
 
@@ -51,7 +51,10 @@ Known Bugs.
 
 
 1.  There is no parallel support in rxtx.  Good project for a interested 
-    programmer.  It should not be too hard.  Give it a try!
+    programmer.  It should not be too hard.  Some initial support has been
+    added
 
-2.  This release has only been tested on linux in a limited scope.
+2.  This release has only been tested on linux.
+
+3.  The library does not handle SIGINT and clean up.
 

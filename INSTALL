@@ -22,12 +22,12 @@ For the methodical:
 
     The following packages are used on the test system:
 
-    autoconf-2.12
-    automake-1.3
+    autoconf-2.13
+    automake-1.4
     libtool-1.2b
     make-3.76.1
-    optional: CommAPI from sun.
-    jdk with native threads.  (strange javah problem with green threads)
+    CommAPI from sun. (unix version not Win32)
+    jdk 1.2 or 1.1.7
 
     RedHat users note that libtool is included in the distribution but not 
     installed by default.  It can be installed by placing disk 1 of the
@@ -43,7 +43,7 @@ For the methodical:
 
     mkdir build; cd build 
     in the following examples we will assume that the build directory is
-    in /blah/blah/blah/rxtx-version/build
+    in /...path.../rxtx-version/build
 
 3) CREATING THE MAKEFILE
    

@@ -1,11 +1,15 @@
 This package is not the result of one persons time.  Recognition is given
 to the following people for their assistance.
 
+Will Kassebaum <wrk@kassebaum.net>
+   Work on rxtx.spec
+
 Douglas Lau <douglau@earthlink.net>
-   Major Rewrite.  rxtx-1.3
+   Major Rewrite.  rxtx-1.3.  Multiple fixes and enhancments.
 
 Wayne Roberts  <wroberts1@home.com>
    Read Timeouts.  Thresholds.  event notification.   Linux kernel hacking.  
+   verification of rxtx with analysis equipment. 
 
 Yuen-Ping Leung <yuenping@semiotek.com>
    Fixes for FreeBSD support.

@@ -43,6 +43,8 @@ A note on hardware:
 Which device should you use?
 
   Linux serial ports should use /dev/ttyS?
+  specialx, cyclades and isdn4 linux have been reported to work.
+  as many as 64 ports have worked at one time.
   Irix serial ports use ttyd? ttym? ttyf?
   
 A note on JDK RPMS for linux users:  
