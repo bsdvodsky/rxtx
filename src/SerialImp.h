@@ -65,6 +65,10 @@
 
 struct event_info_struct
 {
+	int fd;
+	/* flags for events */
+	int eventflags[11];
+	
 	int initialised;
 	fd_set rfds;
 	struct timeval tv_sleep;
@@ -73,7 +77,7 @@ struct event_info_struct
 	char message[80];
 	int has_tiocsergetlsr;
 	int has_tiocgicount;
-	int fd;
+	int eventloop_interrupted;
 	JNIEnv *env;
 	jobject *jobj;
 	jclass jclazz;
@@ -82,6 +86,7 @@ struct event_info_struct
 #if defined(TIOCGICOUNT)
 	struct serial_icounter_struct osis;
 #endif /* TIOCGICOUNT */
+	struct event_info_struct *next, *prev;
 };
 
 /*  Ports known on the OS */
@@ -206,6 +211,7 @@ Trent
 #	define WRITE write
 #	define READ read
 #	define SELECT select
+/* #define TRACE */
 #ifdef TRACE
 #define ENTER(x) report("entering "x" \n");
 #define LEAVE(x) report("leaving "x" \n");
@@ -217,7 +223,7 @@ Trent
 #endif /* WIN32 */
 
 /* allow people to override the directories */
-
+/* #define USER_LOCK_DIRECTORY "/home/tjarvi/1.12/build" */
 #ifdef USER_LOCK_DIRECTORY
 #	define LOCKDIR USER_LOCK_DIRECTORY
 #endif /* USER_LOCK_DIRECTORY */
@@ -312,7 +318,7 @@ int translate_parity( JNIEnv *, tcflag_t *, jint );
 #endif
 void system_wait();
 void finalize_event_info_struct( struct event_info_struct * );
-int read_byte_array( int, unsigned char *, int, int );
+int read_byte_array( JNIEnv *, jobject *, int, unsigned char *, int, int );
 int get_java_var( JNIEnv *, jobject, char *, char * );
 jboolean is_interrupted( struct event_info_struct * );
 int send_event(struct event_info_struct *, jint, int );
