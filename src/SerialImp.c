@@ -252,18 +252,54 @@ JNIEXPORT void JNICALL RXTXPort(nativeSetSerialPortParams)(
 	struct termios ttyset;
 	int fd = get_java_var( env, jobj,"fd","I" );
 	int cspeed = translate_speed( env, speed );
-	if( !cspeed ) return;
-	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
-	if( !translate_data_bits( env, &(ttyset.c_cflag), dataBits ) ) return;
-	if( !translate_stop_bits( env, &(ttyset.c_cflag), stopBits ) ) return;
-	if( !translate_parity( env, &(ttyset.c_cflag), parity ) ) return;
+	if( !cspeed )
+	{
+		fprintf(stderr, "Invalid Speed Selected\n");
+		return;
+	}
+	if( tcgetattr( fd, &ttyset ) < 0 )
+	{
+		fprintf(stderr, "Cannot Get Serial Port Settings\n");
+		goto fail;
+	}
+	if( !translate_data_bits( env, &(ttyset.c_cflag), dataBits ) )
+	{
+		fprintf(stderr, "Invalid Data Bits Selected\n");
+		return;
+	}
+	if( !translate_stop_bits( env, &(ttyset.c_cflag), stopBits ) )
+	{
+		fprintf(stderr, "Invalid Stop Bits Selected\n");
+		return;
+	}
+	if( !translate_parity( env, &(ttyset.c_cflag), parity ) )
+	{
+		fprintf(stderr, "Invalid Parity Selected\n");
+		return;
+	}
 #ifdef __FreeBSD__
-	if( cfsetspeed( &ttyset, cspeed ) < 0 ) goto fail;
+	if( cfsetspeed( &ttyset, cspeed ) < 0 )
+	{
+		fprintf(stderr, "Cannot Set Speed\n");
+		goto fail;
+	}
 #else
-	if( cfsetispeed( &ttyset, cspeed ) < 0 ) goto fail;
-	if( cfsetospeed( &ttyset, cspeed ) < 0 ) goto fail;
+	if( cfsetispeed( &ttyset, cspeed ) < 0 )
+	{
+		fprintf(stderr, "Cannot Set Input Speed\n");
+		goto fail;
+	}
+	if( cfsetospeed( &ttyset, cspeed ) < 0 )
+	{
+		fprintf(stderr, "Cannot Set Output Speed\n");
+		goto fail;
+	}
 #endif  /* __FreeBSD__ */
-	if( tcsetattr( fd, TCSANOW, &ttyset ) < 0 ) goto fail;
+	if( tcsetattr( fd, TCSANOW, &ttyset ) < 0 )
+	{
+		fprintf(stderr, "Cannot Set Serial Port Parameters.\n");
+		goto fail;
+	}
 	return;
 
 fail:
