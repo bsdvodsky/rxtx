@@ -966,7 +966,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 		return; 
 	}
 #else
-	if( ioctl( fd, TIOCMGET, &omflags) <0 {
+	if( ioctl( fd, TIOCMGET, &omflags) <0 ) {
 		fprintf( stderr, "Port does not support events\n" );
  		return;
 	}
@@ -1149,7 +1149,22 @@ JNIEXPORT jboolean  JNICALL Java_gnu_io_RXTXCommDriver_IsDeviceGood(JNIEnv *env,
 #if defined(__linux__)
 	if(!strcmp(name,"tty0")|| !strcmp(name,"ttyd")||
 		!strcmp(name,"ttyq")|| !strcmp(name,"ttym")||
-		!strcmp(name,"ttyf")|| !strcmp(name,"cuaa"))
+		!strcmp(name,"ttyf")|| !strcmp(name,"cuaa")
+		)
+	{
+#ifdef DEBUG
+		printf("DEBUG: Ignoring Port %s\*\n",name);
+#endif
+		return(JNI_FALSE);
+	}
+#endif
+#if defined(__FreeBSD__)
+	if(!strcmp(name,"tty0")|| !strcmp(name,"ttyd")||
+		!strcmp(name,"ttyq")|| !strcmp(name,"ttym")||
+		!strcmp(name,"ttyf")|| !strcmp(name,"ttyS")||
+		!strcmp(name,"ttyI")|| !strcmp(name,"ttyW")||
+		!strcmp(name,"ttyC")|| !strcmp(name,"ttyR")
+		)
 	{
 #ifdef DEBUG
 		printf("DEBUG: Ignoring Port %s\*\n",name);

@@ -129,9 +129,13 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isPaperOut(JNIEnv *env,
 
 	int status;
 	int fd = get_java_fd( env, jobj );
-
+#if defined (__linux__)
 	ioctl(fd, LPGETSTATUS,&status);
 	return( status & LP_NOPA ? JNI_TRUE : JNI_FALSE );
+#else
+/*  FIXME??  */
+	return(JNI_TRUE);
+#endif
 }
 /*----------------------------------------------------------
 LPRPort.isPrinterBusy
@@ -145,7 +149,11 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isPrinterBusy(JNIEnv *env,
 	jobject jobj){
 	int status;
 	int fd = get_java_fd( env, jobj );
+#if defined (__linux__)
 	ioctl(fd, LPGETSTATUS, &status);
+#else
+/*  FIXME??  */
+#endif
 #if defined(__linux__)
 	return( status & LP_BUSY ? JNI_TRUE : JNI_FALSE );
 #endif
@@ -166,8 +174,13 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isPrinterError(JNIEnv *env,
 	jobject jobj){
 	int status;
 	int fd = get_java_fd( env, jobj );
+#if defined (__linux__)
 	ioctl(fd, LPGETSTATUS, &status);
 	return( status & LP_ERR ? JNI_TRUE : JNI_FALSE );
+#else
+/*  FIXME??  */
+	return(JNI_FALSE);
+#endif
 }
 /*----------------------------------------------------------
 LPRPort.isPrinterSelected
@@ -181,8 +194,13 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isPrinterSelected(JNIEnv *env,
 	jobject jobj){
 	int status;
 	int fd = get_java_fd( env, jobj );
+#if defined (__linux__)
 	ioctl(fd, LPGETSTATUS, &status);
 	return( status & LP_SELEC ? JNI_TRUE : JNI_FALSE );
+#else
+/*  FIXME??  */
+	return(JNI_FALSE);
+#endif
 }
 /*----------------------------------------------------------
 LPRPort.isPrinterTimedOut
@@ -198,8 +216,8 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isPrinterTimedOut(JNIEnv *env,
 	jobject jobj){
 	int status;
 	int fd = get_java_fd( env, jobj );
-	ioctl(fd, LPGETSTATUS, &status);
 #if defined(__linux__)
+	ioctl(fd, LPGETSTATUS, &status);
 	return( status & LP_BUSY ? JNI_TRUE : JNI_FALSE );
 #endif
 #if defined(__FreeBSD__)
@@ -531,7 +549,11 @@ JNIEXPORT void JNICALL Java_gnu_io_LPRPort_eventLoop( JNIEnv *env,
 		}
 		while (ret < 0 && errno == EINTR);
 		if( ret < 0 ) break;
+#if defined(__linux__)
 		if( ioctl( fd, LPGETSTATUS, &pflags ) ) break;
+#else
+/*  FIXME??  */
+#endif
 
 /*
                        PAR_EV_BUFFER:
@@ -549,13 +571,18 @@ JNIEXPORT void JNICALL Java_gnu_io_LPRPort_eventLoop( JNIEnv *env,
            posix documentation on this.
 		if (pflags&LP_ACK)   
 			(*env)->CallVoidMethod( env, jobj, method, (jint)PAR_EV_ERROR, JNI_TRUE );
-*/  /* unchanged input, active low */
+*/  
+#if defined (__linux__)
+/* unchanged input, active low */
 		if (pflags&LP_NOPA)   /* unchanged input, active high */
 			(*env)->CallVoidMethod( env, jobj, method, (jint)PAR_EV_ERROR, JNI_TRUE );
 		if (pflags&LP_SELEC)  /* unchanged input, active high */
 			(*env)->CallVoidMethod( env, jobj, method, (jint)PAR_EV_ERROR, JNI_TRUE );
 		if (pflags&LP_ERR)  /* unchanged input, active low */
 			(*env)->CallVoidMethod( env, jobj, method, (jint)PAR_EV_ERROR, JNI_TRUE );
+#else
+/*  FIXME??  */
+#endif
 		interrupted = (*env)->CallStaticBooleanMethod( env, jthread, interrupt );
 	}
 	return;

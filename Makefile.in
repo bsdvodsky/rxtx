@@ -148,7 +148,7 @@ JAR = $(JPATH)/bin/jar
 JAVADOC = $(JPATH)/bin/javadoc $(JCLASSPATH)
 LIBTOOL = $(SHELL) $(TOP)/libtool
 LINK = $(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) -version-info 1:0:1
-SERIAL_HEADER = $(TOP)/$(target_alias)/gnu_io_RXTXPort.h 
+SERIAL_HEADER = $(TOP)/$(target_alias)/gnu_io_RXTXPort.h $(TOP)/$(target_alias)/gnu_io_RXTXCommDriver.h
 PARALLEL_HEADER = $(TOP)/$(target_alias)/gnu_io_LPRPort.h
 CLEANFILES = $(TOP)/*.class $(TOP)/gnu/io/*.class $(TOP)/jcl.jar
 SUFFIXES = .class .h
