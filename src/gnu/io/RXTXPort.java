@@ -298,12 +298,13 @@ final class RXTXPort extends SerialPort {
 		setDSR(false);
 		nativeClose();
 		super.close();
+		fd = 0;
 	}
 
 
 	/** Finalize the port */
 	protected void finalize() {
-		close();
+		if( fd > 0 ) close();
 	}
 
 
