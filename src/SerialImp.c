@@ -5843,14 +5843,14 @@ int different_from_LOCKDIR(const char* ld)
     const char *lockprefixes[] = { "LCK..", "lk..", "LK.", NULL };
     char *p, file[80], pid_buffer[20], message[80];
     int i = 0, j, k, fd, pid;
-    struct stat buf;
-    struct stat buf2;
+    struct stat buf, buf2, lockbuf;
 
     j = strlen (port_filename);
     p = (char *) port_filename + j;
     while (*(p - 1) != '/' && j-- != 1)
       p--;
 
+    stat(LOCKDIR, &lockbuf);
     while (lockdirs[i])
       {
 	/*
@@ -5862,6 +5862,7 @@ int different_from_LOCKDIR(const char* ld)
 	   if it is there is it not the expected lock dir?
 	 */
 	if (!stat (lockdirs[i], &buf2) &&
+            buf2.st_ino != lockbuf.st_ino &&
 	    strncmp (lockdirs[i], LOCKDIR, strlen (lockdirs[i])))
 	  {
 	    j = strlen (port_filename);
