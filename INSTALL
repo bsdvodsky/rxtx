@@ -5,7 +5,7 @@ make a note and email the details to jarvi@ezlink.com.
 
 This is a developers release.  Current focus is on linux-2.2.  Work 
 is required to port this to other OS's.  There should be few problems
-with linux serial communication at this time.
+with linux serial communication at this time.  
 
 For the impatient:
 
@@ -44,7 +44,7 @@ For the methodical:
 	javax.comm.properties contains one line:
 		Driver=gnu.io.RXTXCommDriver
 	jkd 1.1.* does not search for comm.jar in  the above dir.  You will
-	need to point your CLASSPATH to comm.jar before building.  Also, you
+	need to point your CLASSPATH to comm.jar after building.  Also, you
 	will want to point your CLASSPATH to jcl.jar after building the package.
 
     RedHat users note that libtool is included in the distribution but not 
@@ -54,7 +54,7 @@ For the methodical:
       # mount /mnt/cdrom
       # rpm --upgrade /mnt/cdrom/RPMS/libtool*
 
-    Double check that java is in your PATH.  Life will be hell without it.
+    Double check that java is in your PATH.  Life will be tough without it.
     'which java' (this is how we find CLASSPATH,JAVAINCLUDE, JAVANATINC)
    
 2) CREATE THE BUILD DIRECTORY
@@ -155,7 +155,7 @@ For the methodical:
 	/usr/local/java/lib/jcl.jar and
 	/usr/lib/libSerial.so.
 
-	jdk-1.1 users remember to point your CLASSPATH to jcl.jar.  
+	jdk-1.1 users remember to point your CLASSPATH to jcl.jar and comm.jar. 
 	The libSerial.so is placed in /usr/lib so people dont have to
 	change with their LD_LIBRARY_PATH.  This may offend some people.
 	Remember to check /usr/local/java/lib/javax.comm.properties.

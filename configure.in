@@ -198,7 +198,7 @@ Linux)
 		case $OS_NAME in
 		Linux)
 			RXTX_PATH="\$(prefix)/lib/"
-			JAVAH_FIX="if [ ! \$(THREADS_FLAG) ] && [ ! -d com ]; then if [ ! -f \$(JPATH)/lib/comm.jar ]; then echo \"Please install comm.jar from CommAPI in \$(JPATH)/java/lib/\"; else \$(JAR) -xf \$(JPATH)/lib/comm.jar;  fi; fi"
+			JAVAH_FIX="if [ ! \$(THREADS_FLAG) ] && [ ! -d com ]; then if [ ! -f \$(JPATH)/lib/comm.jar ]; then echo \"Please install comm.jar from CommAPI in \$(JPATH)/java/lib/\"; else \$(JAR) -xf \$(JPATH)/lib/comm.jar;  fi; fi;"
 			JAVANATINC="\$(JPATH)/include/genunix"
 			JCL_PATH="lib"
 			case $OS_VERSION in
