@@ -1505,6 +1505,7 @@ int fhs_lock(const char *filename)
 	int i,j,fd, pid;
 	char lockinfo[12], file[80], pid_buffer[20], message[80],*p;
 	struct stat buf;
+	struct stat buf2;
 	const char *lockdirs[]={ "/etc/locks", "/usr/spool/kermit",
 		"/usr/spool/locks", "/usr/spool/uucp", "/usr/spool/uucp/",
 		"/usr/spool/uucp/LCK", "/var/lock", "/var/lock/modem",
@@ -1552,8 +1553,12 @@ int fhs_lock(const char *filename)
 	j=0;
 	while(lockdirs[j])
 	{
-		if(strncmp(lockdirs[j],LOCKDIR,strlen(lockdirs[j])))
+	        if (stat(lockdirs[j],&buf2) == 0)
 		{
+	       
+		        if((buf2.st_dev != buf.st_dev)
+                           || (buf2.st_ino != buf.st_ino))
+			{
 			i=strlen(filename);
 			p=(char *) filename+i;
 			while(*(p-1)!='/' && i-- !=1) p--;
@@ -1564,6 +1569,7 @@ int fhs_lock(const char *filename)
 				printf("RXTX Error:  Unexpected lock file: %s\n Please report to the RXTX developers\n", file);
 				printf("-----------------------------------\n");
 				return 0;
+				}
 				
 			}
 			
