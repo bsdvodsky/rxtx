@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
-|   Copyright 1997-2002 by Trent Jarvi taj@www.linux.org.uk
+|   Copyright 1997-2003 by Trent Jarvi taj@www.linux.org.uk.
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Lesser General Public
@@ -427,7 +427,7 @@ JNIEXPORT void JNICALL LPRPort(writeByte)( JNIEnv *env,
 	int fd = get_java_var( env, jobj,"fd","I" );
 
 #ifdef WIN32
-	DWORD countWritten; //Fixme, should be a loop until all is written
+	DWORD countWritten; /* Fixme, should be a loop until all is written */
 	if( WriteFile( (HANDLE)fd, &byte, sizeof( unsigned char ), &countWritten, NULL ) < 0 ) return;
 #else
 	if( write( fd, &byte, sizeof( unsigned char ) ) >= 0 ) return;
@@ -450,7 +450,7 @@ JNIEXPORT void JNICALL LPRPort(writeArray)( JNIEnv *env,
 	jobject jobj, jbyteArray jbarray, jint offset, jint count )
 {
 #ifdef WIN32
-	DWORD countWritten; //Fixme, should be a loop until all is written
+	DWORD countWritten; /* Fixme, should be a loop until all is written */
 	COMMTIMEOUTS timeouts;
 	int errorCount = 0;
 #endif
@@ -461,19 +461,23 @@ JNIEXPORT void JNICALL LPRPort(writeArray)( JNIEnv *env,
 	for( i = 0; i < count; i++ ) bytes[ i ] = body[ i + offset ];
 	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
 #ifdef WIN32
-	// we set a timeout because all calls are sequentiell (also with asynchron)
-	// this means that the default timeout of unlimited
-	// blocks all calls (also close and status request) if the device is down
+	/*
+	we set a timeout because all calls are sequentiell (also with asynchron)
+	 this means that the default timeout of unlimited
+	blocks all calls (also close and status request) if the device is down
+	*/
 	GetCommTimeouts( (HANDLE)fd, &timeouts );
 	timeouts.WriteTotalTimeoutMultiplier = 0;
-	timeouts.WriteTotalTimeoutConstant = 2000; // 2000 is the min value for the default Windows NT and Windows 2000 driver
+	timeouts.WriteTotalTimeoutConstant = 2000; /*  2000 is the min value for the default Windows NT and Windows 2000 driver */
 	SetCommTimeouts( (HANDLE)fd, &timeouts );
 	while( count > 0 ){
 		if(!WriteFile( (HANDLE)fd, bytes, count, &countWritten, NULL ) && countWritten == 0){
-			// this are 20 * 2 seconds, in this time a printer (or other parallel device)
-			// should solv all problems like buffer full, etc
+			/*
+			this are 20 * 2 seconds, in this time a printer (or other parallel device)
+			should solv all problems like buffer full, etc
+			*/
 			if(errorCount++ < 20){
-				Sleep( 20 ); // make a small pause to execute all other requests in all other threads
+				Sleep( 20 ); /* make a small pause to execute all other requests in all other threads */
 				continue;
 			}
 			throw_java_exception_system_msg( env, IO_EXCEPTION, "writeArray" );
@@ -856,7 +860,7 @@ void throw_java_exception( JNIEnv *env, char *exc, char *foo, char *msg )
 		(*env)->ExceptionClear( env );
 		return;
 	}
-	// reduce the message size if it to large for the message buffer
+	/* reduce the message size if it to large for the message buffer */
 	if(MSG_SIZE < (strlen( msg ) + strlen(foo) + 5)){
 		msg[ MSG_SIZE - strlen(foo) - 5] = 0;
 	}

@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
-|   Copyright 1997-2002 by Trent Jarvi taj@www.linux.org.uk
+|   Copyright 1997-2003 by Trent Jarvi taj@www.linux.org.uk.
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Lesser General Public
@@ -359,12 +359,12 @@ struct timeval snow, enow, seloop, eeloop;
 #endif /* UUCP */
 
 /* java exception class names */
-//#define UNSUPPORTED_COMM_OPERATION "javax/comm/UnsupportedCommOperationException"
+/* define UNSUPPORTED_COMM_OPERATION "javax.comm/UnsupportedCommOperationException" */
 #define UNSUPPORTED_COMM_OPERATION "UnsupportedCommOperationException"
 #define ARRAY_INDEX_OUT_OF_BOUNDS "java/lang/ArrayIndexOutOfBoundsException"
 #define OUT_OF_MEMORY "java/lang/OutOfMemoryError"
 #define IO_EXCEPTION "java/io/IOException"
-#define PORT_IN_USE_EXCEPTION "javax/comm/PortInUseException"
+#define PORT_IN_USE_EXCEPTION "javax.comm/PortInUseException"
 
 /* some popular releases of Slackware do not have SSIZE_MAX */
 

@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
-|   Copyright 1997-2002 by Trent Jarvi taj@www.linux.org.uk
+|   Copyright 1997-2003 by Trent Jarvi taj@www.linux.org.uk.
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Lesser General Public
@@ -44,6 +44,7 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
+
 /* javax.comm.ParallelPort constants */
 /*  this appears to be handled in /usr/src/linux/misc/parport_pc.c */
 #define LPT_MODE_ANY	0
@@ -70,11 +71,11 @@
 #define PAR_EV_BUFFER	2
 
 /* java exception class names */
-#define UNSUPPORTED_COMM_OPERATION "javax/comm/UnsupportedCommOperationException"
+#define UNSUPPORTED_COMM_OPERATION "javax.comm/UnsupportedCommOperationException"
 #define ARRAY_INDEX_OUT_OF_BOUNDS "java/lang/ArrayIndexOutOfBoundsException"
 #define OUT_OF_MEMORY "java/lang/OutOfMemoryError"
 #define IO_EXCEPTION "java/io/IOException"
-#define PORT_IN_USE_EXCEPTION "javax/comm/PortInUseException"
+#define PORT_IN_USE_EXCEPTION "javax.comm/PortInUseException"
 
 /*
 Flow Control defines inspired by reading how mgetty by Gert Doering does it

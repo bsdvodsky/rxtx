@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
-|   Copyright 1997-2002 by Trent Jarvi taj@www.linux.org.uk
+|   Copyright 1997-2003 by Trent Jarvi taj@www.linux.org.uk.
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Lesser General Public
@@ -45,12 +45,12 @@
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
 package gnu.io;
+import javax.comm.*;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.util.TooManyListenersException;
 import java.lang.Math;
-import javax.comm.*;
 
 /**
 * An extension of javax.comm.SerialPort
@@ -127,8 +127,13 @@ final public class RXTXPort extends SerialPort
 	private native synchronized int open( String name )
 		throws PortInUseException;
 
+
+	/* dont close the file while accessing the fd */
+	int IOLocked = 0;
+
 	/** File descriptor */
 	private int fd = 0;
+
 	/** a pointer to the event info structure used to share information
 	    between threads so write threads can send output buffer empty
 	    from a pthread if need be.
@@ -588,6 +593,8 @@ final public class RXTXPort extends SerialPort
 	protected native int readByte() throws IOException;
 	protected native int readArray( byte b[], int off, int len )
 		throws IOException;
+	protected native int readTerminatedArray( byte b[], int off, int len, byte t[] )
+		throws IOException;
 
 
 	/** Serial Port Event listener */
@@ -871,6 +878,7 @@ final public class RXTXPort extends SerialPort
 		Runtime.getRuntime().gc();
 		MonitorThreadLock = false;
 		MonitorThreadAlive=false;
+		monThreadisInterrupted=true;
 		z.reportln( "RXTXPort:removeEventListener() returning");
 	}
 	/**
@@ -887,7 +895,7 @@ final public class RXTXPort extends SerialPort
 		while( MonitorThreadLock )
 		{
 			try {
-				Thread.sleep(100);
+				Thread.sleep(5);
 			} catch( Exception e ) {}
 		}
 	}
@@ -1051,6 +1059,14 @@ final public class RXTXPort extends SerialPort
 			z.reportln( "RXTXPort:close( " + this.name + " )"); 
 		if( closeLock ) return;
 		closeLock = true;
+		while( IOLocked > 0 )
+		{
+			if( debug )
+				z.reportln("IO is locked " + IOLocked);
+			try {
+				Thread.sleep(500);
+			} catch( Exception e ) {}
+		}
 		if ( fd <= 0 )
 		{
 			z.reportln(  "RXTXPort:close detected bad File Descriptor" );
@@ -1086,7 +1102,12 @@ final public class RXTXPort extends SerialPort
 	{
 		if (debug)
 			z.reportln( "RXTXPort:finalize()");
-		if( fd > 0 ) close();
+		if( fd > 0 )
+		{
+			if (debug)
+				z.reportln( "RXTXPort:calling close()");
+			close();
+		}
 		z.finalize();
 	}
 
@@ -1102,17 +1123,21 @@ final public class RXTXPort extends SerialPort
 			if (debug_write)
 				z.reportln( "RXTXPort:SerialOutputStream:write(int)");
 			if( speed == 0 ) return;
-	/* hmm this turns out to be a very bad idea
 			if ( monThreadisInterrupted == true )
 			{
-				throw new IOException( "Port has been Closed" );
+				return;
 			}
-	*/
+			IOLocked++;
 			waitForTheNativeCodeSilly();
-			if ( fd == 0 ) throw new IOException();
+			if ( fd == 0 )
+			{
+				IOLocked--;
+				throw new IOException();
+			}
 			writeByte( b, monThreadisInterrupted );
 			if (debug_write)
 				z.reportln( "Leaving RXTXPort:SerialOutputStream:write( int )");
+			IOLocked--;
 		}
 	/**
 	*  @param b[]
@@ -1125,15 +1150,15 @@ final public class RXTXPort extends SerialPort
 				z.reportln( "Entering RXTXPort:SerialOutputStream:write(" + b.length + ") "/* + new String(b)*/ );
 			}
 			if( speed == 0 ) return;
-	/* hmm this turns out to be a very bad idea
 			if ( monThreadisInterrupted == true )
 			{
-				throw new IOException( "Port has been Closed" );
+				return;
 			}
-	*/
 			if ( fd == 0 ) throw new IOException();
+			IOLocked++;
 			waitForTheNativeCodeSilly();
 			writeArray( b, 0, b.length, monThreadisInterrupted );
+			IOLocked--;
 			if (debug_write)
 				z.reportln( "Leaving RXTXPort:SerialOutputStream:write(" +b.length  +")");
 		}
@@ -1161,16 +1186,16 @@ final public class RXTXPort extends SerialPort
 				z.reportln( "Entering RXTXPort:SerialOutputStream:write(" + send.length + " " + off + " " + len + " " +") " /*+  new String(send) */ );
 			}
 			if ( fd == 0 ) throw new IOException();
-	/* hmm this turns out to be a very bad idea
 			if ( monThreadisInterrupted == true )
 			{
-				throw new IOException( "Port has been Closed" );
+				return;
 			}
-	*/
+			IOLocked++;
 			waitForTheNativeCodeSilly();
 			writeArray( send, 0, len, monThreadisInterrupted );
 			if( debug_write )
 				z.reportln( "Leaving RXTXPort:SerialOutputStream:write(" + send.length + " " + off + " " + len + " " +") "  /*+ new String(send)*/ );
+			IOLocked--;
 		}
 	/**
 	*/
@@ -1180,14 +1205,13 @@ final public class RXTXPort extends SerialPort
 				z.reportln( "RXTXPort:SerialOutputStream:flush() enter");
 			if( speed == 0 ) return;
 			if ( fd == 0 ) throw new IOException();
-	/* hmm this turns out to be a very bad idea
 			if ( monThreadisInterrupted == true )
 			{
+			if (debug)
+				z.reportln( "RXTXPort:SerialOutputStream:flush() Leaving Interrupted");
 				return;
-				// FIXME Trent this breaks
-				//throw new IOException( "flush() Port has been Closed" );
 			}
-	*/
+			IOLocked++;
 			waitForTheNativeCodeSilly();
 			/* 
 			   this is probably good on all OS's but for now
@@ -1195,6 +1219,7 @@ final public class RXTXPort extends SerialPort
 			*/
 			if ( nativeDrain( monThreadisInterrupted ) )
 				sendEvent( SerialPortEvent.OUTPUT_BUFFER_EMPTY, true );
+			IOLocked--;
 			if (debug)
 				z.reportln( "RXTXPort:SerialOutputStream:flush() leave");
 		}
@@ -1223,12 +1248,21 @@ final public class RXTXPort extends SerialPort
 			if (debug_read)
 				z.reportln( "RXTXPort:SerialInputStream:read() called");
 			if ( fd == 0 ) throw new IOException();
-			waitForTheNativeCodeSilly();
 			if ( monThreadisInterrupted )
+			{
 				z.reportln( "+++++++++ read() monThreadisInterrupted" );
-			int result = readByte();
+			}
+			IOLocked++;
 			if (debug_read_results)
-				z.reportln(  "RXTXPort:SerialInputStrea:read() returns byte = " + result );
+				z.reportln(  "RXTXPort:SerialInputStream:read() L" );
+			waitForTheNativeCodeSilly();
+			if (debug_read_results)
+				z.reportln(  "RXTXPort:SerialInputStream:read() N" );
+			int result = readByte();
+			IOLocked--;
+			if (debug_read_results)
+				//z.reportln(  "RXTXPort:SerialInputStream:read() returns byte = " + result );
+				z.reportln(  "RXTXPort:SerialInputStream:read() returns" );
 			return( result );
 		}
 	/**
@@ -1249,16 +1283,16 @@ final public class RXTXPort extends SerialPort
 			int result;
 			if (debug_read)
 				z.reportln( "RXTXPort:SerialInputStream:read(" + b.length + ") called");
-	/* hmm this turns out to be a very bad idea
 			if ( monThreadisInterrupted == true )
 			{
-				throw new IOException( "Port has been Closed" );
+				return(0);
 			}
-	*/
+			IOLocked++;
 			waitForTheNativeCodeSilly();
 			result = read( b, 0, b.length);
 			if (debug_read_results)
 				z.reportln(  "RXTXPort:SerialInputStream:read() returned " + result + " bytes" );
+			IOLocked--;
 			return( result );
 		}
 /*
@@ -1292,6 +1326,8 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 			 */
 			if ( fd == 0 )
 			{
+				if (debug_read)
+					z.reportln( "RXTXPort:SerialInputStream:read() fd == 0");
 				z.reportln("+++++++ IOException()\n");
 				throw new IOException();
 			}
@@ -1299,20 +1335,28 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 			if( b==null )
 			{
 				z.reportln("+++++++ NullPointerException()\n");
+				if (debug_read)
+					z.reportln( "RXTXPort:SerialInputStream:read() b == 0");
 				throw new NullPointerException();
 			}
 
 			if( (off < 0) || (len < 0) || (off+len > b.length))
 			{
 				z.reportln("+++++++ IndexOutOfBoundsException()\n");
+				if (debug_read)
+					z.reportln( "RXTXPort:SerialInputStream:read() off < 0 ..");
 				throw new IndexOutOfBoundsException();
 			}
 
 			/*
 			 * Return immediately if len==0
 			 */
-			if( len==0 ) return 0;
-
+			if( len==0 )
+			{
+				if (debug_read)
+					z.reportln( "RXTXPort:SerialInputStream:read() off < 0 ..");
+				return 0;
+			}
 			/*
 			 * See how many bytes we should read
 			 */
@@ -1342,16 +1386,121 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 			 */
 				Minimum = Math.min(Minimum, threshold);
 			}
-	/* hmm this turns out to be a very bad idea
 			if ( monThreadisInterrupted == true )
 			{
-				throw new IOException( "Port has been Closed" );
+				if (debug_read)
+					z.reportln( "RXTXPort:SerialInputStream:read() Interrupted");
+				return(0);
 			}
-	*/
+			IOLocked++;
 			waitForTheNativeCodeSilly();
 			result = readArray( b, off, Minimum);
 			if (debug_read_results)
 				z.reportln( "RXTXPort:SerialInputStream:read(" + b.length + " " + off + " " + len + ") returned " + result + " bytes"  /*+ new String(b) */);
+			IOLocked--;
+			return( result );
+		}
+
+	/**
+	*  @param b[]
+	*  @param off
+	*  @param len
+	*  @param t[]
+	*  @return int  number of bytes read
+	*  @throws IOException
+
+	   We are trying to catch the terminator in the native code
+	   Right now it is assumed that t[] is an array of 2 bytes.
+	
+	   if the read encounters the two bytes, it will return and the
+	   array will contain the terminator.  Otherwise read behavior should
+	   be the same as read( b[], off, len ).  Timeouts have not been well
+	   tested.
+	*/
+
+		public synchronized int read( byte b[], int off, int len, byte t[] )
+			throws IOException
+		{
+			if (debug_read)
+				z.reportln( "RXTXPort:SerialInputStream:read(" + b.length + " " + off + " " + len + ") called" /*+ new String(b) */ );
+			int result;
+			/*
+			 * Some sanity checks
+			 */
+			if ( fd == 0 )
+			{
+				if (debug_read)
+					z.reportln( "RXTXPort:SerialInputStream:read() fd == 0");
+				z.reportln("+++++++ IOException()\n");
+				throw new IOException();
+			}
+
+			if( b==null )
+			{
+				z.reportln("+++++++ NullPointerException()\n");
+				if (debug_read)
+					z.reportln( "RXTXPort:SerialInputStream:read() b == 0");
+				throw new NullPointerException();
+			}
+
+			if( (off < 0) || (len < 0) || (off+len > b.length))
+			{
+				z.reportln("+++++++ IndexOutOfBoundsException()\n");
+				if (debug_read)
+					z.reportln( "RXTXPort:SerialInputStream:read() off < 0 ..");
+				throw new IndexOutOfBoundsException();
+			}
+
+			/*
+			 * Return immediately if len==0
+			 */
+			if( len==0 )
+			{
+				if (debug_read)
+					z.reportln( "RXTXPort:SerialInputStream:read() off < 0 ..");
+				return 0;
+			}
+			/*
+			 * See how many bytes we should read
+			 */
+			int Minimum = len;
+
+			if( threshold==0 )
+			{
+			/*
+			 * If threshold is disabled, read should return as soon
+			 * as data are available (up to the amount of available
+			 * bytes in order to avoid blocking)
+			 * Read may return earlier depending of the receive time
+			 * out.
+			 */
+				int a = nativeavailable();
+				if( a == 0 )
+					Minimum = 1;
+				else
+					Minimum = Math.min( Minimum, a );
+			}
+			else
+			{
+			/*
+			 * Threshold is enabled. Read should return when
+			 * 'threshold' bytes have been received (or when the
+			 * receive timeout expired)
+			 */
+				Minimum = Math.min(Minimum, threshold);
+			}
+			if ( monThreadisInterrupted == true )
+			{
+				if (debug_read)
+					z.reportln( "RXTXPort:SerialInputStream:read() Interrupted");
+				return(0);
+			}
+			IOLocked++;
+			waitForTheNativeCodeSilly();
+			result = readTerminatedArray( b, off, Minimum, t );
+			if (debug_read_results)
+				z.reportln( "RXTXPort:SerialInputStream:read(" + b.length + " " + off + " " + len + ") returned " + result + " bytes"  /*+ new String(b) */);
+			IOLocked--;
 			return( result );
 		}
 	/**
@@ -1360,18 +1509,18 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 	*/
 		public synchronized int available() throws IOException
 		{
-	/* hmm this turns out to be a very bad idea
 			if ( monThreadisInterrupted == true )
 			{
-				throw new IOException( "Port has been Closed" );
+				return(0);
 			}
-	*/
 			if ( debug_verbose )
 				z.reportln( "RXTXPort:available() called" );
+			IOLocked++;
 			int r = nativeavailable();
 			if ( debug_verbose )
 				z.reportln( "RXTXPort:available() returning " +
 					r );
+			IOLocked--;
 			return r;
 		}
 	}
@@ -1407,7 +1556,7 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 				z.reportln( "RXTXPort:MontitorThread:run()"); 
 			monThreadisInterrupted=false;
 			eventLoop();
-
+			MonitorThreadCloseLock = false;
 			if (debug)
 				z.reportln( "eventLoop() returned"); 
 		}

@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
-|   Copyright 1997-2002 by Trent Jarvi taj@www.linux.org.uk
+|   Copyright 1997-2003 by Trent Jarvi taj@www.linux.org.uk.
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Lesser General Public
@@ -1274,6 +1274,11 @@ JNIEXPORT void JNICALL RXTXPort(writeByte)( JNIEnv *env,
 		report( msg );
 		result=WRITE (fd, (void * ) &byte, sizeof(unsigned char));
 	}  while (result < 0 && errno==EINTR);
+	if( result < 0 )
+	{
+		/* mexPrintf("GOT IT!!!\n"); */
+		goto fail;
+	}
 /*
 	This makes write for win32, glinux and Sol behave the same
 #if defined ( __sun__ )
@@ -1282,7 +1287,7 @@ JNIEXPORT void JNICALL RXTXPort(writeByte)( JNIEnv *env,
 		result=tcdrain(fd);
 		count++;
 	}  while (result && errno==EINTR && count <3);
-#endif *//* __sun __ */
+#endif */ /* __sun __ */
 #ifndef TIOCSERGETLSR
 	if( ! interrupted )
 	{
@@ -1304,6 +1309,7 @@ JNIEXPORT void JNICALL RXTXPort(writeByte)( JNIEnv *env,
 		report_time_end();
 		return;
 	}
+fail:
 	throw_java_exception( env, IO_EXCEPTION, "writeByte",
 		strerror( errno ) );
 }
@@ -1343,8 +1349,8 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 #endif /* __sun__ */
 	fd = get_java_var( env, jobj,"fd","I" );
 	body = (*env)->GetByteArrayElements( env, jbarray, 0 );
-	//result=WRITE (fd, body + total + offset, count - total); 
-	//(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
+	/* result=WRITE (fd, body + total + offset, count - total); 
+	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 ); */
 /* return; OH CRAP */
 
 	report_time_start();
@@ -1361,7 +1367,12 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 			total += result;
 		}
 		report("writeArray()\n");
-	}  while ( ( total < count ) || (result < 0 && errno==EINTR ) );
+	}  while ( ( total < count ) && (result < 0 && errno==EINTR ) );
+	if( result < 0 )
+	{
+		/* mexPrintf("GOT IT!!!\n"); */
+		goto fail;
+	}
 /*
 	This makes write for win32, glinux and Sol behave the same
 #if defined ( __sun__ )
@@ -1370,7 +1381,7 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 		result=tcdrain(fd);
 		icount++;
 	}  while (result && errno==EINTR && icount <3);
-#endif *//* __sun__ */
+#endif */ /* __sun__ */
 	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
 #ifndef TIOCSERGETLSR
 	if( !interrupted )
@@ -1398,6 +1409,7 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 	*/
 	LEAVE( "RXTXPort:writeArray" );
 	report_time_end();
+fail:
 	if( result < 0 ) throw_java_exception( env, IO_EXCEPTION,
 		"writeArray", strerror( errno ) );
 }
@@ -2797,25 +2809,34 @@ int read_byte_array( JNIEnv *env,
 {
 	int ret, left, bytes = 0;
 	long timeLeft, now = 0, start = 0;
-	char msg[80];
+	/* char msg[80]; */
 	struct timeval tv, *tvP;
 	fd_set rset;
 	/* TRENT */
-	int count = 0;
-
+	int flag, count = 0;
+	struct event_info_struct *eis = ( struct event_info_struct * )
+		get_java_var( env, *jobj,"eis","I" );
+	
 	report_time_start();
+	flag = eis->eventflags[SPE_DATA_AVAILABLE];
+	eis->eventflags[SPE_DATA_AVAILABLE] = 0;
+/*
 	ENTER( "read_byte_array" );
 	sprintf(msg, "read_byte_array requests %i\n", length);
 	report( msg );
+*/
 	left = length;
 	if (timeout >= 0)
 		start = GetTickCount();
-	while( bytes < length &&  count++ < 20 );
+	while( bytes < length &&  count++ < 20 ) /* && !is_interrupted( eis ) )*/
 	{
 		if (timeout >= 0) {
 			now = GetTickCount();
 			if ( now-start >= timeout )
+			{
+				eis->eventflags[SPE_DATA_AVAILABLE] = flag;
 				return bytes;
+			}
 		}
 
 		FD_ZERO(&rset);
@@ -2830,20 +2851,29 @@ int read_byte_array( JNIEnv *env,
 		else{
 			tvP = NULL;
 		}
-
-		ret = SELECT(fd + 1, &rset, NULL, NULL, tvP);
+		/* FIXME HERE Trent */
+#ifndef WIN32
+		ret = SELECT( fd + 1, &rset, NULL, NULL, tvP );
+#else
+		ret = 1;
+#endif /* WIN32 */
 		if (ret == -1){
 			report( "read_byte_array: select returned -1\n" );
 			LEAVE( "read_byte_array" );
+			eis->eventflags[SPE_DATA_AVAILABLE] = flag;
 			return -1;
 		}
-		else if (ret > 0){
+		else if (ret > 0)
+		{
 			if ((ret = READ( fd, buffer + bytes, left )) < 0 ){
 				if (errno != EINTR && errno != EAGAIN){
 					report( "read_byte_array: read returned -1\n" );
 					LEAVE( "read_byte_array" );
+					eis->eventflags[SPE_DATA_AVAILABLE] = flag;
 					return -1;
 				}
+				eis->eventflags[SPE_DATA_AVAILABLE] = flag;
+				return -1;
 			}
 			else if ( ret ) {
 				bytes += ret;
@@ -2860,7 +2890,7 @@ int read_byte_array( JNIEnv *env,
 		Nicolas <ripley@8d.com>
 		*/
 			else {
-				//usleep(10);
+				/* usleep(10); */
 				usleep(1000);
 			}
 		}
@@ -2872,12 +2902,13 @@ int read_byte_array( JNIEnv *env,
 		throw_java_exception( env, IO_EXCEPTION, "read_byte_array",
 			"No data available" );
 	}
-*/
 
 	sprintf(msg, "read_byte_array returns %i\n", bytes);
 	report( msg );
 	LEAVE( "read_byte_array" );
 	report_time_end();
+*/
+	eis->eventflags[SPE_DATA_AVAILABLE] = flag;
 	return bytes;
 }
 
@@ -2924,6 +2955,8 @@ RETRY:	if ((ret = READ( fd, buffer + bytes, left )) < 0 )
 	report_time_end();
 	return bytes;
 }
+
+
 int read_byte_array(	JNIEnv *env,
 			jobject *jobj,	
 			int fd,
@@ -2935,6 +2968,8 @@ int read_byte_array(	JNIEnv *env,
 	/* int count = 0; */
 	fd_set rfds;
 	struct timeval sleep;
+	struct event_info_struct *eis = find_eis( fd );
+	
 #ifndef WIN32
 	struct timeval *psleep=&sleep;
 #endif /* WIN32 */
@@ -2965,8 +3000,6 @@ int read_byte_array(	JNIEnv *env,
 		    work on win32.  The select code cannot be accessed
 		    from both the Monitor Thread and the Reading Thread.
 
-		    This keeps the cpu from racing but the select() code
-		    will have to be fixed at some point.
 		*/
 		ret = RXTXPort(nativeavailable)( env, *jobj );
 #endif /* WIN32 */
@@ -3186,10 +3219,12 @@ JNIEXPORT jint JNICALL RXTXPort(readByte)( JNIEnv *env,
 	unsigned char buffer[ 1 ];
 	int fd = get_java_var( env, jobj,"fd","I" );
 	int timeout = get_java_var( env, jobj, "timeout", "I" );
-	char msg[80];
+	/* char msg[80]; */
 
+/*
 	ENTER( "RXTXPort:readByte" );
 	report_time_start( );
+*/
 	bytes = read_byte_array( env, &jobj, fd, buffer, 1, timeout );
 	if( bytes < 0 ) {
 		LEAVE( "RXTXPort:readByte" );
@@ -3197,10 +3232,12 @@ JNIEXPORT jint JNICALL RXTXPort(readByte)( JNIEnv *env,
 			strerror( errno ) );
 		return -1;
 	}
+/*
 	LEAVE( "RXTXPort:readByte" );
 	sprintf( msg, "readByte return(%i)\n", bytes ? buffer[ 0 ] : -1 );
 	report( msg );
 	report_time_end( );
+*/
 	return (bytes ? (jint)buffer[ 0 ] : -1);
 }
 
@@ -3221,12 +3258,14 @@ JNIEXPORT jint JNICALL RXTXPort(readArray)( JNIEnv *env,
 {
 	int bytes;
 	jbyte *body;
-	char msg[80];
+	/* char msg[80]; */
 	int fd = get_java_var( env, jobj, "fd", "I" );
 	int timeout = get_java_var( env, jobj, "timeout", "I" );
 
+/*
 	ENTER( "readArray" );
 	report_time_start( );
+*/
 	if( length > SSIZE_MAX || length < 0 ) {
 		report( "RXTXPort:readArray length > SSIZE_MAX" );
 		LEAVE( "RXTXPort:readArray" );
@@ -3244,10 +3283,81 @@ JNIEXPORT jint JNICALL RXTXPort(readArray)( JNIEnv *env,
 			strerror( errno ) );
 		return -1;
 	}
+/*
 	sprintf( msg, "RXTXPort:readArray: %i %i\n", (int) length, bytes);
 	report( msg );
 	report_time_end( );
 	LEAVE( "RXTXPort:readArray" );
+*/
+	return (bytes);
+}
+
+/*----------------------------------------------------------
+RXTXPort.readTerminatedArray
+
+   accept:       offset (offset to start storing data in the jbarray) and
+                 Length (bytes to read).  Terminator - 2 bytes that we
+		 dont read past
+   perform:      read bytes from the port into a byte array
+   return:       bytes read on success
+                 0 on read timeout
+   exceptions:   IOException
+   comments:     throws ArrayIndexOutOfBoundsException if asked to
+                 read more than SSIZE_MAX bytes
+		 timeout is not properly handled
+
+		 This is an extension to commapi.
+----------------------------------------------------------*/
+JNIEXPORT jint JNICALL RXTXPort(readTerminatedArray)( JNIEnv *env,
+	jobject jobj, jbyteArray jbarray, jint offset, jint length,
+	jbyteArray jterminator )
+{
+	int bytes, total = 0;
+	jbyte *body, *terminator;
+	/* char msg[80]; */
+	int fd = get_java_var( env, jobj, "fd", "I" );
+	int timeout = get_java_var( env, jobj, "timeout", "I" );
+
+/*
+	ENTER( "readArray" );
+	report_time_start( );
+*/
+	if( length > SSIZE_MAX || length < 0 ) {
+		report( "RXTXPort:readArray length > SSIZE_MAX" );
+		LEAVE( "RXTXPort:readArray" );
+		throw_java_exception( env, ARRAY_INDEX_OUT_OF_BOUNDS,
+			"readArray", "Invalid length" );
+		return -1;
+	}
+	body = (*env)->GetByteArrayElements( env, jbarray, 0 );
+	terminator = (*env)->GetByteArrayElements( env, jterminator, 0 );
+	do
+	{
+		bytes = read_byte_array( env, &jobj, fd, (unsigned char *)(body+offset + total ), 1 , timeout );/* dima */
+		total += bytes;
+		if( bytes < 0 ) {
+			report( "RXTXPort:readArray bytes < 0" );
+			LEAVE( "RXTXPort:readArray" );
+			throw_java_exception( env, IO_EXCEPTION, "readArray",
+				strerror( errno ) );
+			return -1;
+		}
+		if ( total > 1 && terminator[1] ==  body[total -1] &&
+			terminator[ 0 ] == body[ total -2 ]
+		)
+		{
+			report("Got terminator!\n" );
+			break;		
+		}
+			
+	} while ( bytes > 0 && total < length );
+	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
+/*
+	sprintf( msg, "RXTXPort:readArray: %i %i\n", (int) length, bytes);
+	report( msg );
+	report_time_end( );
+	LEAVE( "RXTXPort:readArray" );
+*/
 	return (bytes);
 }
 
@@ -3265,9 +3375,10 @@ JNIEXPORT jint JNICALL RXTXPort(nativeavailable)( JNIEnv *env,
 {
 	int fd = get_java_var( env, jobj,"fd","I" );
 	int result;
+/*
 	char message[80];
 
-/*
+
 	ENTER( "RXTXPort:nativeavailable" );
 
     On SCO OpenServer FIONREAD always fails for serial devices,
@@ -3284,19 +3395,19 @@ JNIEXPORT jint JNICALL RXTXPort(nativeavailable)( JNIEnv *env,
 		goto fail;
 	}
 #endif /* FIORDCHK */
-	sprintf(message, "    nativeavailable: FIORDCHK result %d, \
-		errno %d\n", result , result == -1 ? errno : 0);
-	report_verbose( message );
 	if (result == -1) {
 		goto fail;
 	}
+/*
+	sprintf(message, "    nativeavailable: FIORDCHK result %d, \
+		errno %d\n", result , result == -1 ? errno : 0);
+	report_verbose( message );
 	if( result )
 	{
 		sprintf(message, "    nativeavailable: FIORDCHK result %d, \
 				errno %d\n", result , result == -1 ? errno : 0);
 		report( message );
 	}
-/*
 	LEAVE( "RXTXPort:nativeavailable" );
 */
 	return (jint)result;
@@ -3669,13 +3780,12 @@ void report_serial_events( struct event_info_struct *eis )
 		if( check_line_status_register( eis ) )
 			return;
 
-#ifndef WIN32 /* something is wrong here */
 	if ( eis && eis->has_tiocgicount )
 		check_cgi_count( eis );
+#ifndef WIN32 /* something is wrong here */
 #endif /* WIN32 */
 
 	check_tiocmget_changes( eis );
-
 	if( eis && port_has_changed_fionread( eis ) )
 	{
 		if(!eis->eventflags[SPE_DATA_AVAILABLE] )
@@ -3684,6 +3794,7 @@ void report_serial_events( struct event_info_struct *eis )
 /*
 			report(".");
 */
+			usleep(20000);
 #if !defined(__sun__)
 	/* FIXME: No time to test on all OS's for production */
 			usleep(20000);
@@ -3694,14 +3805,12 @@ void report_serial_events( struct event_info_struct *eis )
 		if(!send_event( eis, SPE_DATA_AVAILABLE, 1 ))
 		{
 			/* select wont block */
-#if !defined(__sun__)
 	/* FIXME: No time to test on all OS's for production */
-			usleep(20000);
+/* REMOVE goes around usleep */
+#if !defined(__sun__)
 #endif /* !__sun__ */
-/*
-			system_wait();
-*/
 		}
+		usleep(20000);
 	}
 }
 
@@ -3820,13 +3929,13 @@ RXTXPort.eventLoop
 JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 {
 	struct event_info_struct eis;
-	jclass jclazz = (*env)->GetObjectClass( env, jobj );
-	jfieldID jfid = (*env)->GetFieldID( env, jclazz,
-						"MonitorThreadCloseLock", "Z" );
-	eis.jclazz = jclazz;
+	eis.jclazz = (*env)->GetObjectClass( env, jobj );
 	eis.env = env;
 	eis.jobj = &jobj;
 	eis.initialised = 0;
+#ifdef WIN32
+	int i = 0;
+#endif /* WIN32 */
 
 	ENTER( "eventLoop\n" );
 	if ( !initialise_event_info_struct( &eis ) ) goto end;
@@ -3835,24 +3944,43 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 	do{
 		report_time_eventLoop( );
 		do {
-			/* report( "." ); */
-			eis.ret = SELECT( eis.fd + 1, &eis.rfds, NULL, NULL,
-					&eis.tv_sleep );
 			/* nothing goes between this call and select */
 			if( eis.closing )
 			{
 				report("eventLoop: got interrupt\n");
 				finalize_threads( &eis );
 				finalize_event_info_struct( &eis );
-				(*env)->SetBooleanField( env, jobj,
-							jfid, JNI_FALSE );
 				LEAVE("eventLoop");
 				return;
 			}
-			usleep(20000);
+#ifndef WIN32
+			/* report( "." ); */
+			eis.ret = SELECT( eis.fd + 1, &eis.rfds, NULL, NULL,
+					&eis.tv_sleep );
+#else
+			/*
+			    termios.c:serial_select is instable for some
+			    reason
+
+			    polling is not blowing up.
+			*/
 /*
-			 Trent system_wait();
+			usleep(5000);
 */
+			eis.ret=1;
+			while( i++ < 5 )
+			{
+				if(eis.eventflags[SPE_DATA_AVAILABLE] )
+				{
+					if( port_has_changed_fionread( &eis ) )
+					{
+						send_event( &eis, SPE_DATA_AVAILABLE, 1 );
+					}
+				}
+				usleep(1000);
+			}
+			i = 0;
+#endif /* WIN32 */
 		}  while ( eis.ret < 0 && errno == EINTR );
 		if( eis.ret >= 0 )
 		{
@@ -3879,7 +4007,7 @@ RXTXCommDriver.nativeGetVersion
 JNIEXPORT jstring JNICALL RXTXCommDriver(nativeGetVersion) (JNIEnv *env,
 	jclass jclazz )
 {
-	return (*env)->NewStringUTF( env, "RXTX-2.0-6" );
+	return (*env)->NewStringUTF( env, "RXTX-2.0-7pre1" );
 }
 
 /*----------------------------------------------------------
@@ -4200,12 +4328,12 @@ registerKnownSerialPorts(JNIEnv *env, jobject jobj, jint portType) /* dima */
     } else {
 	jclass cls; /* dima */
 	jmethodID mid; /* dima */
-        cls = (*env)->FindClass(env,"javax/comm/CommPortIdentifier" ); /* dima */
+        cls = (*env)->FindClass(env,"javax.comm/CommPortIdentifier" ); /* dima */
         if (cls == 0) { /* dima */
-            report( "can't find class of javax/comm/CommPortIdentifier\n" ); /* dima */
+            report( "can't find class of javax.comm/CommPortIdentifier\n" ); /* dima */
             return numPorts; /* dima */
         } /* dima */
-        mid = (*env)->GetStaticMethodID(env, cls, "addPortName", "(Ljava/lang/String;ILjavax/comm/CommDriver;)V" ); /* dima */
+        mid = (*env)->GetStaticMethodID(env, cls, "addPortName", "(Ljava/lang/String;ILjavax.comm/CommDriver;)V" ); /* dima */
 
         if (mid == 0) {
             printf( "getMethodID of CommDriver.addPortName failed\n" );

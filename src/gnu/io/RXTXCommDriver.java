@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
-|   Copyright 1997-2002 by Trent Jarvi taj@www.linux.org.uk
+|   Copyright 1997-2003 by Trent Jarvi taj@www.linux.org.uk.
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Lesser General Public
@@ -44,6 +44,7 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
+
 /* Martin Pool <mbp@linuxcare.com> added support for explicitly-specified
  * lists of ports, October 2000. */
 /* Joseph Goldstone <joseph@lp.com> reorganized to support registered ports,
@@ -87,7 +88,7 @@ public class RXTXCommDriver implements CommDriver
 			System.out.println("Devel Library");
 			System.out.println("=========================================");
 			System.out.println("Native lib Version = " + LibVersion );
-			System.out.println("Java lib Version   = " + LibVersion );
+			System.out.println("Java lib Version   = " + JarVersion );
 		}
 
 		if ( ! JarVersion.equals( LibVersion ) )
@@ -350,20 +351,20 @@ public class RXTXCommDriver implements CommDriver
 	}
 
    /*
-    * Register ports specified in the file "gnu.io.rxtx.properties"
+    * Register ports specified in the file "javax.comm.rxtx.properties"
     * Key system properties:
-    *                   gnu.io.rxtx.SerialPorts
-    * 			gnu.io.rxtx.ParallelPorts
+    *                   javax.comm.rxtx.SerialPorts
+    * 			javax.comm.rxtx.ParallelPorts
     *
     * Tested only with sun jdk1.3
-    * The file gnu.io.rxtx.properties must reside in the java extension dir
+    * The file javax.comm.rxtx.properties must reside in the java extension dir
     *
-    * Example: /usr/local/java/jre/lib/ext/gnu.io.rxtx.properties
+    * Example: /usr/local/java/jre/lib/ext/javax.comm.rxtx.properties
     *
     * The file contains the following key properties:
     *
-    *  gnu.io.rxtx.SerialPorts=/dev/ttyS0:/dev/ttyS1:
-    *  gnu.io.rxtx.ParallelPorts=/dev/lp0:
+    *  javax.comm.rxtx.SerialPorts=/dev/ttyS0:/dev/ttyS1:
+    *  javax.comm.rxtx.ParallelPorts=/dev/lp0:
     *
     */
 	private boolean registerSpecifiedPorts(int PortType)
@@ -374,13 +375,13 @@ public class RXTXCommDriver implements CommDriver
 		    {
 
 		     String ext_dir=System.getProperty("java.ext.dirs")+System.getProperty("file.separator");
-		     FileInputStream rxtx_prop=new FileInputStream(ext_dir+"gnu.io.rxtx.properties");
+		     FileInputStream rxtx_prop=new FileInputStream(ext_dir+"javax.comm.rxtx.properties");
 		     Properties p=new Properties(System.getProperties());
 		     p.load(rxtx_prop);
 		     System.setProperties(p);
 		    }catch(Exception e){
 			if (debug){
-			    System.out.println("The file: gnu.io.rxtx.properties doesn't exists.");
+			    System.out.println("The file: javax.comm.rxtx.properties doesn't exists.");
 			    System.out.println(e.toString());
 			    }//end if
 			}//end catch
@@ -392,13 +393,13 @@ public class RXTXCommDriver implements CommDriver
 
 		switch (PortType) {
 			case CommPortIdentifier.PORT_SERIAL:
-				if ((val = System.getProperty("gnu.io.rxtx.SerialPorts")) == null)
-				val = System.getProperty("gnu.io.SerialPorts");
+				if ((val = System.getProperty("javax.comm.rxtx.SerialPorts")) == null)
+				val = System.getProperty("javax.comm.SerialPorts");
 				break;
 
 			case CommPortIdentifier.PORT_PARALLEL:
-				if ((val = System.getProperty("gnu.io.rxtx.ParallelPorts")) == null)
-				val = System.getProperty("gnu.io.ParallelPorts");
+				if ((val = System.getProperty("javax.comm.rxtx.ParallelPorts")) == null)
+				val = System.getProperty("javax.comm.ParallelPorts");
 				break;
 			default:
 				if (debug)
@@ -431,38 +432,16 @@ public class RXTXCommDriver implements CommDriver
 		}
 		else if(osName.toLowerCase().indexOf("windows") != -1 )
 		{
-			/*
-			{ "COM1:", "COM2:","COM3:","COM4:",
-			"COM5:", "COM6:", "COM7:", "COM8:" };
-			*/
-			/* //./name is supposed to work for port numbers > 8 */
-			/*
-					{ "//./COM1", "//./COM2", "//./COM3",
-					"//./COM4", "//./COM5", "//./COM6",
-					"//./COM7", "//./COM8" };
-			*/
-			String[] temp =
+			String[] temp = new String[259];
+			for( int i = 1; i <= 256; i++ )
 			{
-					"COM1", "COM2", "COM3",
-					"COM4", "COM5", "COM6",
-					"COM7", "COM8",
-				/*
-				   OK,  you asked for it The thread gods will
-				   not like this.
-				*/
-					"COM9", "COM10", "COM11",
-					"COM12", "COM13", "COM14",
-					"COM15", "COM16",
-				/*
-				   Lets toss in LPT too!
-				*/
-					"LPT1", "LPT2", "LPT3" 
-				};
-	/*
-				{ "COM1", "COM2","COM3","COM4",
-				"COM5", "COM6", "COM7", "COM8" };
-	*/
-				CandidateDeviceNames=temp;
+				temp[i - 1] = new String( "COM" + i );
+			}
+			for( int i = 1; i <= 3; i++ )
+			{
+				temp[i + 255] = new String( "LPT" + i );
+			}
+			CandidateDeviceNames=temp;
 			}
 			else if ( osName.equals("Solaris") || osName.equals("SunOS"))
 			{
