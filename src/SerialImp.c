@@ -452,6 +452,10 @@ RXTXPort.isCD
                 false if TIOCM_CD is not set
    exceptions:  none
    comments:    CD stands for Carrier Detect
+
+"*pp* well, it works, there might ofcourse be a bug, but making DCD permanently
++on fixed it for me so I don't care"
+
 ----------------------------------------------------------*/
 JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isCD( JNIEnv *env,
 	jobject jobj )
@@ -697,6 +701,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_readByte( JNIEnv *env,
 	jfield = (*env)->GetFieldID( env, jclazz, "timeout", "I" );
 	timeout = (int)( (*env)->GetIntField( env, jobj, jfield ) );
 
+
 	bytes = read_byte_array( fd, buffer, 1, 1, timeout );
 	if( bytes < 0 ) {
 		throw_java_exception( env, IO_EXCEPTION, "readByte",
@@ -784,28 +789,43 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_nativeavailable( JNIEnv *env,
 
 
 /*----------------------------------------------------------
-RXTXPort.setHWFC
+RXTXPort.setflowcontrol
 
    accept:      state (JNI_FALSE 0, JNI_TRUE 1)
    perform:     set hardware flow control to state
    return:      none
    exceptions:  IOException
 ----------------------------------------------------------*/
-JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setHWFC( JNIEnv *env,
-	jobject jobj, jboolean state )
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setflowcontrol( JNIEnv *env,
+	jobject jobj, jint flowmode )
 {
 	struct termios ttyset;
+	jfieldID jfield;
 	int fd = get_java_fd( env, jobj );
+	jint flags=0;
+
 	if( tcgetattr( fd, &ttyset ) ) goto fail;
-	if( state == JNI_TRUE )
+	
+	if ( flowmode & ( FLOWCONTROL_RTSCTS_IN | FLOWCONTROL_RTSCTS_OUT ) )
 		ttyset.c_cflag |= HARDWARE_FLOW_CONTROL;
-	else
-		ttyset.c_cflag &= ~HARDWARE_FLOW_CONTROL;
+	else ttyset.c_cflag &= ~HARDWARE_FLOW_CONTROL;
+
+	ttyset.c_iflag &= ~IXANY;
+
+	if ( flowmode & FLOWCONTROL_XONXOFF_IN )
+		ttyset.c_iflag |= IXOFF;
+	else ttyset.c_iflag &= ~IXOFF;
+
+	if ( flowmode & FLOWCONTROL_XONXOFF_OUT )
+		ttyset.c_iflag |= IXON;
+	else ttyset.c_iflag &= ~IXON;
+
 	if( tcsetattr( fd, TCSAFLUSH, &ttyset ) ) goto fail;
 	return;
 fail:
 	throw_java_exception( env, IO_EXCEPTION, "setHWFC",
 		strerror( errno ) );
+	return;
 }
 
 
