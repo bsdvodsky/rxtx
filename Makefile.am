@@ -31,9 +31,9 @@ JAR=$(JPATH)/bin/jar
 JAVADOC=$(JPATH)/bin/javadoc $(JCLASSPATH)
 LIBTOOL = $(SHELL) $(TOP)/libtool
 LINK = $(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) -version-info 1:0:1
-SERIAL_HEADER = $(TOP)/$(target_alias)/gnu_io_RXTXPort.h $(TOP)/$(target_alias)/gnu_io_RXTXCommDriver.h
-PARALLEL_HEADER = $(TOP)/$(target_alias)/gnu_io_LPRPort.h
-CLEANFILES = $(TOP)/*.class $(TOP)/gnu/io/*.class $(TOP)/jcl.jar
+SERIAL_HEADER = $(TOP)/$(target_alias)/javax_comm_RXTXPort.h $(TOP)/$(target_alias)/javax_comm_RXTXCommDriver.h
+PARALLEL_HEADER = $(TOP)/$(target_alias)/javax_comm_LPRPort.h
+CLEANFILES = $(TOP)/*.class $(TOP)/javax/comm/*.class $(TOP)/jcl.jar
 #LTLIBRARIES =     $(lib_LTLIBRARIES)
 #BUILT_SOURCES = $(TOP)/$(target_alias)/libSerial.la
 SUFFIXES = .java .class
@@ -42,7 +42,7 @@ SUFFIXES = .class .h
 install: all jcl install-lib
 
 clean-generic:
-	rm -rf $(TOP)/$(target_alias) $(TOP)/gnu 
+	rm -rf $(TOP)/$(target_alias) $(TOP)/javax 
 	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 	@echo -e "\n\nMake distclean will remove the remaining files\n\n"
 install-lib:
@@ -61,19 +61,23 @@ run: $(TOP)/test.class all jcl
 	export LD_LIBRARY_PATH;\
 	$(JAVA) test)
 
-all: @IDENTIFIERS@ @TARGETLIB@
+all: $(IDENTIFIERS) $(TARGETLIB)
 	@echo -e "\n\nIf you have javax.comm.* and java.comm.* in your CLASSPATH, type make jcl to"
 	@echo -e "build the javacomm20-x86.tar.Z supporting classes.\n"
 	@echo "Note: CLASSPATH was grabbed during the configure stage.  Modification of the"
 	@echo "environment variable will not change the behavior of make without rerunning" 
 	@echo  -e "configure or editing the Makefile. \n"
 
-jcl:  $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class $(TOP)/gnu/io/RXTXPort.class @IDENTIFIERS@
-	$(JAR) cf jcl.jar gnu/io/*
+jcl:  $(TOP)/javax/comm/RXTXCommDriver.class $(TOP)/javax/comm/RXTXPort.class $(TOP)/javax/comm/RXTXPort.class $(IDENTIFIERS)
+	$(JAR) cf jcl.jar javax/comm/*
 	@echo "make install will install RxTx"
 
-$(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class \
-		$(TOP)/gnu/io/LPRPort.class \
+comm:  $(TOP)/javax/comm/RXTXCommDriver.class $(TOP)/javax/comm/RXTXPort.class $(TOP)/javax/comm/RXTXPort.class $(IDENTIFIERS)
+	$(JAR) cf comm.jar javax/comm/*
+	@echo "make install will install RxTx"
+
+$(TOP)/javax/comm/RXTXCommDriver.class $(TOP)/javax/comm/RXTXPort.class \
+		$(TOP)/javax/comm/LPRPort.class \
 		: $(srcdir)/src/RXTXCommDriver.java \
 		$(srcdir)/src/LPRPort.java \
 		$(srcdir)/src/RXTXPort.java 
@@ -103,14 +107,34 @@ $(TOP)/$(target_alias)/SerialImp.lo: $(srcdir)/src/SerialImp.c \
 	(cd $(TOP)/$(target_alias); \
 	$(LIBTOOL) --mode=compile $(CC) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) @VERBOSE_IOEXCEPTIONS@ -c ../$< )
 
-$(TOP)/%.class $(TOP)/gnu/io/%.class: $(srcdir)/src/%.java 
+$(TOP)/javax/comm/ParallelPort.class $(TOP)/javax/comm/ParallelPortEvent.class $(TOP)/javax/comm/ParallelPortEventListener.class: $(srcdir)/src/ParallelPort.java $(srcdir)/src/ParallelPortEvent.java $(srcdir)/src/ParallelPortEventListener.java
+	$(JAVAC) $(srcdir)/src/ParallelPort.java $(srcdir)/src/ParallelPortEvent.java $(srcdir)/src/ParallelPortEventListener.java
+
+PARALLEL: $(TOP)/javax/comm/ParallelPort.class $(TOP)/javax/comm/ParallelPortEvent.class $(TOP)/javax/comm/ParallelPortEventListener.class
+
+$(TOP)/javax/comm/SerialPort.class $(TOP)/javax/comm/SerialPortEvent.class $(TOP)/javax/comm/SerialPortEventListener.class: $(srcdir)/src/SerialPort.java $(srcdir)/src/SerialPortEvent.java $(srcdir)/src/SerialPortEventListener.java
+	$(JAVAC) $(srcdir)/src/SerialPort.java $(srcdir)/src/SerialPortEvent.java $(srcdir)/src/SerialPortEventListener.java
+
+RS232: $(TOP)/javax/comm/SerialPort.class $(TOP)/javax/comm/SerialPortEvent.class $(TOP)/javax/comm/SerialPortEventListener.class
+
+$(TOP)/javax/comm/RS485Port.class $(TOP)/javax/comm/RS485PortEvent.class $(TOP)/javax/comm/RS485PortEventListener.class: $(srcdir)/src/RS485Port.java $(srcdir)/src/RS485PortEvent.java $(srcdir)/src/RS485PortEventListener.java 
+	$(JAVAC) $(srcdir)/src/RS485Port.java $(srcdir)/src/RS485PortEvent.java $(srcdir)/src/RS485PortEventListener.java
+
+RS485: $(TOP)/javax/comm/RS485Port.class $(TOP)/javax/comm/RS485PortEvent.class $(TOP)/javax/comm/RS485PortEventListener.class
+
+$(TOP)/javax/comm/I2CPort.class $(TOP)/javax/comm/I2CPortEvent.class $(TOP)/javax/comm/I2CPortEventListener.class: $(srcdir)/src/I2CPort.java $(srcdir)/src/I2CPortEvent.java $(srcdir)/src/I2CPortEventListener.java 
+	$(JAVAC) $(srcdir)/src/I2CPort.java $(srcdir)/src/I2CPortEvent.java $(srcdir)/src/I2CPortEventListener.java
+
+I2C: $(TOP)/javax/comm/I2CPort.class $(TOP)/javax/comm/I2CPortEvent.class $(TOP)/javax/comm/I2CPortEventListener.class 
+
+$(TOP)/%.class $(TOP)/javax/comm/%.class: $(srcdir)/src/%.java 
 	$(JAVAC) $< 
 
-$(SERIAL_HEADER) $(PARALLEL_HEADER): $(TOP)/gnu/io/RXTXPort.class
-	$(JAVAH) gnu.io.`echo $(@F) | sed s#\.h##|sed s#gnu_io_##`
+$(SERIAL_HEADER) $(PARALLEL_HEADER): $(TOP)/javax/comm/RXTXPort.class
+	$(JAVAH) javax.comm.`echo $(@F) | sed s#\.h##|sed s#javax_comm_##`
 	touch $(TOP)/$(target_alias)/$(@F)
 
-borg: $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class $(TOP)/gnu/io/LPRPort.class $(SERIAL_HEADER)
+borg: $(TOP)/javax/comm/RXTXCommDriver.class $(TOP)/javax/comm/RXTXPort.class $(TOP)/javax/comm/LPRPort.class $(SERIAL_HEADER)
 	gcc -DWIN32 -D  __int64="long long"  -mno-fp-ret-in-387 -b$(target_alias) -I $(TOP) -I $(TOP)/$(target_alias) -I . $(WJI) -I ../src/ -Wall -c ../src/SerialImp.c -o  $(TOP)/$(target_alias)/SerialImp.o
 	gcc -DWIN32 -D  __int64="long long"  -mno-fp-ret-in-387 -b$(target_alias) -I $(TOP) -I $(TOP)/$(target_alias) -I . $(WJI) -I ../src/ -Wall -c ../src/termios.c -o  $(TOP)/$(target_alias)/termios.o
 	gcc -DWIN32 -D  __int64="long long"  -mno-fp-ret-in-387 -b$(target_alias) -I $(TOP) -I $(TOP)/$(target_alias) -I . $(WJI) -I ../src/ -Wall -c ../src/fixup.c -o  $(TOP)/$(target_alias)/fixup.o
@@ -123,9 +147,9 @@ borg: $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class $(TOP)/gnu
 	ld $(target_alias)/Serial.exp -dll -o  $(target_alias)/Serial.dll $(target_alias)/termios.o $(target_alias)/SerialImp.o $(target_alias)/fixup.o $(target_alias)/init.o  -luser32 -lgdi32 -lcomdlg32 -lkernel32 -ladvapi32 -lmingw32 -lmoldname -lcrtdll -e _dll_entry@12 --base-file $(target_alias)/Serial.base
 
 docs:
-	mkdir gnu;
-	cd gnu;ln -s $(srcdir)/src io
+	mkdir javax;
+	cd javax;ln -s $(srcdir)/src io
 	cd ..
-	rm -rf gnu
+	rm -rf javax
 
 # END
