@@ -1,0 +1,70 @@
+/*-------------------------------------------------------------------------
+|   rxtx is a native interface to serial ports in java.
+|   Copyright 1997, 1998, 1999 by Trent Jarvi jarvi@ezlink.com.
+|
+|   This library is free software; you can redistribute it and/or
+|   modify it under the terms of the GNU Library General Public
+|   License as published by the Free Software Foundation; either
+|   version 2 of the License, or (at your option) any later version.
+|
+|   This library is distributed in the hope that it will be useful,
+|   but WITHOUT ANY WARRANTY; without even the implied warranty of
+|   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+|   Library General Public License for more details.
+|
+|   You should have received a copy of the GNU Library General Public
+|   License along with this library; if not, write to the Free
+|   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+--------------------------------------------------------------------------*/
+
+There are numerous possibilities for projects that involve serial communication.
+Java is an excellent language for putting GUI apps together.  Well have fun.  
+Send back stories. 
+
+Copies of the latest RXTX will be on ftp://jarvi.ezlink.com/pub/rxtx.
+The primary source for information/support is http://jarvi.ezlink.com/rxtx/.
+
+This is a native lib for jdk 1.1.*/1.2.*.  If you find changes required
+for different platforms or OS's please pass them back this way so we may share
+it with others.  Credit will be given unless one specifically requests no 
+credit.
+
+We chopped rxtx out of my program and tried to put a small example together.  
+There is plenty of room for configurability, safe guarding and error reporting.
+If you have some time please contribute some improvements.
+
+A note on hardware:
+
+  With the DB25 use 2 (TX), 3 (RX) and 7 (GD) to connect to the device.
+  With the DB9  use 2 (RX), 3 (TX) and 5 (GD) to connect to the device.
+
+  You will need to hook up more than that for hardware flow control.
+
+Which device should you use?
+
+  Linux serial ports should use /dev/ttyS?
+  Irix serial ports use ttyd? ttym? ttyf?
+  
+A note on JDK RPMS for linux users:  
+
+   You will have to edit the Makefile if you use the rpms from the redhat/
+   contrib.  The RPMS do not follow the sun 'standard layout.'  JAVAINCLUDE 
+   and JAVANATINC in the make file will need to be pointed to the include files
+   that can not be found during the build.   If you can live without the rpm 
+   we suggest getting the tar archive from www.blackdown.org mirrors.
+
+A note on Win32:  
+
+   (win32 support has been dropped.  Get the Sun CommAPI if you want a 
+    plug-in solution)
+
+We are interested in sharing this code in hopes that a more versatile lib may
+be developed and released with minimal restrictions.  Please send any patches 
+back my way if you like.   
+
+For bug reports please follow the directions in BUGS.  For installation help
+see INSTALL.
+
+Trent Jarvi
+jarvi@ezlink.com
+

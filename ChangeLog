@@ -1,0 +1,90 @@
+1.2BETA2Jan 31, 1999  RXTXPort.java:  Stop Bit fix Stephen Martin
+                      SerialImp.c: Set Speed fix.  Stephen Martin
+                      RXTXCommDriver.java:  Specialix card support.
+                      configure: remove -ansi for libc5 linux
+                      hardware flow control error message fix.
+1.2BETA1Dec 28, 1998  extensive native code rewrite.
+1.2pre12Dec 20, 1998  SerialImp.c cleanup.  ASYNC is now default.  irix is
+                      running.  Thanks to Steve Swicord and Bob Carpenter.
+1.2pre11Dec 20, 1998  multiport bug fix.  Event Notification (FE PE BI OE)
+1.2pre10Dec 11, 1998  public release of pre9 work.  
+1.2pre9 Dec 11, 1998  Series of nonpublic releases to work out sgi-irix build
+                      problems.  Thanks to Steve Swicord and Bob Carpenter for
+                      the feedback.  Some multiport fixes.
+1.2pre8 Nov 30, 1998  Wayne Roberts Contributed read timeout fix
+                      binary read fix libtool-1.2b is now used
+                      multiport use is in.
+                      Yeun-Ping Leung contributed FreeBSD support
+1.2pre7 Oct 14, 1998  Various Fixes
+1.2pre6 Oct  6, 1998  cleaned up documentation.  Pulled out win32 support.
+                      Makefile.am remove full path from JAR command.
+1.2pre5 Aug 12, 1998  Added David Atkinson's support for which implements event
+                      notification, hardwareflow control (tested with a modem),
+                      multiple bytes reads etc.  Needs to be converted back to
+                      termios calls.  Claims to work with blackbox.
+
+                      .cvsignore - Added to ignore generated files such as 
+                      "config.h".  It just cleans up CVS reports of what's new 
+                      and different.
+                      Makefile.am - Add a "jcl.jar" target to make a JAR file 
+                      for JCL.
+                      SerialImp.c - Implemented SerialInputStream_skip().  If 
+                      it runs out of memory it uses a slower algorithm which 
+                      uses almost no memory.  
+                      - Support for baud rates of 38400.  - Rename get_speed to 
+                      bps2speed_t (bits-per-second to speed_t constant) to 
+                      remove ambiguity.  
+                      - The GetSpeed functions now correctly return the bps 
+                      speed rather than the speed_t constant.  This means JCL 
+                      will now return the correct speed.
+                      - Add speed_t2bps to be the reverse of bps2speed_t.
+                      - Fix the spelling of "recieve".
+                      Added /dev/modem to the list of ports because it's very 
+                      common.  Added comments from Suns NullDriver sample, 
+                      giving credit where necessary.  (Sheldon Young - 
+                      sheldon_young@yahoo.com)
+                      
+                      Commented SerialImp.c (jarvi@ezlink.com)
+1.2pre4 Aug 12, 1998  The CommAPI has changed in the newest beta from Sun,
+                      now named "javacomm20-ea".  I have attached RXTXPort.java,                      which I have modified so it now compiles.
+                      Sheldon Young sheldon@intergate.bc.ca
+1.2pre3 July 5, 1998  libtool 1.0h, automake 1.3, (redhat-5.1 defaults)
+                      added JDK_HOME as and option to configure.
+                      missing string control to termios (in progress).
+                      documentation changes/updates 
+                      (doc and JDK_HOME changes suggested by 
+                      fred@rodan.moremagic.com)
+                      IOExeption work.
+1.2pre2 Jun  5, 1998  termios control from java (overdue)
+1.2pre1 May 19, 1998  CommAPI start <kevinh@acm.org (Kevin Hester)>
+1.1.5   Mar 17, 1998  mingw (win32) support
+1.1.3p7 Feb 26, 1998  change how configure.in finds JAVANATINC
+1.1.3p6 Feb 24, 1998  SunOS support (further) 
+                      thanks to Gilles Paquet Gilles.Paquet@ulb.ac.be 
+                      Added libtool support.  This should fix most unix
+                      porting problems.  
+                      added automake.  I'm not convinced it was a good idea.
+1.1.3p4 Jan 30, 1998  SunOS support (initial) 
+                      thanks to Michael.Forte@Corp.Sun.COM
+                      makeraw() fix
+1.1.3p3 Jan 18, 1998  added termios(3) funtions and FD class javadoc'ed
+1,1.3p2 Jan 16, 1998  Complete rewrite.  Now have SerialIn/Output.class's
+1,1.3p1 Jan 15, 1998  Speed was not being changed properly 
+1.1.3p0 Jan 13, 1998  jdk-1.1.3 fixes.
+1.1.1p2 May 23, 1997  Replaced terio with termios.
+1.1.1p1 May 22, 1997  obj dirs for different os's.  per request.
+1.1.1p0 May 21, 1997  Support for jdk 1.1.1.  Dropped support for 1.0.2
+                      because of the jni in 1.1.1.  The native code required 
+                      many changes.
+0.50    Mar 17, 1997  Buffered input/output use of FileDescriptors.  Removed 
+                      most of the native code.  deleted RO.java.  
+0.22    Mar 14, 1997  Everything is now controlled from Main.java.  renamed 
+                      classes for easier reading.  debug info for open(), 
+                      write().  prevent reading from bad fd.  dump hex for RX 
+                      as an example in RO.java.
+0.21    Mar 12, 1997  Removal of hard coded vars Makefile Removed the last 
+                      remnants of my GPS program.  Fixed Main.java by making it
+                      wait for TX to finish (thanks to oliver) Irix support. 
+                      (thanks to oliver)
+0.2     Mar 11, 1997  added autoconf ability
+0.1     Mar 10, 1997  Just tossed the stuff together

@@ -1,0 +1,131 @@
+#-------------------------------------------------------------------------
+#   rxtx is a native interface to serial ports in java.
+#   Copyright 1997, 1998, 1999 by Trent Jarvi jarvi@ezlink.com.
+#
+#   This library is free software; you can redistribute it and/or
+#   modify it under the terms of the GNU Library General Public
+#   License as published by the Free Software Foundation; either
+#   version 2 of the License, or (at your option) any later version.
+#
+#   This library is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#   Library General Public License for more details.
+#
+#   You should have received a copy of the GNU Library General Public
+#   License along with this library; if not, write to the Free
+#   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#-------------------------------------------------------------------------
+AC_INIT(src/SerialImp.c)
+AM_CONFIG_HEADER(config.h)
+AC_CANONICAL_SYSTEM
+AC_MSG_WARN(Trying libtool.  If the following fails install libtool)
+AM_PROG_LIBTOOL
+AM_INIT_AUTOMAKE(Serial,1.2.10)
+AC_PROG_CC
+AC_CHECK_HEADERS(fcntl.h)
+AC_CHECK_HEADERS(sys/fcntl.h)
+AC_CHECK_HEADERS(sys/file.h)
+AC_CHECK_HEADERS(sys/signal.h)
+AC_CHECK_HEADERS(termios.h)
+AC_PROG_GCC_TRADITIONAL
+AC_SUBST(JAVAINCLUDE)
+AC_SUBST(JAVANATINC)
+AC_SUBST(JCLASSPATH)
+AC_SUBST(TOP)
+AC_SUBST(JPATH)
+AC_SUBST(TARGETLIB)
+AC_SUBST(LDFLAG)
+AC_SUBST(CFLAGS)
+AC_SUBST(VERBOSE_IOEXCEPTIONS)
+AC_SUBST(THREADS_FLAG)
+if test "$CC" = "gcc"; then
+        CFLAGS="$CFLAGS"
+fi
+if test "$CC" = "egcs"; then
+        CFLAGS="$CFLAGS"
+fi
+[case "$host_os" in
+	*-gnu)
+	CFLAGS="$CFLAGS -ansi";;
+	*);;
+esac]
+TOP="`pwd`"
+AC_ARG_ENABLE(VERBOSE,
+   [  --enable-VERBOSE        more verbose native io messages [default=yes]],echo $enable_VERBOSE, enable_VERBOSE="yes")
+   if test x$enable_VERBOSE = xno; then 
+      VERBOSE_IOEXCEPTIONS="-DNO_VERBOSE_IOEXCEPTIONS"
+   fi
+AC_ARG_ENABLE(TIMEOUTS,
+   [  --enable-TIMEOUTS       IO TIMEOUT support [default=yes]], echo $enable_TIMEOUTS, enable_TIMEOUTS="yes")
+   if test x$enable_TIMEOUTS = xyes; then  
+      CFLAGS="$CFLAGS -DTIMEOUT"
+   fi
+AC_ARG_ENABLE(ASYNC,
+   [  --enable-ASYNC          ASYNC io support [default=yes]], echo $enable_ASYNC, enable_ASYNC="yes"
+   if test x$enable_ASYNC = xyes; then 
+         if test "$CC" = "gcc"; then
+            CFLAGS="$CFLAGS -DASYNC -D_POSIX_SOURCE -D_BSD_SOURCE"
+         else
+            [case "$host_os" in
+               irix*)
+                  CFLAGS="$CFLAGS -DASYNC -D_NO_POSIX=1 -D_NO_XOPEN4=1";;
+               *);;
+            esac]
+         fi
+         THREADS_FLAG="native"
+   fi
+   )
+AC_ARG_ENABLE(EVENT,
+   [  --enable-EVENT          Event notification [default=yes]], echo $enable_EVENT, enable_EVENT="yes"
+   if test x$enable_EVENT = xyes; then 
+      CFLAGS="$CFLAGS -DEVENTNOTIFICATION"
+      THREADS_FLAG="native"
+   fi
+   )
+AC_ARG_ENABLE(FULL_EVENT,
+   [  --enable-FULL_EVENT     Experimental event notification (linux 2.2)],
+   if test x$enable_FULL_EVENT = xyes; then 
+   	if test x$enable_EVENT = xno; then 
+		CFLAGS="$CFLAGS -DEVENTNOTIFICATION"
+	fi
+	CFLAGS="$CFLAGS -DFULL_EVENT"
+	THREADS_FLAG="native"
+   fi
+   )
+AC_ARG_ENABLE(GREENTHREAD,
+   [  --enable-GREENTHREAD    Experimental Greenthread Workaround],
+   if test x$enable_GREENTHREAD = xyes; then 
+      CFLAGS="$CFLAGS -DGREENTHREAD_WORKAROUND"
+   fi
+   )
+AC_ARG_ENABLE(JDK_HOME,
+   [  --enable-JDK_HOME       get JDK location from \$JDK_HOME],
+   if test x$enable_JDK_HOME = xyes; then 
+      JPATH="`echo $JDK_HOME/`"
+      if test x$JDK_HOME = x; then
+         AC_MSG_ERROR([Could not find java in \$JDK_HOME.])
+      fi
+   fi
+   )
+AC_ARG_ENABLE(DEBUG,
+   [  --enable-DEBUG          Print debugging info from SerialImp.c],
+   if test x$enable_DEBUG = xyes; then 
+      CFLAGS="$CFLAGS -DDEBUG"
+   fi
+   )
+if test "$JPATH" = ""; then
+   JPATH="`which java | sed s#bin\/java##`"
+   if test x$JPATH = x; then
+      AC_MSG_WARN([Could not find java in \$PATH.  Trying \$JDK_HOME.])
+      if test x$JDK_HOME = x; then
+         AC_MSG_ERROR([Could not find java in \$JDK_HOME.])
+      fi
+      JPATH="`echo $JDK_HOME/`"
+   fi
+fi
+TARGETLIB="libSerial.la"
+JAVANATINC="\$(JPATH)`cd $JPATH; find . -name jni_md.h|sed s#jni_md\\\\.h##|sed s#\\\\.\\\\/##`"
+JAVAINCLUDE="\$(JPATH)include"
+JCLASSPATH="-classpath \$(TOP):\$(TOP)/src:\$(JPATH)lib/classes.zip:\$(JPATH)/bin/comm.jar:\$(JPATH)/bin/jcl.jar.:$CLASSPATH"
+AC_OUTPUT(Makefile)

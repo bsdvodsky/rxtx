@@ -1,0 +1,155 @@
+
+This is the INSTALL file for RXTX.  If while following the instructions you
+find it unclear or incorrect please make a note and email the details to
+jarvi@ezlink.com.
+
+For the impatient:
+
+   ./configure
+   make
+   make install
+
+
+For the methodical:
+
+1) REQUIRED SOFTWARE
+
+    The following packages are used on the test system:
+
+    autoconf-2.12
+    automake-1.3
+    libtool-1.2b
+    make-3.76.1
+    optional: CommAPI from sun.
+
+    RedHat users note that libtool is included in the distribution but not 
+    installed by default.  It can be installed by placing disk 1 of the
+    distribution in the drive and running these commands as root:
+
+      # mount /mnt/cdrom
+      # rpm --upgrade /mnt/cdrom/RPMS/libtool*
+
+    Double check that java is in your PATH.  Life will be hell without it.
+    'which java' (this is how we find CLASSPATH,JAVAINCLUDE, JAVANATINC)
+   
+2) CREATE THE BUILD DIRECTORY
+
+    mkdir build; cd build 
+    in the following examples we will assume that the build directory is
+    in /blah/blah/blah/rxtx-version/build
+
+3) CREATING THE MAKEFILE
+   
+    from the build directory
+    ../configure
+
+    If you would rather use the JDK_HOME environment variable to determine the
+    location of the JDK tree use...
+
+    ../configure --enable-JDK_HOME
+
+    with JDK_HOME set to something like JDK_HOME=/usr/local/jdk.  Configure
+    will check for JDK_HOME if PATH fails.
+   
+    ../configure --help  for other options not documented here.  
+      Especially people interested in things like async communication, 
+      debugging information, ...  configure tries to keep the code simple
+      for initial ports.  
+  
+    linux-2.2 glibc users can do 
+	 ../configure --enable-EVENT
+    and have full functionality of the package.  Event notification is very
+    OS dependent.  Expect it to break on non linux systems at this point.
+
+    If, for some reason, no makefile is generated please send bug reports to
+    jarvi@ezlink.com.  You may be able to continue by installing the latest
+    GNU make package and then running ./autogen.sh; ./configure.
+
+    for cross-compiling see the file CROSSCOMPILE
+
+    Win32 users:   The rxtx package has dropped win32 support.  Email 
+                  jarvi@ezlink.com if you have an interest in developing it.
+
+4) JAVA INCLUDE FILES
+
+    These should all be handled properly except for people using the JDK rpms
+    found in RedHat contrib.  
+
+    Check to top of the Makefile to make sure we agree on the location of
+    the include files that came with the jdk.  Specifically:
+
+    JAVAINCLUDE =  -I /usr/local/java/include/
+    JAVANATINC =  -I /usr/local/java/include/genunix
+    also check the classpath
+    CLASSPATH = ...
+  
+    if your trying to build rxtx for commapi support you will need to
+    have comm.jar in your classpath.  The Makefile looks in the
+    environmental variable COMM_JAR_PATH and adds that to the classpath
+    so you don't have to edit the Makefile.
+
+  example:  #set COMM_JAR_PATH=/usr/local/java/lib/comm.jar;export COMM_JAR_PATH
+
+    I realize that automake can make life hard.  You edit the Makefile and
+    automake regenerates it...  if the above paths (especially JAVANATINC)
+    are pointing to the wrong place and you don't know how to work with the
+    make files you may want to just add a symlink.
+
+
+5) MAKING THE PACKAGE
+
+    # NOTE!!  if you have problems with make grab a copy of gnu make.
+    # ftp://sunsite.unc.edu/makefile-3.76.1.tar.gz
+    # -r--r--r--   1 root     bin        631458 Sep 19 19:41 make-3.76.1.tar.gz
+    # thanks Michael.Forte@Corp.Sun.COM
+
+    Try using the makefile. 
+        make
+	optional: make install  (installs commapi support too)
+        make run (runs a simple (not fun at all) test.java app)
+	or run the BlackBox, SerialDemo or Simple applications that come
+        with the commapi package
+    if no luck look through Makefile and send back comments please.
+
+6)  Start hacking...
+
+    See TODO for developer ideas.
+
+    CVS information is now shipped with the package.  To obtain the latest
+    developer version with cvs perform the following.
+
+       1. install cvs
+       2. in the rxtx directory type cvs login.
+          there is no password.  hit return when prompted for one.
+       3. type cvs update.
+
+       4. if your interested in contributing please email jarvi@ezlink.com
+          to obtain an account with write permission.
+
+7) Where does everything go?
+
+    > Sorry, but where do I must put the *.h and the "libSerial.so" ? The
+    > "java/include" directory or "java/include/solaris" directory or
+    > somewhere else ?  This is not include in your documentation.
+
+    make install should handle this now.
+
+8)  Threads, read() and timeouts.
+
+    The following is intended for typically more advanced use of serial
+    communications.  If your just playing with serial comm its probably not
+    important.
+
+    ok...  Lets say your a lucky person and have a jdk with native threads.
+
+    export THREADS_FLAG=native should allow timeouts to work.  Timeouts will not
+    work with green threads.  It is possible to bypass the green threads (in 
+    linux) with __open() and __read() in src/SerialImp.c.  We ran into problems 
+    on BSD (probably others) when trying to use them though.  Bypassing the 
+    green threads allowed timeouts to work.  --enable-GREENTHREADS does the 
+    __open trick.  
+
+
+9) If you found that the package did not work after all this its probably a
+   bug.  Please follow the procedure in BUGS for reporting problems.  Known
+   bugs are listed at the bottom of that file. 

@@ -1,0 +1,42 @@
+This package is not the result of one persons time.  Recognition is given
+to the following people for their assistance.
+
+Wayne Roberts  <wroberts1@home.com>
+   Read Timeouts.  Thresholds.  event notification.   Linux kernel hacking.  
+
+Yuen-Ping Leung <yuenping@semiotek.com>
+   Fixes for FreeBSD support.
+
+David Atkinson david.atkinson@vf.vodafone.co.uk
+   Hardware event handling implementation.
+   Many fixes and contributions.
+
+Sheldon Young sheldon@intergate.bc.ca
+   JCL/CommAPI compatibility with "javacomm20-ea"
+   Many fixes and contributions.
+
+kevinh@acm.org (Kevin Hester) 
+   CommAPI support.  The Linux Comm Project 
+   http://www.interstice.com/~kevinh/linuxcomm.html
+   src/RXTXPort.java src/RXTXCommDriver.java
+
+karl@blackdown.org (Karl Asha)
+   Karl gave this package a web presence at www.blackdown.org
+   Debugging the autoconfig
+   Reminding me to upgrade to 1.1.1.
+ 
+oliver@io.aec.at (Oliver Frommel)
+   IRIX port
+   Fixed open() call so pins 4,5,6,8 and 20 don't need to be tied together.
+   Helped track down a problem with the threads that prevented the package
+   from working.
+   Multiple suggestions.
+   Verifying serial communication with the rs232 analizer
+
+Michael.Forte@Corp.Sun.COM (Mike Forte)
+   SunOS port
+
+Gilles.Paquet@ulb.ac.be (Gilles Paquet)
+   SunOS port
+
+Maintainer:  Trent Jarvi  jarvi@ezlink.com

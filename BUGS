@@ -1,0 +1,72 @@
+If your not able to open the port (read the errors carefully) then you may
+not have permission to use the device.  Redhat linux ships with the following
+permissions:
+
+crw-r--r--   /dev/ttyS?
+
+Users need to be able to read and write with serial communication...
+
+chmod 666 /dev/ttyS? 
+
+should fix the problem.
+
+slackware users:  libc5 slackware/jdk does not compile ansi clean. (!) 
+configure --disable-ANSI_CLEAN will remove the -ansi flag.
+
+If you run into a problem building the rxtx package please report the following
+with the bug report.
+
+   was java in your PATH when you tried ./configure.  'which java'
+      JDK_HOME is checked also...
+   which machine type are you running on?  'uname -a'
+   which jdk version.
+       Linux users:  If your trying to use event notification, make sure
+       your using the latest native thread package and linux-2.2 kernel.
+   which rxtx version.
+   what version of libc are you using
+   what cc are you using
+
+If your having problems with JCL make sure you have read through CommAPI.
+
+with autoconfig/make/libtool/... problems report the following  if they are
+not present please install them.
+
+   autoconf --version
+   automake --version
+   libtool --version
+   make --version
+
+Here's whats on my system for comparison.  Correct versions are important.
+
+   autoconf 2.12
+   automake 1.3
+   libtool 1.2b
+   make 3.76.1
+
+
+mail any bugs to jarvi@ezlink.com.  
+
+Known Bugs.
+
+1.  SIGINT (CTL-C) does not work reliably with native threads.  green_threads 
+    work as one process ID so signaling works as expected.  It is unknown at 
+    this time how to know when the application recieved SIGINT, SIGQUIT... in 
+    native threads.
+
+    Actually I'm not sure.  It only happens with test.java.  Must be something
+    wrong with the silly thing.  Take a look.  Its probably something easy.
+
+2.  output buffer empty is not implemented. (optional for commapi).  On linux
+    this would require modification of the kernel.  Not an easy problem.
+
+3.  input/output buffer sizes do nothing.  Nobody has mentioned a need.
+
+5.  Event notification is only known to work on linux (optional for commapi)
+
+6.  There is no parallel support in rxtx.  Good project for a interested 
+    programmer.  It should not be too hard.  Give it a try!
+
+7.  opening and closing a port ~30 times can crash blackbox.  [fixed?].
+
+8.  jdk-1.1.7a1 with glibc-2.1 is hosed stick with glibc-2.  linux-2.2 appears 
+    to work.
