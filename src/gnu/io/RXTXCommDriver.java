@@ -108,11 +108,6 @@ public class RXTXCommDriver implements CommDriver
 		return returnArray;
 	}
 
-	private void registerKnownPortsCallback(String knownPort, int portType)
-	{
-		CommPortIdentifier.addPortName(knownPort, portType, this);
-	}
-
 	private void registerValidPorts(
 		String CandidateDeviceNames[],
 		String ValidPortPrefixes[],
