@@ -12,6 +12,8 @@ you downloaded.
 		      getParityErrorChar() and getEndOfInputChar() added 
 		      Lots of tickles a few wacks more error debug info
 		      fixes by the buckets.
+		      Thread fixes for open/close/monitorthread/native code
+		      win32 fixes for NT and win9?
 1.5-6  Oct 14, 2001   Mac OS X port to Code Warrier
 		      Documentation of the above
 		      possible double deletion fix
