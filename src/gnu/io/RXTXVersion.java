@@ -61,18 +61,19 @@ public class RXTXVersion
 	comments:     
 		      See INSTALL for details.
 ------------------------------------------------------------------------------*/
-	private static String Version;
+  private static String Version;
 
-	static {
-		Version = "RXTX-2.0-7pre1";
-	}
+  static
+  {
+    Version = "RXTX-2.0-7pre1";
+  }
 	/**
 	*  static method to return the current version of RXTX
 	*  unique to RXTX.
 	*  @returns a string representing the version  "RXTX-1.4-9"
 	*/
-	public static String getVersion()
-	{
-		return(Version);
-	}
+  public static String getVersion ()
+  {
+    return (Version);
+  }
 }

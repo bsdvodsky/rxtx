@@ -86,7 +86,7 @@
 
 /* glue for unsupported linux speeds see also win32termios.h */
 
-#if !defined(__APPLE__) && !defined(__FreeBSD__) /* dima */
+#if !defined(__APPLE__) && !defined(__FreeBSD__)	/* dima */
 /* this is now handled in SerialImp.c
 #define B14400		1010001
 #define B28800		1010002
@@ -97,41 +97,41 @@
 
 struct preopened
 {
-	char filename[40];
-	int fd;
-	struct preopened *next;
-	struct preopened *prev;
+  char filename[40];
+  int fd;
+  struct preopened *next;
+  struct preopened *prev;
 };
 
 struct event_info_struct
 {
-	int fd;
-	/* flags for events */
-	int eventflags[11];
-	
-	int initialised;
-	int ret, change;
-	unsigned int omflags;
-	char message[80];
-	int has_tiocsergetlsr;
-	int has_tiocgicount;
-	int eventloop_interrupted;
-	JNIEnv *env;
-	jobject *jobj;
-	jclass jclazz;
-	jmethodID send_event;
-	jmethodID checkMonitorThread;
-	struct event_info_struct *next, *prev;
-	fd_set rfds;
-	struct timeval tv_sleep;
-	int closing;
+  int fd;
+  /* flags for events */
+  int eventflags[11];
+
+  int initialised;
+  int ret, change;
+  unsigned int omflags;
+  char message[80];
+  int has_tiocsergetlsr;
+  int has_tiocgicount;
+  int eventloop_interrupted;
+  JNIEnv *env;
+  jobject *jobj;
+  jclass jclazz;
+  jmethodID send_event;
+  jmethodID checkMonitorThread;
+  struct event_info_struct *next, *prev;
+  fd_set rfds;
+  struct timeval tv_sleep;
+  int closing;
 #if !defined(TIOCSERGETLSR) && !defined(WIN32)
-	int writing;
-	int output_buffer_empty_flag;
-#endif /* !TIOCSERGETLSR !WIN32 */
+  int writing;
+  int output_buffer_empty_flag;
+#endif				/* !TIOCSERGETLSR !WIN32 */
 #	if defined(TIOCGICOUNT)
-	struct serial_icounter_struct osis;
-#endif /* TIOCGICOUNT */
+  struct serial_icounter_struct osis;
+#endif				/* TIOCGICOUNT */
 };
 
 /*  Ports known on the OS */
@@ -228,13 +228,13 @@ Trent
 #	define LOCKFILEPREFIX "LCK."
 #	define UUCP
 #endif /* __hpux__ */
-#if defined(__osf__)  /* Digital Unix */
+#if defined(__osf__)		/* Digital Unix */
 #	define DEVICEDIR "/dev/"
 #	define LOCKDIR ""
 #	define LOCKFILEPREFIX "LK."
 #	define UUCP
 #endif /* __osf__ */
-#if defined(__sun__) /* Solaris */
+#if defined(__sun__)		/* Solaris */
 #	define DEVICEDIR "/dev/"
 #	define LOCKDIR "/var/spool/locks"
 #	define LOCKFILEPREFIX "LK."
@@ -332,7 +332,7 @@ struct timeval snow, enow, seloop, eeloop;
 #endif /* DISABLE_LOCKFILES */
 
 /*  That should be all you need to look at in this file for porting */
-#ifdef LFS  /*  Use a Lock File Server */
+#ifdef LFS			/*  Use a Lock File Server */
 #	define LOCK lfs_lock
 #	define UNLOCK lfs_unlock
 #elif defined(UUCP)
@@ -353,7 +353,7 @@ struct timeval snow, enow, seloop, eeloop;
 #elif defined(FHS)
 #	define LOCK fhs_lock
 #	define UNLOCK fhs_unlock
-#else 
+#else
 #	define LOCK system_does_not_lock
 #	define UNLOCK system_does_not_unlock
 #endif /* UUCP */
@@ -374,7 +374,7 @@ struct timeval snow, enow, seloop, eeloop;
 #	elif defined(MAXINT)
 #		define SSIZE_MAX MAXINT
 #	else
-#		define SSIZE_MAX 2147483647 /* ugh */
+#		define SSIZE_MAX 2147483647	/* ugh */
 #	endif
 #endif
 
@@ -406,10 +406,10 @@ Flow Control defines inspired by reading how mgetty by Gert Doering does it
 
 /* PROTOTYPES */
 #ifdef DEBUG_MW
-extern void mexWarnMsgTxt( const char * );
-extern void mexErrMsgTxt( const char * );
+extern void mexWarnMsgTxt (const char *);
+extern void mexErrMsgTxt (const char *);
 #ifndef __APPLE__
-extern int mexPrintf( const char *, ... );
+extern int mexPrintf (const char *, ...);
 #	define printf mexPrintf
 #endif
 #endif /* DEBUG_MW */
@@ -419,46 +419,46 @@ extern int mexPrintf( const char *, ... );
 #endif
 
 #ifdef __BEOS__
-struct tpid_info_struct *add_tpid( struct tpid_info_struct * );
-data_rate translate_speed( JNIEnv*, jint  );
-int translate_data_bits( JNIEnv *, data_bits *, jint );
-int translate_stop_bits( JNIEnv *, stop_bits *, jint );
-int translate_parity( JNIEnv *, parity_mode *, jint );
+struct tpid_info_struct *add_tpid (struct tpid_info_struct *);
+data_rate translate_speed (JNIEnv *, jint);
+int translate_data_bits (JNIEnv *, data_bits *, jint);
+int translate_stop_bits (JNIEnv *, stop_bits *, jint);
+int translate_parity (JNIEnv *, parity_mode *, jint);
 #else
-int spawn_write_thread( int, char *, int, JNIEnv *, jobject *);
-int translate_speed( JNIEnv*, jint  );
-int translate_data_bits( JNIEnv *, tcflag_t *, jint );
-int translate_stop_bits( JNIEnv *, tcflag_t *, jint );
-int translate_parity( JNIEnv *, tcflag_t *, jint );
+int spawn_write_thread (int, char *, int, JNIEnv *, jobject *);
+int translate_speed (JNIEnv *, jint);
+int translate_data_bits (JNIEnv *, tcflag_t *, jint);
+int translate_stop_bits (JNIEnv *, tcflag_t *, jint);
+int translate_parity (JNIEnv *, tcflag_t *, jint);
 #endif
-void system_wait();
-void finalize_event_info_struct( struct event_info_struct * );
-int read_byte_array( JNIEnv *, jobject *, int, unsigned char *, int, int );
-int get_java_var( JNIEnv *, jobject, char *, char * );
-jboolean is_interrupted( struct event_info_struct * );
-int send_event(struct event_info_struct *, jint, int );
-void dump_termios(char *,struct termios *);
-void report_verbose(char *);
-void report_error(char *);
-void report_warning(char *);
-void report(char *);
-void throw_java_exception( JNIEnv *, char *, char *, char * );
-int lock_device( const char * );
-void unlock_device( const char * );
-int is_device_locked( const char * );
-int check_lock_status( const char * );
-int lfs_unlock(const char *, int );
-int lfs_lock( const char *, int);
-void fhs_unlock(const char *, int );
-int fhs_lock( const char *, int);
-void uucp_unlock( const char *, int );
-int uucp_lock( const char *, int );
-int system_does_not_lock( const char *, int );
-void system_does_not_unlock( const char *, int );
-int check_group_uucp();
-int check_lock_pid( const char *, int );
-int printj(JNIEnv *env, wchar_t *fmt, ...);
+void system_wait ();
+void finalize_event_info_struct (struct event_info_struct *);
+int read_byte_array (JNIEnv *, jobject *, int, unsigned char *, int, int);
+int get_java_var (JNIEnv *, jobject, char *, char *);
+jboolean is_interrupted (struct event_info_struct *);
+int send_event (struct event_info_struct *, jint, int);
+void dump_termios (char *, struct termios *);
+void report_verbose (char *);
+void report_error (char *);
+void report_warning (char *);
+void report (char *);
+void throw_java_exception (JNIEnv *, char *, char *, char *);
+int lock_device (const char *);
+void unlock_device (const char *);
+int is_device_locked (const char *);
+int check_lock_status (const char *);
+int lfs_unlock (const char *, int);
+int lfs_lock (const char *, int);
+void fhs_unlock (const char *, int);
+int fhs_lock (const char *, int);
+void uucp_unlock (const char *, int);
+int uucp_lock (const char *, int);
+int system_does_not_lock (const char *, int);
+void system_does_not_unlock (const char *, int);
+int check_group_uucp ();
+int check_lock_pid (const char *, int);
+int printj (JNIEnv * env, wchar_t * fmt, ...);
 
 #define UNEXPECTED_LOCK_FILE "RXTX Error:  Unexpected lock file: %s\n Please report to the RXTX developers\n"
 #define LINUX_KERNEL_VERSION_ERROR "\n\n\nRXTX WARNING:  This library was compiled to run with OS release %s and you are currently running OS release %s.  In some cases this can be a problem.  Try recompiling RXTX if you notice strange behavior.  If you just compiled RXTX make sure /usr/include/linux is a symbolic link to the include files that came with the kernel source and not an older copy.\n\n\npress enter to continue\n"
-#define UUCP_ERROR "\n\n\nRXTX WARNING:  This library requires the user running applications to be in\ngroup uucp.  Please consult the INSTALL documentation.  More information is\navaiable under the topic 'How can I use Lock Files with rxtx?'\n" 
+#define UUCP_ERROR "\n\n\nRXTX WARNING:  This library requires the user running applications to be in\ngroup uucp.  Please consult the INSTALL documentation.  More information is\navaiable under the topic 'How can I use Lock Files with rxtx?'\n"

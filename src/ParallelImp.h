@@ -62,7 +62,7 @@
 #	elif defined(MAXINT)
 #		define SSIZE_MAX MAXINT
 #	else
-#		define SSIZE_MAX 2147483647 /* ugh */
+#		define SSIZE_MAX 2147483647	/* ugh */
 #	endif
 #endif
 
@@ -82,13 +82,12 @@ Flow Control defines inspired by reading how mgetty by Gert Doering does it
 */
 
 /* PROTOTYPES */
-jboolean is_interrupted(JNIEnv *, jobject );
-int send_event(JNIEnv *, jobject, jint, int );
-int read_byte_array( int fd, unsigned char *buffer, int length, int threshold,
-   int timeout );
-int get_java_var( JNIEnv *, jobject, char *, char * );
-void report(char *);
-void report_error(char *);
-void throw_java_exception( JNIEnv *, char *, char *, char * );
-void throw_java_exception_system_msg( JNIEnv *, char *, char * );
-
+jboolean is_interrupted (JNIEnv *, jobject);
+int send_event (JNIEnv *, jobject, jint, int);
+int read_byte_array (int fd, unsigned char *buffer, int length, int threshold,
+		     int timeout);
+int get_java_var (JNIEnv *, jobject, char *, char *);
+void report (char *);
+void report_error (char *);
+void throw_java_exception (JNIEnv *, char *, char *, char *);
+void throw_java_exception_system_msg (JNIEnv *, char *, char *);
