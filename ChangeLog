@@ -8,6 +8,7 @@
                       Alejandro P. Revilla <apr@cs.com.uy>
                       Documentation of libc5 bugs. Peter Bennett 
                       <bencom@bencom.co.nz>
+                      Warning when there are multiple jni include file paths.
 1.3-8   Oct 25, 1999  Introduced Wayne Roberts Win32 code. 
                       CLOCAL added to c_cflags.  (How did it get out?)
                       -thanks to Bertrand Renuart <bertrand.renuart@itma.lu>

@@ -26,7 +26,7 @@ ac_help="$ac_help
 ac_help="$ac_help
   --enable-PRINTER        PRINTER support (experimental) [default=yes]"
 ac_help="$ac_help
-  --enable-NATIVETHREADS  Use jdk native-threads. Overrides environment "
+  --enable-NATIVETHREADS  Use jdk native-threads.  Overrides environment "
 ac_help="$ac_help
   --enable-FULL_EVENT     Full event notification (linux 2.2)"
 ac_help="$ac_help
@@ -2447,17 +2447,13 @@ fi
 
 
 
+
 JCL_PATH=lib
 TOP="`pwd`"
-if test "$CC" = "gcc"; then
-        CFLAGS="$CFLAGS"
-fi
-if test "$CC" = "egcs"; then
-        CFLAGS="$CFLAGS"
-fi
+
 case "$host_os" in
 	*-gnu)
-	CFLAGS="$CFLAGS -ansi -D_POSIX_SOURCE";;
+	CFLAGS="$CFLAGS -D_POSIX_SOURCE";;
 	*);;
 esac
 # Check whether --enable-RXTXIDENT or --disable-RXTXIDENT was given.
@@ -2466,32 +2462,41 @@ if test "${enable_RXTXIDENT+set}" = set; then
   echo $enable_RXTXIDENT
 else
   enable_RXTXIDENT="no"
+
 fi
 
-   if test x$enable_RXTXIDENT = xyes; then  
-	IDENTIFIERS="\$(TOP)/gnu/io/CommPortIdentifier.class \$(TOP)/gnu/io/CommPortEnumerator.class \$(TOP)/gnu/io/CpoList.class \$(TOP)/gnu/io/CpoListEntry.class \$(TOP)/gnu/io/OwnershipEventThread.class"
-   fi
+	if test x$enable_RXTXIDENT = xyes; then  
+		IDENTIFIERS="\$(TOP)/gnu/io/CommPortIdentifier.class \
+			\$(TOP)/gnu/io/CommPortEnumerator.class \
+			\$(TOP)/gnu/io/CpoList.class \
+			\$(TOP)/gnu/io/CpoListEntry.class \
+			\$(TOP)/gnu/io/OwnershipEventThread.class"
+	fi
 # Check whether --enable-PRINTER or --disable-PRINTER was given.
 if test "${enable_PRINTER+set}" = set; then
   enableval="$enable_PRINTER"
   echo $enable_PRINTER
 else
   enable_PRINTER="no"
+
 fi
 
-   if test x$enable_PRINTER = xyes; then  
-	TARGETLIB="\$(TOP)/\$(target_alias)/libSerial.la \$(TOP)/\$(target_alias)/libParallel.la"
-   else
-	TARGETLIB="\$(TOP)/\$(target_alias)/libSerial.la"
-   fi
-#AC_ARG_ENABLE(VERBOSE,
-#   [  --enable-VERBOSE        more verbose native io messages [default=yes]],echo $enable_VERBOSE, enable_VERBOSE="yes")
+	if test x$enable_PRINTER = xyes; then  
+		TARGETLIB="\$(TOP)/\$(target_alias)/libSerial.la \
+			\$(TOP)/\$(target_alias)/libParallel.la"
+	else
+		TARGETLIB="\$(TOP)/\$(target_alias)/libSerial.la"
+	fi
+#AC_ARG_ENABLE
+#(
+#	VERBOSE,
+#	[  --enable-VERBOSE        more verbose native io messages [default=yes]],
+#	echo $enable_VERBOSE, 
+#	enable_VERBOSE="yes"
+#)
 #   if test x$enable_VERBOSE = xno; then 
 #      VERBOSE_IOEXCEPTIONS="-DNO_VERBOSE_IOEXCEPTIONS"
 #   fi
-   if test "$CC" = "gcc"; then
-      CFLAGS="$CFLAGS -D_BSD_SOURCE"
-   fi
 
 # Check whether --enable-NATIVETHREADS or --disable-NATIVETHREADS was given.
 if test "${enable_NATIVETHREADS+set}" = set; then
@@ -2499,62 +2504,83 @@ if test "${enable_NATIVETHREADS+set}" = set; then
   echo $enable_NATIVETHREADS
 else
   enable_NATIVETHREADS="no"
+
 fi
 
-   if test x$enable_NATIVETHREADS = xyes; then 
-      THREAD_FLAG="native"
-   else
-      THREAD_FLAG=""
-   fi
+if test x$enable_NATIVETHREADS = xyes; then 
+	THREAD_FLAG="native"
+else
+	THREAD_FLAG=""
+fi
 # Check whether --enable-FULL_EVENT or --disable-FULL_EVENT was given.
 if test "${enable_FULL_EVENT+set}" = set; then
   enableval="$enable_FULL_EVENT"
   if test x$enable_FULL_EVENT = xyes; then 
-	CFLAGS="$CFLAGS -DFULL_EVENT"
-	THREADS_FLAG="native"
-   fi
-   
+		CFLAGS="$CFLAGS -DFULL_EVENT"
+		THREADS_FLAG="native"
+	fi
+
 fi
 
 # Check whether --enable-JDK_HOME or --disable-JDK_HOME was given.
 if test "${enable_JDK_HOME+set}" = set; then
   enableval="$enable_JDK_HOME"
   if test x$enable_JDK_HOME = xyes; then 
-      JPATH="`echo $JDK_HOME`"
-      if test x$JDK_HOME = x; then
-         { echo "configure: error: Could not find java in \$JDK_HOME." 1>&2; exit 1; }
-      fi
-   fi
-   
+		JPATH="`echo $JDK_HOME`"
+		if test x$JDK_HOME = x; then
+			{ echo "configure: error: Could not find java in \$JDK_HOME." 1>&2; exit 1; }
+		fi
+	fi
+
 fi
 
 # Check whether --enable-DEBUG or --disable-DEBUG was given.
 if test "${enable_DEBUG+set}" = set; then
   enableval="$enable_DEBUG"
   if test x$enable_DEBUG = xyes; then 
-      CFLAGS="$CFLAGS -DDEBUG"
-   fi
-   
+		CFLAGS="$CFLAGS -DDEBUG"
+	fi
+
 fi
 
 if test "$JPATH" = ""; then
-   JPATH="`which java | sed s#/\bin\/java##`"
-   if test x$JPATH = x; then
-      echo "configure: warning: Could not find java in \$PATH.  Trying \$JDK_HOME." 1>&2
-      if test x$JDK_HOME = x; then
-         { echo "configure: error: Could not find java in \$JDK_HOME." 1>&2; exit 1; }
-      fi
-      JPATH="`echo $JDK_HOME`"
-   fi
+	JPATH="`which java | sed s#/\bin\/java##`"
+	if test x$JPATH = x; then
+		echo "configure: warning: Could not find java in \$PATH.  Trying \$JDK_HOME." 1>&2
+		if test x$JDK_HOME = x; then
+			{ echo "configure: error: Could not find java in \$JDK_HOME." 1>&2; exit 1; }
+		fi
+	JPATH="`echo $JDK_HOME`"
+	fi
 fi
+JAVANATINC="\$(JPATH)/`cd $JPATH; find ./include -name jni_md.h|sed s#jni_md\\\\.h##|sed s#\\\\.\\\\/## |head -n1`"
+if  test `find $JPATH/include -name jni_md.h|wc -l` != "1" ; then
+	echo
+	echo configure is having a hard time determining which directory
+	echo contains the file jni_md.h.  Edit Makefile and fix the 
+	echo variable JAVANATINC to point to the correct directory.
+	echo
+	echo The following options are available:
+	find $JPATH/include -name jni_md.h|sed s#jni_md\.h##
+	echo
+	echo If there are more than one option available the first was selected. 
+	echo
+	echo press enter to continue.
+	read
+fi
+	
+
 cat > conftest.java << EOF
 /* this may be usefull for getting around java cobwebs during build */
-public class conftest {
-	public static void main(String[] args) {
+public class conftest 
+{
+	public static void main(String[] args) 
+	{
 		System.out.println(System.getProperty(args[0]));
 	}
 }
 EOF
+
 $JPATH/bin/javac conftest.java
 echo -n checking os.name  " "
 OS_NAME=`$JPATH/bin/java conftest "os.name"`
@@ -2562,13 +2588,16 @@ echo $OS_NAME
 echo -n checking os.arch   " "
 OS_ARCH=`$JPATH/bin/java conftest "os.arch"`
 echo $OS_ARCH
-echo -n checking os.version   " "
-OS_VERSION=`java conftest "os.version"`
-echo $OS_VERSION
 echo -n checking java.version   " "
 JAVA_VERSION=`$JPATH/bin/java conftest "java.version"`
 echo $JAVA_VERSION
+echo -n checking java.vendor " "
+JAVA_VENDOR=`java conftest "java.vendor"`
+echo $JAVA_VENDOR
 
+echo -n checking os.version   " "
+OS_VERSION=`uname -r`
+echo $OS_VERSION
 rm -f conftest.java
 rm -f conftest.class
 
@@ -2637,6 +2666,16 @@ function fix_comm_jar()
 }
 
 JAVAINCLUDE="\$(JPATH)/include"
+if test "$CC" = "gcc" || test "$CC"="egcs"; then
+	case $JAVA_VENDOR in
+	IBM*)
+		CFLAGS="$CFLAGS -D_BSD_SOURCE"
+		;;
+	*)
+		CFLAGS="$CFLAGS -D_BSD_SOURCE -ansi"
+		;;
+	esac
+fi
  case $OS_NAME in 
 Linux)
 	case $JAVA_VERSION in
@@ -2649,8 +2688,8 @@ Linux)
 		JCL_PATH="\$(JPATH)/lib"
 		case $OS_NAME in
 		Linux)
+			if ! grep -q `uname -r` /usr/include/linux/version.h;then echo WARNING:  Kernel include files do not match the current kernel;fi;
 			JCL_PATH="jre/lib/ext"
-			JAVANATINC="\$(JPATH)/include/linux"
 			case $OS_VERSION in
 			2.2.*|2.3.*)
 				CFLAGS="$CFLAGS -DFULL_EVENT"
@@ -2680,7 +2719,6 @@ Linux)
 			esac
 		;;
 		*)
-			JAVANATINC="\$(JPATH)/`cd $JPATH; find ./include -name jni_md.h|sed s#jni_md\\\\.h##|sed s#\\\\.\\\\/##`"
 		;;
 		esac
 	;;
@@ -2691,9 +2729,9 @@ Linux)
 		JAVA_H_CLASSPATH="\$(JCLASSPATH)"
 		case $OS_NAME in
 		Linux)
+			if ! grep -q `uname -r` /usr/include/linux/version.h;then echo WARNING:  Kernel include files do not match the current kernel;fi;
 			RXTX_PATH="\$(prefix)/lib/"
 			JAVAH_FIX="if [ ! \$(THREADS_FLAG) ] && [ ! -d com ]; then if [ ! -f \$(JPATH)/lib/comm.jar ]; then echo \"Please install comm.jar from CommAPI in \$(JPATH)/java/lib/\"; else \$(JAR) -xf \$(JPATH)/lib/comm.jar;  fi; fi;"
-			JAVANATINC="\$(JPATH)/include/genunix"
 			JCL_PATH="lib"
 			case $OS_VERSION in
 			2.2.*|2.3.*)
@@ -2704,7 +2742,6 @@ Linux)
 			esac
 		;;
 		*)
-			JAVANATINC="\$(JPATH)/`cd $JPATH; find ./include -name jni_md.h|sed s#jni_md\\\\.h##|sed s#\\\\.\\\\/##`"
 		;;
 		esac
 	;;
@@ -2714,19 +2751,16 @@ Linux)
 	RXTX_PATH="\$(prefix)/lib"
 	JCL_PATH="lib"
 	CFLAGS="$CFLAGS -D_NO_POSIX=1 -D_NO_XOPEN4=1"
-	JAVANATINC="\$(JPATH)/`cd $JPATH; find ./include -name jni_md.h|sed s#jni_md\\\\.h##|sed s#\\\\.\\\\/##`"
 	JCLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:$CLASSPATH"
 ;;
 irix*)
 	JCL_PATH="lib"
 	CFLAGS="$CFLAGS -D_NO_POSIX=1 -D_NO_XOPEN4=1"
-	JAVANATINC="\$(JPATH)/`cd $JPATH; find ./include -name jni_md.h|sed s#jni_md\\\\.h##|sed s#\\\\.\\\\/##`"
 	JCLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:$CLASSPATH"
 ;;
 *)
 	JCL_PATH="lib"
 	CFLAGS="$CFLAGS -D_NO_POSIX=1 -D_NO_XOPEN4=1"
-	JAVANATINC="\$(JPATH)/`cd $JPATH; find ./include -name jni_md.h|sed s#jni_md\\\\.h##|sed s#\\\\.\\\\/##`"
 	JCLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:$CLASSPATH"
 ;;
 esac 
@@ -2914,6 +2948,7 @@ s%@OS_NAME@%$OS_NAME%g
 s%@OS_ARCH@%$OS_ARCH%g
 s%@OS_VERSION@%$OS_VERSION%g
 s%@JAVA_VERSION@%$JAVA_VERSION%g
+s%@JAVA_VENDOR@%$JAVA_VENDOR%g
 s%@JAVA_HOME@%$JAVA_HOME%g
 s%@JAVA_LIBRARY_PATH@%$JAVA_LIBRARY_PATH%g
 s%@JAVA_CLASS_PATH@%$JAVA_CLASS_PATH%g

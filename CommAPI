@@ -62,7 +62,7 @@ mv /usr/local/lib/libSerial.* /usr/local/java/jre/lib/i386/
 
 lets break the proerties files
 vi /usr/local/java/lib/javax.comm.properties
->place intention typo in the file<
+>place intentional typo in the file<
 Caught java.lang.ClassNotFoundException: gnu.io.rXTXCommDriver while
 loading driver gnu.io.rXTXCommDriver
 No serial ports found!
