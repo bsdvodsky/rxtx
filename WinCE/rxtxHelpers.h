@@ -70,16 +70,16 @@
 
 typedef struct
 {
+  /* Port handle */
   HANDLE fd;
   /* flags for events */
   DWORD ef;
-	
+  /* event handle for Monitor interthread signalling*/
   HANDLE eventHandle;
-  /* current event */
+  /* current serial event */
   DWORD event;
-  JNIEnv *env;
-  jobject jobj;
-  jfieldID jfMonitorThreadLock;
+  /* EventThread sets this flag to TRUE when it's ready */
+  bool eventThreadReady;
 } EventInfoStruct;
 
 
