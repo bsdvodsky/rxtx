@@ -797,6 +797,13 @@ JNIEXPORT void JNICALL LPRPort(eventLoop)( JNIEnv *env,
 			send_event( env, jobj, PAR_EV_ERROR, 1 );
 		if (pflags&LP_ERR)  /* unchanged input, active low */
 			send_event( env, jobj, PAR_EV_ERROR, 1 );
+#elif defined ( WIN32 )
+		if (LPRPort(isPaperOut)(env,jobj))
+			send_event( env, jobj, PAR_EV_ERROR, 1 );
+		if (LPRPort(isPrinterSelected)(env,jobj))
+			send_event( env, jobj, PAR_EV_ERROR, 1 );
+		if (LPRPort(isPrinterError)(env,jobj))
+			send_event( env, jobj, PAR_EV_ERROR, 1 );
 #else
 	/*  FIXME??  */
 	printf("ParallelImp.c LPGETSTATUS is undefined!\n");
