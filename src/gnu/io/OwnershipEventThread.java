@@ -16,14 +16,16 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
-package gnu.io;
+package javax.comm;
 
 //import  java.io.*;
 //import  java.util.*;
 
 
-class OwnershipEventThread extends Thread {
+class OwnershipEventThread extends Thread 
+{
 	CommPortIdentifier cpi;
+	static boolean debug=true;
 
 /*------------------------------------------------------------------------------
         OwnershipEventThread()
@@ -33,7 +35,10 @@ class OwnershipEventThread extends Thread {
         exceptions:
         comments:
 ------------------------------------------------------------------------------*/
-	OwnershipEventThread(CommPortIdentifier c) { }
+	OwnershipEventThread(CommPortIdentifier c) 
+	{ 
+		if(debug) System.out.println("OwnershipEventThread:OwnershipEventThread()");
+	}
 /*------------------------------------------------------------------------------
         run()
         accept:
@@ -42,5 +47,8 @@ class OwnershipEventThread extends Thread {
         exceptions:
         comments:
 ------------------------------------------------------------------------------*/
-	public void run() { }
+	public void run() 
+	{ 
+		if(debug) System.out.println("OwnershipEventThread:run()");
+	}
 }

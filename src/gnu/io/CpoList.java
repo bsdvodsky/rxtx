@@ -23,7 +23,9 @@ import javax.comm.*;
 //import  java.util.*;
 
 
-class CpoList {
+class CpoList 
+{
+	static boolean debug = true;
 /*------------------------------------------------------------------------------
         add()
         accept:
@@ -32,7 +34,10 @@ class CpoList {
         exceptions:
         comments:
 ------------------------------------------------------------------------------*/
-	synchronized void add(CommPortOwnershipListener c) { }
+	synchronized void add(CommPortOwnershipListener c) 
+	{ 
+		if(debug) System.out.println("CpoList:add()");
+	}
 /*------------------------------------------------------------------------------
         remove()
         accept:
@@ -41,7 +46,10 @@ class CpoList {
         exceptions:
         comments:
 ------------------------------------------------------------------------------*/
-	synchronized void remove(CommPortOwnershipListener c) { }
+	synchronized void remove(CommPortOwnershipListener c) 
+	{ 
+		if(debug) System.out.println("CpoList:remove()");
+	}
 /*------------------------------------------------------------------------------
         clonelist()
         accept:
@@ -50,7 +58,11 @@ class CpoList {
         exceptions:
         comments:
 ------------------------------------------------------------------------------*/
-	synchronized CpoList clonelist() { return(this); }
+	synchronized CpoList clonelist() 
+	{ 
+		if(debug) System.out.println("CpoList:clonelist()");
+		return(this); 
+	}
 /*------------------------------------------------------------------------------
         isEmpty()
         accept:
@@ -59,7 +71,11 @@ class CpoList {
         exceptions:
         comments:
 ------------------------------------------------------------------------------*/
-	synchronized boolean isEmpty() {  return(false);}
+	synchronized boolean isEmpty() 
+	{  
+		if(debug) System.out.println("CpoList:isEmpty()");
+		return(false);
+	}
 /*------------------------------------------------------------------------------
         fireOwnershipEvent()
         accept:
@@ -68,7 +84,10 @@ class CpoList {
         exceptions:
         comments:
 ------------------------------------------------------------------------------*/
-	synchronized void fireOwnershipEvent(int i) { }
+	synchronized void fireOwnershipEvent(int i) 
+	{ 
+		if(debug) System.out.println("CpoList:fireOwnershipEvent()");
+	}
 /*------------------------------------------------------------------------------
         dump()
         accept:
@@ -77,5 +96,8 @@ class CpoList {
         exceptions:
         comments:
 ------------------------------------------------------------------------------*/
-	synchronized void dump() { }
+	synchronized void dump() 
+	{ 
+		if(debug) System.out.println("CpoList:dump()");
+	}
 }

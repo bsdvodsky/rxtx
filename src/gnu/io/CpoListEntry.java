@@ -21,7 +21,9 @@ package gnu.io;
 import javax.comm.*;
 
 
-class CpoListEntry {
+class CpoListEntry 
+{
+	static boolean debug = true;
 /*------------------------------------------------------------------------------
         CpoListEntry()
         accept:
@@ -30,5 +32,8 @@ class CpoListEntry {
         exceptions:
         comments:
 ------------------------------------------------------------------------------*/
-	CpoListEntry(CommPortOwnershipListener c) { }
+	CpoListEntry(CommPortOwnershipListener c) 
+	{ 
+		if(debug) System.out.println("CpoListEntry:CpoListEntry()");
+	}
 }
