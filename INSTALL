@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in Java.
-|   Copyright 1997-2001 by Trent Jarvi trentjarvi@yahoo.com.
+|   Copyright 1997-2002 by Trent Jarvi taj@www.linux.org.uk
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Library General Public
@@ -19,7 +19,7 @@
 This is the INSTALL file for RXTX.  Mon Mar 11 17:03:40 MST 2002
 
 If, while following the instructions, you find this file unclear or incorrect 
-please make a note and email the details to trentjarvi@yahoo.com.  
+please make a note and email the details to taj@www.linux.org.uk.
 
 A note on Mac OS X:
 
@@ -45,7 +45,7 @@ A note on Mac OS X:
 	A.  java.lang.UnsatisfiedLinkError: nSetOwner while loading driver
 	    gnu.io.RXTXCommDriver
 	B.  Exception in thread "main" java.lang.UnsatisfiedLinkError: 
-	    no Serial in java.library.path
+	    no rxtxSerial in java.library.path
 	C.  No serial ports found!
 	D.  I Can Not Open the Port.
 	E.  java.lang.NoClassDefFoundError: javax/comm/CommPort
@@ -107,8 +107,8 @@ A.  Japanese
 
 	With the packages installed, proceed to build and install rxtx.
 
-		$ tar -xzvf rxtx-1.4.tar.gz
-		$ cd rxtx-1.4
+		$ tar -xzvf rxtx-2.0-1.tar.gz
+		$ cd rxtx-2.0-1
 		$ ./configure  (follow the instructions)
 		$ make install (gmake if your system uses that convention)
 		Read "T.  How can I use Lock Files with rxtx?"
@@ -145,7 +145,7 @@ A.  Japanese
 			/usr/local/java/jre/lib/ext/comm.jar
 
 		IBM's comm.jar remaps 'COM1' to '/dev/ttyS0.'  It is not
-		recommended to try mixing IBM's comm.jar and rxtx-1.4 at
+		recommended to try mixing IBM's comm.jar and rxtx-2.0-1 at
 		this time.  If you do try it, Watch out for the above.
 
 	C.  Installing javax.comm.properties.
@@ -230,19 +230,19 @@ A.  Japanese
 		
 			/usr/local/java/jre/lib/ext/jcl.jar
 			/usr/local/java/jre/lib/ext/comm.jar
-			/usr/local/java/jre/lib/$(ARCH)/libSerial.so.
-			/usr/local/java/jre/lib/$(ARCH)/libParallel.so.
+			/usr/local/java/jre/lib/$(ARCH)/librxtxSerial.so.
+			/usr/local/java/jre/lib/$(ARCH)/librxtxParallel.so.
 			/usr/local/java/jre/lib/javax.comm.properties
 
 		jdk-1.1.* the files go in 
 
 			/usr/local/java/lib/jcl.jar
 			/usr/local/java/lib/comm.jar
-			/usr/lib/libSerial.so.
-			/usr/lib/libParallel.so.
+			/usr/lib/librxtxSerial.so.
+			/usr/lib/librxtxParallel.so.
 			/usr/local/java/lib/javax.comm.properties
 
-			The libSerial.so libParallel.so are placed in 
+			The librxtxSerial.so librxtxParallel.so are placed in 
 			/usr/lib so people don't have to change with their 
 			LD_LIBRARY_PATH.
 
@@ -371,14 +371,14 @@ A.  I get java.lang.UnsatisfiedLinkError: nSetOwner while loading driver
 
 	See Also: 2-B.  Installing Sun's comm.jar
 
-B.  Exception in thread "main" java.lang.UnsatisfiedLinkError: no Serial in 
+B.  Exception in thread "main" java.lang.UnsatisfiedLinkError: no rxtxSerial in 
     java.library.path
 
-	libSerial.so is located in the wrong directory.  Here is an example
+	librxtxSerial.so is located in the wrong directory.  Here is an example
 
-	$ mv /usr/local/java/jre/lib/i386/libSerial* /usr/local/lib
+	$ mv /usr/local/java/jre/lib/i386/librxtxSerial* /usr/local/lib
 	$ java BlackBox
-	Exception in thread "main" java.lang.UnsatisfiedLinkError: no Serial in
+	Exception in thread "main" java.lang.UnsatisfiedLinkError: no rxtxSerial in
 	java.library.path
 		at java.lang.ClassLoader.loadLibrary(Compiled Code)
 		at java.lang.Runtime.loadLibrary0(Compiled Code)
@@ -394,7 +394,7 @@ B.  Exception in thread "main" java.lang.UnsatisfiedLinkError: no Serial in
 
 		... lets fix it.
 
-	$ mv /usr/local/lib/libSerial.* /usr/local/java/jre/lib/i386/
+	$ mv /usr/local/lib/librxtxSerial.* /usr/local/java/jre/lib/i386/
 
 C.  No serial ports found!
 
@@ -611,7 +611,7 @@ make --version
    		make 3.77
 
 
-	mail any bugs to trentjarvi@yahoo.com.  
+	mail any bugs to taj@www.linux.org.uk.
 
 
 R.  Which jdk should be used? 
@@ -871,7 +871,7 @@ X.  My ThinkPad is Not Working!
 
 -- 
 Trent Jarvi
-TrentJarvi@yahoo.com
+taj@www.linux.org.uk
 -------------------------------------------------------------------------------
 You made it this far.. what is one more line.
 
