@@ -2,6 +2,7 @@ psmisc, version 18
 + _hacks_ to get a lib Trent Jarvi trentjarvi@yahoo.com
   This is experimental work for rxtx. 
   try testing /dev/ttyS0 to see whats up.
+  Added(kmt) to test cvs
 ==================
 
 This package contains four little utilities that use the proc FS:
