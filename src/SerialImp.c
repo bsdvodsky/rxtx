@@ -2808,7 +2808,8 @@ int is_device_locked( const char *filename )
 	const char *lockdirs[] = { "/etc/locks", "/usr/spool/kermit",
 		"/usr/spool/locks", "/usr/spool/uucp", "/usr/spool/uucp/",
 		"/usr/spool/uucp/LCK", "/var/lock", "/var/lock/modem",
-		"/var/spool/lock", "/var/spool/locks", "/var/spool/uucp", NULL
+		"/var/spool/lock", "/var/spool/locks", "/var/spool/uucp",
+		LOCKDIR, NULL
 	};
 	const char *lockprefixes[] = { "LK..", "lk..", "LK.", NULL }; 
 	char *p, file[80], pid_buffer[20], message[80];

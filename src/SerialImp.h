@@ -56,12 +56,12 @@
 
 /* glue for unsupported linux speeds see also win32termios.h */
 
-#if !defined(__APPLE__) //dima
+#if !defined(__APPLE__) /* dima */
 #define B14400		1010001
 #define B28800		1010002
 #define B128000		1010003
 #define B256000		1010004
-#endif //dima
+#endif /* dima */
 
 
 /*  Ports known on the OS */
@@ -193,6 +193,12 @@ Trent
 #endif /* TRACE */
 
 #endif /* WIN32 */
+
+/* allow people to override the directories */
+
+#ifdef USER_LOCK_DIRECTORY
+#	define LOCKDIR USER_LOCK_DIRECTORY
+#endif /* USER_LOCK_DIRECTORY */
 
 
 /*  That should be all you need to look at in this file for porting */
