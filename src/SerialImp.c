@@ -48,6 +48,7 @@
 extern int errno;
 
 #include "SerialImp.h"
+/* #define DEBUG_TIMEOUT */
 
 /*----------------------------------------------------------
 RXTXPort.Initialize
@@ -427,7 +428,7 @@ RXTXPort.NativeenableReceiveTimeout
    perform: change termios.c_cc[VTIME] to vtime    
    return:  void    
 ----------------------------------------------------------*/ 
-JNIEXPORT void JNICALL java_gnu_io_NativeenableReceiveTimeout( 
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_NativeenableReceiveTimeout( 
 	JNIEnv *env, 
 	jobject jobj, 
 	jint vtime 
@@ -452,7 +453,7 @@ RXTXPort.NativegetReceiveTimeout
    perform:    get termios.c_cc[VTIME] 
    return:     VTIME 
 ----------------------------------------------------------*/ 
-JNIEXPORT int JNICALL java_gnu_io_NativegetReceiveTimeout(
+JNIEXPORT int JNICALL Java_gnu_io_RXTXPort_NativegetReceiveTimeout(
 	JNIEnv *env, 
 	jobject jobj
 	)
@@ -474,7 +475,7 @@ RXTXPort.NativeisReceiveTimeoutEnabled
    perform:    determine if VTIME is none 0 
    return:     JNI_TRUE if VTIME > 0 else JNI_FALSE 
 ----------------------------------------------------------*/ 
-JNIEXPORT jboolean JNICALL java_gnu_io_NativeisReceiveTimeoutEnabled(
+JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_NativeisReceiveTimeoutEnabled(
 	JNIEnv *env, 
 	jobject jobj
 	)
@@ -496,7 +497,7 @@ RXTXPort.enableReceiveThreshold
    perform: change termios.c_cc[VMIN] to vim    
    return:  void    
 ----------------------------------------------------------*/ 
-JNIEXPORT void JNICALL java_gnu_io_enableReceiveThreshold( 
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_enableReceiveThreshold( 
 	JNIEnv *env, 
 	jobject jobj, 
 	jint vmin 
@@ -521,7 +522,7 @@ RXTXPort.getReceiveThreshold
    perform:    get termios.c_cc[MIN] 
    return:     VMIN 
 ----------------------------------------------------------*/ 
-JNIEXPORT int JNICALL java_gnu_io_getReceiveThreshold(
+JNIEXPORT int JNICALL Java_gnu_io_RXTXPort_getReceiveThreshold(
 	JNIEnv *env, 
 	jobject jobj
 	)
@@ -543,7 +544,7 @@ RXTXPort.isReceiveThresholdEnabled
    perform:    determine if VMIN is none 0 
    return:     JNI_TRUE if VMIN > 0 else JNI_FALSE 
 ----------------------------------------------------------*/ 
-JNIEXPORT jboolean JNICALL java_gnu_io_isReceiveThresholdEnabled(
+JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isReceiveThresholdEnabled(
 	JNIEnv *env, 
 	jobject jobj
 	)
@@ -787,6 +788,9 @@ int read_byte_array( int fd, unsigned char *buffer, int length, int timeout )
 	left = length;
 
 	while( bytes < length ) {
+#ifdef DEBUG_TIMEOUT
+		printf(">bytes= %i,lengths=%i,timeout=%i()\n",bytes,length,timeout);
+#endif /* DEBUG_TIMEOUT */
 		if( timeout > 0 ) {
          /* FIXME: In Linux, select updates the timeout automatically, so
             other OSes will need to update it manually if they want to have
@@ -796,9 +800,20 @@ int read_byte_array( int fd, unsigned char *buffer, int length, int timeout )
 				ret=select( fd + 1, &rfds, NULL, NULL, &sleep );
 			}  while (ret < 0 && errno==EINTR);
 			if( ret == 0 ) break;
-			if( ret < 0 ) return -1;
+			if( ret < 0 ) {
+#ifdef DEBUG_TIMEOUT
+				printf("read_byte_array() select() reports %s\n", strerror(errno)); 
+#endif /* DEBUG_TIMEOUT */
+				return -1;
+			}
 		}
+#ifdef DEBUG_TIMEOUT
+		printf(">starting read()\n");
+#endif /* DEBUG_TIMEOUT */
 		ret = read( fd, buffer + bytes, left );
+#ifdef DEBUG_TIMEOUT
+		printf("<read returned %i\n",ret);
+#endif /* DEBUG_TIMEOUT */
 		if( ret == 0 ) break;
 		if( ret < 0 ) return -1;
 		bytes += ret;
