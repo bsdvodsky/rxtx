@@ -66,41 +66,47 @@
 #if defined(__linux__)
 #	define DEVICEDIR "/dev/"
 #	define LOCKDIR "/var/lock"
+#	define FHS
 #endif /* __linux__ */
 #if defined(__sgi__) || defined(sgi)
 #	define DEVICEDIR "/dev/"
 #	define LOCKDIR "/usr/spool/uucp"
+#	define UUCP
 #endif /* __sgi__ || sgi */
 #if defined(__FreeBSD__)
 #	define DEVICEDIR "/dev/"
-/* see SerialImp.c fhs_lock() & fhs_unlock() */
 #	define LOCKDIR "/var/spool/uucp/"
+#	define UUCP
 #endif
 #if defined(__APPLE__)
 #	define DEVICEDIR "/dev/"
-/* see SerialImp.c fhs_lock() & fhs_unlock() */
 #	define LOCKDIR "/var/spool/uucp/"
 #endif /* __FreeBSD__ */
 #if defined(__NetBSD__)
 #	define DEVICEDIR "/dev/"
 #	define LOCKDIR "/usr/spool/uucp"
+#	define UUCP
 #endif /* __NetBSD__ */
 #if defined(__hpux__)
 /* modif cath */
 #	define DEVICEDIR "/dev/"
 #	define LOCKDIR "/usr/spool/uucp"
+#	define UUCP
 #endif /* __hpux__ */
 #if defined(__osf__)  /* Digital Unix */
 #	define DEVICEDIR "/dev/"
 #	define LOCKDIR ""
+#	define UUCP
 #endif /* __osf__ */
 #if defined(__sun__) /* Solaris */
-#      define DEVICEDIR "/dev/"
-#      define LOCKDIR "/var/spool/lock"
+#	define DEVICEDIR "/dev/"
+#	define LOCKDIR "/var/spool/locks"
+#	define UUCP
 #endif /* solaris */
 #if defined(__BEOS__)
 #	define DEVICEDIR "/dev/ports/"
 #	define LOCKDIR ""
+#	define UUCP
 #endif /* __BEOS__ */
 #if defined(WIN32)
 #	define DEVICEDIR ""
@@ -108,6 +114,16 @@
 #endif /* WIN32 */
 
 /*  That should be all you need to look at in this file for porting */
+#ifdef UUCP
+#	define LOCK uucp_lock
+#	define UNLOCK uucp_unlock
+#elif defined(FHS)
+#	define LOCK fhs_lock
+#	define UNLOCK fhs_unlock
+#else /* FSH */
+#	define LOCK system_does_not_lock
+#	define UNLOCK system_does_not_unlock
+#endif /* UUCP */
 
 /* java exception class names */
 #define UNSUPPORTED_COMM_OPERATION "javax/comm/UnsupportedCommOperationException"
@@ -154,7 +170,6 @@ Flow Control defines inspired by reading how mgetty by Gert Doering does it
 #	endif
 #endif
 
-
 /* PROTOTYPES */
 #ifdef __BEOS__
 data_rate translate_speed( JNIEnv*, jint  );
@@ -174,8 +189,18 @@ int send_event(JNIEnv *, jobject, jint, int );
 void dump_termios(char *,struct termios *);
 void report(char *);
 void throw_java_exception( JNIEnv *, char *, char *, char * );
-void fhs_unlock(const char *);
-int fhs_lock(const char *);
+int lock_device( const char * );
+void unlock_device( const char * );
+int is_device_locked( const char * );
+int check_lock_status( const char * );
+void fhs_unlock(const char * );
+int fhs_lock( const char *);
+void uucp_unlock( const char * );
+int uucp_lock( const char * );
+int system_does_not_lock( const char * );
+void system_does_not_unlock( const char * );
+int check_group_uucp();
+int check_lock_pid( const char * );
 
 #define UNEXPECTED_LOCK_FILE "RXTX Error:  Unexpected lock file: %s\n Please report to the RXTX developers\n"
 #define LINUX_KERNEL_VERSION_ERROR "\n\n\nRXTX WARNING:  This library was compiled to run with OS release %s and you are currently running OS release %s.  In some cases this can be a problem.  Try recompiling RXTX if you notice strange behavior.  If you just compiled RXTX make sure /usr/include/linux is a symbolic link to the include files that came with the kernel source and not an older copy.\n\n\npress enter to continue\n"

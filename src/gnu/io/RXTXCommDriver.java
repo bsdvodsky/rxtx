@@ -110,7 +110,7 @@ public class RXTXCommDriver implements CommDriver
 	{
 		CommPortIdentifier.addPortName(knownPort, portType, this);
 	}
-    
+
 	private void registerValidPorts(
 		String CandidateDeviceNames[],
 		String ValidPortPrefixes[],
