@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
-|   Copyright 1997-2003 by Trent Jarvi taj@www.linux.org.uk.
+|   Copyright 1997-2005 by Trent Jarvi taj@www.linux.org.uk.
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Lesser General Public
@@ -157,17 +157,23 @@ struct event_info_struct
 #	define LOCKDIR "/var/spool/uucp"
 #	define LOCKFILEPREFIX "LK."
 #	define UUCP
-#endif
+#endif /* __FreeBSD__ */
+/*
+    rxtx 2.1 has this as /var/lock
+    I'm not sure if it was ever decided if Apple will use /var/lock or
+    /var/lock/uucp  - taj
+*/
 #if defined(__APPLE__)
 #	define DEVICEDIR "/dev/"
 #	define LOCKDIR "/var/spool/uucp"
 /*#	define LOCKDIR "/var/lock"*/
 #	define LOCKFILEPREFIX "LK."
 #	define UUCP
-#endif /* __FreeBSD__ */
+#endif /* __APPLE__ */
 #if defined(__NetBSD__)
 #	define DEVICEDIR "/dev/"
-#	define LOCKDIR "/usr/spool/uucp"
+#	define LOCKDIR "/var/lock"
+/*#	define LOCKDIR "/usr/spool/uucp"*/
 #	define LOCKFILEPREFIX "LK."
 #	define UUCP
 #endif /* __NetBSD__ */
@@ -435,7 +441,7 @@ int translate_parity (JNIEnv *, tcflag_t *, jint);
 void system_wait ();
 void finalize_event_info_struct (struct event_info_struct *);
 int read_byte_array (JNIEnv *, jobject *, int, unsigned char *, int, int);
-int get_java_var (JNIEnv *, jobject, char *, char *);
+size_t get_java_var( JNIEnv *, jobject, char *, char * );
 jboolean is_interrupted (struct event_info_struct *);
 int send_event (struct event_info_struct *, jint, int);
 void dump_termios (char *, struct termios *);
