@@ -1,4 +1,3 @@
-/* read TODO! */
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
 |   Copyright 1997-2001 by Trent Jarvi trentjarvi@yahoo.com.
@@ -35,8 +34,9 @@
 #	include <winsock.h>
 #else
 #	include <malloc.h>
-#endif
+#endif /* __LCC__ */
 
+#define SIGIO 0
 
 #define SIZE 64	/* number of serial ports */
 int my_errno;
@@ -46,6 +46,9 @@ struct termios_list {
 	HANDLE hComm;
 	struct termios ttyset;
 	int flags;
+	OVERLAPPED rol;
+	OVERLAPPED wol;
+	OVERLAPPED sol;
 };
 struct termios_list *tl[SIZE];
 
@@ -244,6 +247,7 @@ get_dos_port()
 ----------------------------------------------------------*/
 
 const char *get_dos_port(char const *name){
+	printf("get_dos_port running strcmp\n");
 	if (!strcmp(name, "/dev/cua0")) return("COM1");
 	if (!strcmp(name, "/dev/cua1")) return("COM2");
 	if (!strcmp(name, "/dev/cua2")) return("COM3");
@@ -328,8 +332,16 @@ close()
 
 int close(int fd) {
 	int ret;
+	fprintf(stderr, "closeing!\n");
 	if (fd < 0) return 0;
+	if ( !SetCommMask( tl[fd]->hComm, EV_RXCHAR ) )
+	{
+		fprintf( stderr, "eventLoop hung\n" );
+	}
 	ret = CloseHandle(tl[fd]->hComm);
+	CloseHandle( tl[fd]->rol.hEvent );
+	CloseHandle( tl[fd]->wol.hEvent );
+	CloseHandle( tl[fd]->sol.hEvent );
 	free(tl[fd]);
 	return ret;
 }
@@ -406,10 +418,16 @@ int serial_open(const char *filename, int flags) {
 #ifdef DEBUG
 	printf("serial open() %s\n",filename);
 #endif /* DEBUG */
+
+
+
 	for (fd = 0; fd<SIZE; fd++) {
-		if (!tl[fd]) continue;
-		if (!strcmp(filename, tl[fd]->filename))
-			return fd;	/* do nothing */
+		if ( tl[fd] && tl[fd]->filename ) 
+		{
+			printf("open running strcmp\n");
+			if (!strcmp(filename, tl[fd]->filename))
+				return fd;	/* do nothing */
+		}
 	}
 
 	/* find next free */
@@ -471,7 +489,37 @@ int serial_open(const char *filename, int flags) {
 	else
 		tl[fd]->flags = 0;
 
+	tl[fd]->rol.Offset =0;
+	tl[fd]->wol.Offset =0;
+	tl[fd]->sol.Offset =0;
+	tl[fd]->rol.OffsetHigh =0;
+	tl[fd]->wol.OffsetHigh =0;
+	tl[fd]->sol.OffsetHigh =0;
+	tl[fd]->rol.hEvent = CreateEvent( NULL, TRUE, FALSE, NULL );
+
+	if ( tl[fd]->rol.hEvent == NULL )
+	{
+		fprintf( stderr, "Could not create read overlapped\n");
+		goto fail;
+	}
+
+	tl[fd]->sol.hEvent = CreateEvent( NULL, TRUE, FALSE, NULL );
+
+	if ( tl[fd]->sol.hEvent == NULL )	
+	{
+		fprintf( stderr, "Could not create select overlapped\n");
+		goto fail;
+	}
+	tl[fd]->wol.hEvent = CreateEvent( NULL, TRUE, FALSE, NULL );
+
+	if ( tl[fd]->wol.hEvent == NULL )	
+	{
+		fprintf( stderr, "Could not create write overlapped\n");
+		goto fail;
+	}
 	return fd;
+fail:
+	return -1;
 }
 
 /*----------------------------------------------------------
@@ -485,8 +533,7 @@ serial_write()
 ----------------------------------------------------------*/
 
 int serial_write(int fd, char *Str, int length) {
-	DWORD nBytes, pendingResult, wrote;
-	OVERLAPPED ol;
+	DWORD nBytes, pendingResult;
 
 	/***** output mode flags (c_oflag) *****/
 	/* FIXME: OPOST: enable ONLCR, OXTABS & ONOEOT */
@@ -494,45 +541,24 @@ int serial_write(int fd, char *Str, int length) {
 	/* FIXME: OXTABS: convert tabs to spaces */
 	/* FIXME: ONOEOT: discard ^D (004) */
 
-	ol.hEvent = CreateEvent( NULL, TRUE, FALSE, NULL );
 
-	if ( ol.hEvent == NULL )	
-	{
-		fprintf( stderr, "Write could not create overlapped\n");
-		nBytes=-1;
-		goto fail;
-	}
-
-	if (!WriteFile(tl[fd]->hComm, Str, length, &nBytes, &ol ))
+	ENTER("serial_write");
+	if (!WriteFile(tl[fd]->hComm, Str, length, &nBytes, &tl[fd]->wol ))
 	{
 		if ( GetLastError() != ERROR_IO_PENDING )
 		{
 			ClearError(tl[fd]->hComm);
+			printf("write error\n");
 			nBytes=-1;
 			goto end;
 		}
-		else
-		{
-			pendingResult = WaitForSingleObject(
-						ol.hEvent,
-						INFINITE );
-			if ( 	( pendingResult !=  WAIT_OBJECT_0 ) ||
-				( ! GetOverlappedResult( tl[fd]->hComm,
-							&ol,
-							&wrote,
-							FALSE )
-				)		
-			)
-			{
-				nBytes=-1;
-				goto end;
-			}
-		}
 	}
+	pendingResult = WaitForSingleObject( tl[fd]->wol.hEvent, INFINITE );
+			//if ( 	( pendingResult !=  WAIT_OBJECT_0 ) ||
+	GetOverlappedResult( tl[fd]->hComm, &tl[fd]->wol, &nBytes, FALSE );
 	FlushFileBuffers(tl[fd]->hComm);
 end:
-	CloseHandle( ol.hEvent );
-fail:
+	LEAVE("serial_write");
 	return nBytes;
 }
 
@@ -547,42 +573,57 @@ serial_read()
 ----------------------------------------------------------*/
 
 int serial_read(int fd, void *vb, int size) {
-	/* FIXME: CREAD: without this, data cannot be read */
-
-	/* FIXME: PARMRK: mark framing & parity errors */
-	/* FIXME: IGNCR: ignore \r */
-	/* FIXME: ICRNL: convert \r to \n */
-	/* FIXME: INLCR: convert \n to \r */
-	DWORD nBytes = 0, total = 0;
+	DWORD nBytes = 0, total = 0, waiting = 0;
 	char *b = (char *)vb;
 	int err, vmin;
 
+	/* FIXME: CREAD: without this, data cannot be read 
+	   FIXME: PARMRK: mark framing & parity errors 
+	   FIXME: IGNCR: ignore \r 
+	   FIXME: ICRNL: convert \r to \n 
+	   FIXME: INLCR: convert \n to \r
+	*/
+
+	ENTER("serial_read");
+
 	if (tl[fd]->flags & O_NONBLOCK)
-		vmin = 0;	/* if vmin would 1 or more, then we would block */
-	else	/* read blocks forever on VMIN chars */
+	{
+		/* if vmin would 1 or more, then we would block */
+		vmin = 0;
+	}
+	else
+	{
+		/* read blocks forever on VMIN chars */
 		vmin = tl[fd]->ttyset.c_cc[VMIN];
+	}
 	
-//	printf("serial_read(ing) %d\n", size);
-	while (nBytes <= vmin || size > 0) {
-		if (!ReadFile(tl[fd]->hComm, b, size, &nBytes, NULL)) {
+	while ( ( ( nBytes <= vmin ) || ( size > 0 ) ) && !waiting )
+	{
+		if (!ReadFile(tl[fd]->hComm, b, size, &nBytes, &tl[fd]->rol ))
+		{
 			err = GetLastError();
-			switch (err) {
+			switch (err)
+			{
 				case ERROR_BROKEN_PIPE:
 					nBytes = 0;
 					break;
 				case ERROR_MORE_DATA:
 					break;
+				case ERROR_IO_PENDING:
 				default:
 					return -1;
 			}
 		}
-//		printf("(g%ld n%d) ", nBytes, size);	/* got, need */
+		if ( ! GetOverlappedResult( tl[fd]->hComm, &tl[fd]->rol,
+						&nBytes, FALSE ) )
+			printf("error read\n");
 		size -= nBytes;
 		b += nBytes;
 		total += nBytes;
-		if (vmin == 0) break;	/* wait for no chars, can return whenever */
+		/* wait for no chars, can return whenever */
+		if (vmin == 0) break;
 	}
-//	printf("serial_read(ed) %ld\n", total);
+	LEAVE("serial_read");
 	return total;
 }  
 
@@ -710,7 +751,7 @@ int tcgetattr(int fd, struct termios *s_termios) {
 	COMMTIMEOUTS timeouts;
 #ifdef DEBUG
 	printf("tcgetattr:\n");
-#endif
+#endif /* DEBUG */
 	if (!GetCommState(tl[fd]->hComm, &myDCB)) {
 		fprintf(stderr, "GetCommState failed\n");
 		return -1;
@@ -1154,8 +1195,9 @@ int ioctl(int fd, int request, ...) {
 	COMSTAT Stat;
 #ifdef TIOCGICOUNT
 	struct serial_icounter_struct *sistruct;
-#endif 
+#endif  /* TIOCGICOUNT */
 
+ENTER("ioctl");
 	va_start(ap, request);
 	
 	switch(request) {
@@ -1285,9 +1327,11 @@ int ioctl(int fd, int request, ...) {
 			goto fail;
 	}
 	va_end(ap);
+	LEAVE("ioctl");
 	return 0;
 fail:
 	fprintf( stderr, "IOCTL( %i ) not implemented\n", request );
+	LEAVE("ioctl");
 	return -ENOIOCTLCMD;
 }
 
@@ -1305,6 +1349,7 @@ int fcntl(int fd, int command, ...) {
 	int arg, ret = 0;
 	va_list ap;
 
+ENTER("fcntl");
 	va_start(ap, command);
 
 	arg = va_arg(ap, int);
@@ -1324,6 +1369,7 @@ int fcntl(int fd, int command, ...) {
 	}
 
 	va_end(ap);
+LEAVE("fcntl");
 	return ret;
 }
 
@@ -1343,22 +1389,45 @@ serial_select()
 int  serial_select(int  n,  fd_set  *readfds,  fd_set  *writefds,
 			fd_set *exceptfds, struct timeval *timeout) {
 
-	DWORD dwCommEvent;
-	int i;
-
-	printf("> select called  %i\n", n);
-	for( i = 0 ;i < 6; i++ )
-	{
-		if(! tl[i]->filename)
-			break;
-		printf( " %i %s\n", i, tl[i]->filename );
-	}
-	if ( !SetCommMask( tl[n-1]->hComm, EV_RXCHAR|EV_TXEMPTY ) )
+	DWORD dwCommEvent, wait = WAIT_TIMEOUT;
+	int fd = n-1;
+	HANDLE h[1] =	{
+		tl[fd]->sol.hEvent
+		//tl[fd]->rol.hEvent,
+		//tl[fd]->wol.hEvent
+	};
+	ENTER("serial_select");
+	if ( !SetCommMask( tl[fd]->hComm, 
+		EV_RXCHAR|EV_TXEMPTY|EV_BREAK|EV_CTS|EV_DSR|EV_ERR|EV_RING|EV_RLSD|EV_RXFLAG ) )
 		goto fail;
 	
-	if ( !WaitCommEvent( tl[ n-1 ]->hComm, &dwCommEvent, NULL ) )
-		goto fail;
+	if ( !WaitCommEvent( tl[ fd ]->hComm, &dwCommEvent, &tl[fd]->sol ) )
+	{
+		if ( GetLastError() != ERROR_IO_PENDING )
+			goto fail;
+	}
+	while ( wait == WAIT_TIMEOUT )
+	{
+		wait = WaitForMultipleObjects( 1, h, FALSE, 5000 );
+#ifdef DEBUG
+		switch (wait)
+		{
+			case WAIT_OBJECT_0:
+				printf("Status Object\n");
+				break;
+			case WAIT_OBJECT_0 + 1:
+				printf("Read Object\n");
+				break;
+			case WAIT_OBJECT_0 + 2:
+				printf("Write Object\n");
+				break;
+		}
+#endif /* DEBUG */
+	}
+/*
 	printf("< select called success %i\n", n);
+*/
+	LEAVE("serial_select");
 	return(1);
 fail:
 

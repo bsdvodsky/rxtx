@@ -1120,9 +1120,12 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 		omflags = mflags;
 
 		ioctl( fd, FIONREAD, &change );
-		if( change ) {
+		if( change )
+		{
 			if(!send_event( env, jobj, SPE_DATA_AVAILABLE, 1 ))
+			{
 				usleep(100000); /* select wont block */
+			}
 		}
 	}
 	return;

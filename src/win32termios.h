@@ -25,14 +25,36 @@
 #include <windows.h>
 #include <sys/types.h>
 #include <io.h>
+#ifdef DEBUG
+#	define ENTER(x) printf("entering "x" \n");
+#	define LEAVE(x) printf("leavine "x" \n");
+#else
+#	define ENTER(x)
+#	define LEAVE(x)
+#endif /* DEBUG */
+#define YACK() \
+{ \
+	char *allocTextBuf; \
+	unsigned long nChars; \
+	unsigned int errorCode = GetLastError(); \
+	nChars = FormatMessage ( \
+		FORMAT_MESSAGE_ALLOCATE_BUFFER | \
+		FORMAT_MESSAGE_FROM_SYSTEM, \
+		NULL, \
+		errorCode, \
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), \
+		(LPSTR)&allocTextBuf, \
+		16, \
+		NULL ); \
+	fprintf( stderr, "Error 0x%x at %s(%d): %s", errorCode, __FILE__, __LINE__, allocTextBuf); \
+	LocalFree(allocTextBuf); \
+}
+
 typedef unsigned char   cc_t;
 typedef unsigned int    speed_t;
 typedef unsigned int    tcflag_t;
 
-/* garbage to get compiling */
-//#define SSIZE_MAX 0
-/*#define SIG_IGN 0*/
-#define SIGIO 0
+
 
 #define NCCS 32
 struct termios
@@ -360,7 +382,8 @@ void cfmakeraw(struct termios *s_termios);
 #define TIOCSERGETMULTI	0x545a
 #define TIOCSERSETMULTI	0x545b
 #define TIOCMIWAIT	0x545c
-#define TIOCGICOUNT	0x545d
+/* this would require being able to get the number of overruns ... */
+/* #define TIOCGICOUNT	0x545d */
 
 /* ioctl errors */
 #define ENOIOCTLCMD	515
