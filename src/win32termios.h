@@ -347,6 +347,7 @@ void cfmakeraw(struct termios *s_termios);
 #define TIOCMSET	0x5418
 #define TIOCGSOFTCAR	0x5419
 #define TIOCSSOFTCAR	0x541a
+#define TIOCSER_TEMP	0x01
 // #define FIONREAD	0x541b
 #define TIOCGSERIAL	0x541e
 #define TIOCSSERIAL	0x541f

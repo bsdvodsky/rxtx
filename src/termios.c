@@ -1179,7 +1179,24 @@ int ioctl(int fd, int request, ...) {
 		case TIOCSERCONFIG:
 		case TIOCSERGETLSR:
 			arg = va_arg( ap, int * );
-			goto fail;
+			ret = !ClearCommError( tl[fd]->hComm, &ErrCode, &Stat );
+			if ( ret == 0 )
+			{
+				/* FIXME ? */
+				set_errno( EBADFD );
+				return -1;
+			}
+			if ( (int) Stat.cbOutQue != 0 )
+			{
+				*arg = 0;
+				ret = 0;
+			}
+			else
+			{
+				*arg = TIOCSER_TEMP;
+				ret = 1;
+			}
+			break;
 		case TIOCSERGSTRUCT:
 			astruct = va_arg(ap, struct async_struct *);
 			goto fail;
@@ -1206,8 +1223,8 @@ int ioctl(int fd, int request, ...) {
 			return 0;
 		/*  number of bytes available for reading */
 		case FIONREAD: 
-			arg = va_arg(ap, int *);
-			ret = ClearCommError(tl[fd]->hComm, &ErrCode, &Stat);
+			arg = va_arg( ap, int * );
+			ret = ClearCommError( tl[fd]->hComm, &ErrCode, &Stat );
 			if ( ret == 0 )
 			{
 				/* FIXME ? */
