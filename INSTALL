@@ -27,6 +27,7 @@ For the methodical:
     libtool-1.2b
     make-3.76.1
     optional: CommAPI from sun.
+    jdk with native threads.  (strange javah problem with green threads)
 
     RedHat users note that libtool is included in the distribution but not 
     installed by default.  It can be installed by placing disk 1 of the

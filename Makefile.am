@@ -21,10 +21,11 @@ AUTOMAKE_OPTIONS = foreign
 TOP=@TOP@
 JPATH=@JPATH@
 INCLUDES= -I $(TOP) -I $(TOP)/$(target_alias) -I . -I $(JAVAINCLUDE) -I $(JAVANATINC)
-NSJAVA=1
-JAVAC=set NS_JAVA="$(NSJAVA)";export NS_JAVA;$(JPATH)/bin/javac $(JCLASSPATH):$(COMM_JAR_PATH):$(JCL_JAR_PATH) -d $(TOP)/ -O 
-JAVAH=set NS_JAVA="$(NSJAVA)";export NS_JAVA;$(JPATH)/bin/javah $(JCLASSPATH) -d $(TOP)/$(target_alias) -jni
-JAVA=set NS_JAVA="$(NSJAVA)";export NS_JAVA;$(JPATH)/bin/java $(JCLASSPATH)
+export NSJAVA=1
+export THREADS_FLAG=native
+JAVAC=$(JPATH)/bin/javac $(JCLASSPATH):$(COMM_JAR_PATH):$(JCL_JAR_PATH) -d $(TOP)/ -O 
+JAVAH=$(JPATH)/bin/javah $(JCLASSPATH) -d $(TOP)/$(target_alias) -jni
+JAVA=$(JPATH)/bin/java $(JCLASSPATH)
 JAR=$(JPATH)/bin/jar cf
 JAVADOC=$(JPATH)/bin/javadoc $(JCLASSPATH)
 LIBTOOL = $(SHELL) $(TOP)/libtool
@@ -52,7 +53,6 @@ install-lib:
 	$(INSTALL_PROGRAM) jcl.jar $(JPATH)/lib/
 run: $(TOP)/test.class all jcl
 	(cd $(TOP)/;chmod 755 *.class;\
-	set THREADS_FLAG="$(THREADS_FLAG)";export THREADS_FLAG;\
 	LD_LIBRARY_PATH="$(target_alias)";\
 	export LD_LIBRARY_PATH;\
 	$(JAVA) test)
