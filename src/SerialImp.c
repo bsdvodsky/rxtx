@@ -1387,11 +1387,11 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 	//exit(0);
 	write(output, message, strlen(message));
 	close(output);
-*/
 	if ( strcmp( name, "COM1" ) )
 		return( JNI_TRUE );
 	else
 		return( JNI_FALSE );
+*/
 	
 
 	/* 
