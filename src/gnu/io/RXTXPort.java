@@ -472,6 +472,16 @@ final class RXTXPort extends SerialPort
 			System.out.println("RXTXPort:checkMonitorThread()");
 		if(monThread != null)
 		{
+			/* FIXME FIXME FIXME This print solves a deadlock
+			   don't ask me how.  See also sendEvent
+		   	   A sleep(50) wont work.  More than one eventLoop?
+
+		   	   test: fgetl check 7  Probably related to fprintf
+			   spin1.5 , pair 4. 
+
+			   Trent
+			*/
+			System.out.print("");
 			if (debug)
 				System.out.println(
 					"monThread.isInterrupted = " +
@@ -491,6 +501,16 @@ final class RXTXPort extends SerialPort
 	public synchronized boolean sendEvent( int event, boolean state )
 	{
 
+		/* FIXME FIXME FIXME This print solves a deadlock
+		   don't ask me how.  See also checkMonitorThread
+		   A sleep(50) will work two.  More than one eventLoop?
+
+		   test: fgetl check 7  Probably related to fprintf
+		   spin1.5 , pair 4. 
+
+		   Trent
+		*/
+		System.out.print("");
 		if (debug)
 			System.out.print("RXTXPort:sendEvent(");
 		/* Let the native side know its time to die */
@@ -875,8 +895,10 @@ final class RXTXPort extends SerialPort
 		public synchronized int read() throws IOException
 		{
 			if (debug)
-				System.out.println("RXTXPort:SerialInputStream:read()");
+				System.out.println(">RXTXPort:SerialInputStream:read()");
 			if ( fd == 0 ) throw new IOException();
+			if (debug)
+				System.out.println("<RXTXPort:SerialInputStream:read()");
 			return readByte();
 		}
 	/**
@@ -887,7 +909,9 @@ final class RXTXPort extends SerialPort
 		public synchronized int read( byte b[] ) throws IOException
 		{
 			if (debug)
-				System.out.println("RXTXPort:SerialInputStream:read(" + b.length + ")");
+				System.out.println(">RXTXPort:SerialInputStream:read(" + b.length + ")");
+			if (debug)
+				System.out.println("<RXTXPort:SerialInputStream:read(" + b.length + ")");
 			return read ( b, 0, b.length);
 		}
 /*
