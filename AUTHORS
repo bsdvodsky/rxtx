@@ -1,6 +1,8 @@
 This package is not the result of one persons time.  Recognition is given
 to the following people for their assistance.
 
+Masayuki "Tencho" Yamashita <tencho@venus.kanazawa-it.ac.jp> Japanese install instructions
+
 Stuart Anderson <anderson@metrolink.com>  netbsd port
 
 Ken Thompson <thompson@milestonesolutions.com>  Comtrol RocketPort serial boards
