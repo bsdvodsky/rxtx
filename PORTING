@@ -4,7 +4,7 @@ made to point out areas of concern to people porting by #if defined (__linux__)
 in SerialImp.c/h.   RXTXCommDriver.java also contains port names which vary by
 OS.
 
-If you want to port rxtx to a new unix platform do the following.
+If you want to port rxtx to a new Unix platform do the following.
 *IMPORTANT* you will probably need gnu make.
 
 0.  ./autogen.sh (you will need a compatible automake autoconf and libtool)
@@ -23,6 +23,6 @@ If its not compiling try backing out functionality until it compiles.
 win32 support has not been tested.  Contact trentjarvi@yahoo.com if your 
 interested in developing win32 support.   
 
-For all unix flavors... If the package did not work out of the box please
+For all Unix flavors... If the package did not work out of the box please
 see BUGS and send a comment.
 

@@ -81,7 +81,8 @@ final class RXTXPort extends SerialPort {
 
 	/** Set the native serial port parameters */
 	private native void nativeSetSerialPortParams( int speed, int dataBits,
-		int stopBits, int parity ) throws UnsupportedCommOperationException;
+		int stopBits, int parity ) 	
+		throws UnsupportedCommOperationException;
 
 	/** Line speed in bits-per-second */
 	private int speed=9600;
@@ -135,14 +136,16 @@ final class RXTXPort extends SerialPort {
 
 	public native int NativegetReceiveTimeout();
 	public native boolean NativeisReceiveTimeoutEnabled();
-	public native void NativeEnableReceiveTimeoutThreshold(int time, int threshold,int InputBuffer);
+	public native void NativeEnableReceiveTimeoutThreshold(int time, 
+		int threshold,int InputBuffer);
 	public void disableReceiveTimeout(){
 		enableReceiveTimeout(0);
 	}
 	public void enableReceiveTimeout( int time ){
 		if( time >= 0 )  {
 			timeout = time;
-			NativeEnableReceiveTimeoutThreshold( time , threshold, InputBuffer );
+			NativeEnableReceiveTimeoutThreshold( time , threshold, 
+				InputBuffer );
 		}
 		else {
 			System.out.println("Invalid timeout");
@@ -163,7 +166,8 @@ final class RXTXPort extends SerialPort {
 		if(thresh >=0)
 		{
 			threshold=thresh;
-			NativeEnableReceiveTimeoutThreshold(timeout, threshold, InputBuffer);
+			NativeEnableReceiveTimeoutThreshold(timeout, threshold,
+				InputBuffer);
 		}
 		else /* invalid thresh */
 		{
@@ -296,7 +300,8 @@ final class RXTXPort extends SerialPort {
 				System.err.println("unknown event:"+event);
 				return;
 		}
-		SerialPortEvent e = new SerialPortEvent(this, event, !state, state );
+		SerialPortEvent e = new SerialPortEvent(this, event, !state, 
+			state );
 		if( SPEventListener != null ) SPEventListener.serialEvent( e );
 	}
 
@@ -304,7 +309,8 @@ final class RXTXPort extends SerialPort {
 	public void addEventListener( SerialPortEventListener lsnr )
 		throws TooManyListenersException
 	{
-		if( SPEventListener != null ) throw new TooManyListenersException();
+		if( SPEventListener != null ) 
+			throw new TooManyListenersException();
 		SPEventListener = lsnr;
 		monThread = new MonitorThread();
 		monThread.start(); 
@@ -318,18 +324,47 @@ final class RXTXPort extends SerialPort {
 		}
 	}
 
-	public void notifyOnDataAvailable( boolean enable ) { monThread.Data = enable; }
+	public void notifyOnDataAvailable( boolean enable ) 
+	{ 
+		monThread.Data = enable; 
+	}
 
-	public void notifyOnOutputEmpty( boolean enable ) { monThread.Output = enable; }
+	public void notifyOnOutputEmpty( boolean enable ) 
+	{ 
+		monThread.Output = enable; 
+	}
 
 	public void notifyOnCTS( boolean enable ) { monThread.CTS = enable; }
 	public void notifyOnDSR( boolean enable ) { monThread.DSR = enable; }
-	public void notifyOnRingIndicator( boolean enable ) { monThread.RI = enable; }
-	public void notifyOnCarrierDetect( boolean enable ) { monThread.CD = enable; }
-	public void notifyOnOverrunError( boolean enable ) { monThread.OE = enable; }
-	public void notifyOnParityError( boolean enable ) { monThread.PE = enable; }
-	public void notifyOnFramingError( boolean enable ) { monThread.FE = enable; }
-	public void notifyOnBreakInterrupt( boolean enable ) { monThread.BI = enable; }
+	public void notifyOnRingIndicator( boolean enable ) 
+	{ 
+		monThread.RI = enable; 
+	}
+
+	public void notifyOnCarrierDetect( boolean enable ) 
+	{ 
+		monThread.CD = enable; 
+	}
+
+	public void notifyOnOverrunError( boolean enable ) 
+	{ 
+		monThread.OE = enable; 
+	}
+
+	public void notifyOnParityError( boolean enable ) 
+	{ 
+		monThread.PE = enable;
+	}
+
+	public void notifyOnFramingError( boolean enable ) 
+	{ 
+		monThread.FE = enable; 
+	}
+
+	public void notifyOnBreakInterrupt( boolean enable ) 
+	{ 
+		monThread.BI = enable; 
+	}
 
 
 	/** Close the port */
@@ -357,7 +392,9 @@ final class RXTXPort extends SerialPort {
                 public void write( byte b[] ) throws IOException {
                         writeArray( b, 0, b.length );
                 }
-                public void write( byte b[], int off, int len ) throws IOException {
+                public void write( byte b[], int off, int len ) 
+			throws IOException 
+		{
                         writeArray( b, off, len );
                 }
                 public void flush() throws IOException {
@@ -375,7 +412,8 @@ final class RXTXPort extends SerialPort {
 		{
 			return read ( b, 0, b.length);
 		}
-		public int read( byte b[], int off, int len ) throws IOException 
+		public int read( byte b[], int off, int len ) 
+			throws IOException 
 		{
 			dataAvailable=0;
 			int i=0, Minimum=0;

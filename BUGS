@@ -2,7 +2,7 @@ There are sure to be bugs.  The goal is to make the install as painless
 as possible.  Send back comments if something could be easier.
 
 If your not able to open the port (read the errors carefully) then you may
-not have permission to use the device.  Redhat linux ships with the following
+not have permission to use the device.  Redhat Linux ships with the following
 permissions:
 
 crw-r--r--   /dev/ttyS?
@@ -16,7 +16,7 @@ should fix the problem.  Be sure to check the file CommAPI for common mistakes.
 If you run into a problem building the rxtx package please report the following
 with the bug report.
 
-   was java in your PATH when you tried ./configure.  'which java'
+   was Java in your PATH when you tried ./configure.  'which java'
       JDK_HOME is checked also...
    which machine type are you running on?  'uname -a'
    which jdk version.
@@ -37,7 +37,7 @@ not present please install them.
    libtool --version
    make --version
 
-Here's whats on my system for comparison.  Correct versions are important.
+Here's what's on my system for comparison.  Correct versions are important.
 
    autoconf 2.13
    automake 1.4a
@@ -65,9 +65,9 @@ to try regenerating the scripts with your tools.
 
 mail any bugs to trentjarvi@yahoo.com.  
 
-jdk-1.2 users may not on redhat systems that java complains about not being
+jdk-1.2 users may not on redhat systems that Java complains about not being
 able to find libstdc++-libc6.0-1.so.2.  A symbolic link can be used to get
-around this feature of java.
+around this feature of Java.
 
  /usr/lib/libstdc++-libc6.0-1.so.2 -> libstdc++.so.2.8.0
 
@@ -78,12 +78,12 @@ Known 'Features.'
     programmer.  It should not be too hard.  Some initial support has been
     added
 
-2.  This release has only been tested on linux and freebsd.
+2.  This release has only been tested on Linux and free-BSD.
 
 3.  The library does not handle SIGINT and clean up.
 
 4.  Flow control with small FIFO's on the other side.   See the setserial 
-    manpage for how to change the uart setting mentioned.
+    manpage for how to change the UART setting mentioned.
 
    Chris Kakris writes:
 
@@ -106,8 +106,8 @@ Known 'Features.'
    emptied.
 
 5.  BlackBox has a hard coded limit in BlackBox.java that prevents it from 
-    running if you dont specify a port.  We are considering alternative ways
-    of handling the large number of port names in unix.  The line in question
+    running if you don't specify a port.  We are considering alternative ways
+    of handling the large number of port names in Unix.  The line in question
     is:
 
 	 portDisp = new SerialPortDisplay[50];
@@ -134,7 +134,7 @@ If you don't have the sources for the offending class to recompile with a
 
 Louis
 
-In otherwords start with a fresh build directory, rebuild, and reinstall to
+In other words start with a fresh build directory, rebuild, and reinstall to
 avoid the problem.
 
 7.  Older Linux Systems (libc5) should upgrade to a glibc system with libpthread-0.7 or newer.  We have run into many problems with older libraries.  SIGSEGV was the most common symptom.  Reported by  Peter Bennett <bencom@bencom.co.nz>

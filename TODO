@@ -6,7 +6,7 @@ Example:
     notifyOnDataAvailable(true);
     addEventListener( this );
  
-It is ok if you first register the listener, then enable notifications
+It is OK if you first register the listener, then enable notifications
 (which is probably the best thing to do anyway).
 
 DSR does not work reliably for some people.  contrib/DSR-workaround.java
@@ -14,7 +14,7 @@ contains a workaround the Ken Eisner contributed.  If you are able to reproduce
 the problem and find a fix for RXTX please let the maintainer know.
 
 Buffer Size is just a var.  No memory is allocated.  This was done to duplicate
-the behavior in the behaviour table in javax.comm.CommPort.html.  Its not clear
+the behavior in the behavior table in javax.comm.CommPort.html.  Its not clear
 to me if the buffers are just mallocs or modem buffers.  Any experts there?
 
 While looking through the blackdown mail list, it was obvious that some people
@@ -51,6 +51,15 @@ ParallelPort support.  Needs some code.
 	Printer support was working earlier.  Recent kernel changes have 
 	probably broken the printer support.  More comments in ParallelImp.c
 
+----------------------------------------------------------------------------
+From This point on, You have the wrong version.  All of this work is 
+being done in the development branch of the cvs archive.
+
+cvs checkout -r commapi-0-0-1 rxtx-devel 
+
+gets the recent work.
+----------------------------------------------------------------------------
+
 RS485 Support
 	The basic layout is in place with no native implementation.
 	devices are not coded into RXTXDriver.java see /dev/ttyS0 and gang
@@ -85,7 +94,7 @@ CommPortIdentifier support. Needs some code.
 
 	./configure --enable-RXTXIDENT will create a Makefile that uses it.
 	Plenty of example code can be found in commapi/samples/porting
-	Please dont send in Sun's code.  
+	Please don't send in Sun's code.  
 
 	files:
 		CommDriver.java
@@ -108,9 +117,9 @@ CommPortIdentifier support. Needs some code.
 		PortInUseException.java
 	
 ------------------
-backwards compatibility for older linux systems.
+backwards compatibility for older Linux systems.
 ------------------
-non linux specific implementations
+non Linux specific implementations
 ------------------
 allow the library to catch sigint so it can shut down the port properly when
 sent

@@ -47,7 +47,7 @@ Which device should you use?
   as many as 64 ports have worked at one time.
   Irix serial ports use ttyd? ttym? ttyf?
   
-A note on JDK RPMS for linux users:  
+A note on JDK RPMS for Linux users:  
 
    You will have to edit the Makefile if you use the rpms from the redhat/
    contrib.  The RPMS do not follow the sun 'standard layout.'  JAVAINCLUDE 

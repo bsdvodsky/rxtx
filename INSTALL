@@ -1,6 +1,6 @@
 This is the INSTALL file for RXTX.  
 
-Instructions are available in japanese at
+Instructions are available in Japanese at
 
 	http://www.geocities.co.jp/Technopolis/4789/settei.htm#id1
 	Thanks to Masayuki "Tencho" Yamashita <tencho@venus.kanazawa-it.ac.jp>
@@ -14,17 +14,14 @@ make a note and email the details to trentjarvi@yahoo.com.
 
 This is a developers release.  Current focus is on linux-2.2.  Work 
 is required to port this to other OS's.  There should be few problems
-with linux serial communication at this time.  
+with Linux serial communication at this time.  
 
 For the impatient:
 
-   cd rxtx-version
+   cd rxtx-'version'
    mkdir build
    cd build
-   ../configure  --prefix=/usr
-   make
-   make install
-
+   ../configure --prefix=/usr;make install
 
 For the methodical:
 
@@ -38,8 +35,8 @@ For the methodical:
     gnu make-3.77
     jdk 1.2 or 1.1.7
 	Preferably the native threads version of jdk. 
-    CommAPI from sun. (unix version not Win32)
-	- assuming you have java in /usr/local/java -
+    CommAPI from sun. (Unix version not Win32)
+	- assuming you have Java in /usr/local/java -
 
 	With jdk 1.2 install the files like this.  
 		/usr/local/java/jre/lib/ext/comm.jar
@@ -63,7 +60,7 @@ For the methodical:
       # mount /mnt/cdrom
       # rpm --upgrade /mnt/cdrom/RPMS/libtool*
 
-    Double check that java is in your PATH.  Life will be tough without it.
+    Double check that Java is in your PATH.  Life will be tough without it.
     'which java' (this is how we find CLASSPATH,JAVAINCLUDE, JAVANATINC)
    
 2) CREATE THE BUILD DIRECTORY
@@ -87,7 +84,7 @@ For the methodical:
    
     ../configure --help  for other options not documented here.  
   
-    linux-2.2 offers improved event notification over previous linux kernels.
+    linux-2.2 offers improved event notification over previous Linux kernels.
     rxtx recognizes 2.2 during the configure process and takes advantage of
     these features. 
 
@@ -100,7 +97,7 @@ For the methodical:
 
 4) JAVA INCLUDE FILES
 
-    For linux users with current systems you can probably go to the next step.
+    For Linux users with current systems you can probably go to the next step.
 
     Check to top of the Makefile to make sure we agree on the location of
     the include files that came with the jdk.  Specifically:
@@ -115,9 +112,11 @@ For the methodical:
     environmental variable COMM_JAR_PATH and adds that to the classpath
     so you don't have to edit the Makefile.  
 
-    Linux ppc users:  We have had reports that the jar files need to be unjared
+    Linux PPC users:  We have had reports that the jar files need to be unjared
     for the build to work.  If you figure out more concerning this, please let
-    us know. 
+    us know.  
+    
+    -- note: This was probably a more general problem with older jdk's. *taj*
 
   example:  #set COMM_JAR_PATH=/usr/local/java/lib/comm.jar;export COMM_JAR_PATH
 
@@ -145,9 +144,9 @@ For the methodical:
 
     make install
 
-    which does the folling.
+    which does the following.
 
-	- assuming you have java in /usr/local/java -
+	- assuming you have Java in /usr/local/java -
 
     jdk-1.2 the files go in
 	/usr/local/java/jre/lib/ext/jcl.jar and
@@ -165,16 +164,16 @@ For the methodical:
 	/usr/lib/libSerial.so.
 
 	jdk-1.1 users remember to point your CLASSPATH to jcl.jar and comm.jar. 
-	The libSerial.so is placed in /usr/lib so people dont have to
+	The libSerial.so is placed in /usr/lib so people don't have to
 	change with their LD_LIBRARY_PATH.  This may offend some people.
 	Remember to check /usr/local/java/lib/javax.comm.properties.
 
 7) If you found that the package did not work after all this its probably a
-   bug.  Please follow the procedure in BUGS for reporting problems.  Known
-   bugs are listed at the bottom of that file. 
+    bug.  Please follow the procedure in BUGS for reporting problems.  Known
+    bugs are listed at the bottom of that file. 
 
-   Furthmore, information specific to CommAPI problems can be found in 
-   CommAPI.  Examples of bad setups are given.
+    Furthermore, information specific to CommAPI problems can be found in 
+    CommAPI.  Examples of bad setups are given.
 
 
 8)  Start hacking...
