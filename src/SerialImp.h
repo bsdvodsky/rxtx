@@ -122,6 +122,10 @@
 #	define DEVICEDIR ""
 #	define LOCKDIR ""
 #	define LOCKFILEPREFIX ""
+#	define OPEN serial_open
+#	define CLOSE serial_close
+#	define WRITE serial_write
+#	define READ serial_read
 #else /* use the system calls for Unix */
 #	define OPEN open
 #	define CLOSE close
@@ -190,7 +194,7 @@ Flow Control defines inspired by reading how mgetty by Gert Doering does it
 /* PROTOTYPES */
 #ifdef DEBUG_MW
 extern void mexWarnMsgTxt( const char * );
-extern void mexErrMsgTxt( const char *, ...);
+extern void mexErrMsgTxt( const char * );
 extern int mexPrintf( const char *, ... );
 #	define printf mexPrintf
 #endif /* DEBUG_MW */

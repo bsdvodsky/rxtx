@@ -26,16 +26,15 @@
 #include <sys/types.h>
 #include <io.h>
 #ifdef TRACE
-#	define ENTER(x) printf("entering "x" \n");
-#	define LEAVE(x) printf("leaving "x" \n");
+#define ENTER(x) report("entering "x" \n");
+#define LEAVE(x) report("leaving "x" \n");
 #else
-#	define ENTER(x)
-#	define LEAVE(x)
+#define ENTER(x)
+#define LEAVE(x)
 #endif /* TRACE */
-/*
 #define YACK() \
 { \
-	char *allocTextBuf; \
+	char *allocTextBuf, message[80]; \
 	unsigned long nChars; \
 	unsigned int errorCode = GetLastError(); \
 	nChars = FormatMessage ( \
@@ -47,36 +46,9 @@
 		(LPSTR)&allocTextBuf, \
 		16, \
 		NULL ); \
-	fprintf( stderr, "Error 0x%x at %s(%d): %s", errorCode, __FILE__, __LINE__, allocTextBuf); \
+	sprintf( message, "Error 0x%x at %s(%d): %s\n", errorCode, __FILE__, __LINE__, allocTextBuf); \
+	report( message ); \
 	LocalFree(allocTextBuf); \
-}
-*/
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
-
-#define YACK() \
-{ \
-	char *allocTextBuf; \
-	char message[160]; \
-	int fd; \
-	unsigned long nChars; \
-	unsigned int errorCode = GetLastError(); \
-	nChars = FormatMessage ( \
-		FORMAT_MESSAGE_ALLOCATE_BUFFER | \
-		FORMAT_MESSAGE_FROM_SYSTEM, \
-		NULL, \
-		errorCode, \
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), \
-		(LPSTR)&allocTextBuf, \
-		16, \
-		NULL ); \
-	sprintf( message, "Error 0x%x at %s(%d): %s", errorCode, __FILE__, __LINE__, allocTextBuf); \
-	LocalFree(allocTextBuf); \
-	fd = open( "rxtx.log", O_CREAT|O_APPEND ); \
-	write( fd, message, strlen(message) ); \
-	close(fd); \
 }
 
 typedef unsigned char   cc_t;
@@ -165,7 +137,7 @@ int termios_to_bytesize(int);
 int bytesize_to_termios(int);
 int tcgetattr(int Fd, struct termios *s_termios);
 int tcsetattr(int Fd, int when, struct termios *);
-int close(int );
+int serial_close(int );
 speed_t cfgetospeed(struct termios *s_termios);
 speed_t cfgetispeed(struct termios *s_termios);
 int cfsetspeed(struct termios *, speed_t speed);

@@ -292,6 +292,16 @@ public class RXTXCommDriver implements CommDriver
 				if(osName.equals("Linux"))
 				{
 					String[] Temp = {
+					"ttyS" // linux Serial Ports
+					};
+					CandidatePortPrefixes=Temp;
+				}
+				/* if you want to enumerate all ports ~5000
+				   possible, then replace the above with this
+				*/
+				if(osName.equals("Linux-all-ports"))
+				{
+					String[] Temp = {
 					"comx",      // linux COMMX synchronous serial card
 					"holter",    // custom card for heart monitoring
 					"modem",     // linux symbolic link to modem.

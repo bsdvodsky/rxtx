@@ -117,11 +117,6 @@ extern int errno;
 #ifdef TRENT_IS_HERE
 #define DEBUG
 #define DEBUG_MW
-#ifdef DEBUG_MW
-	extern void mexWarnMsgTxt( const char * );
-	extern void mexErrMsgTxt( const char * );
-	extern void mexPrintf( const char *, ... );
-#endif /* DEBUG_MW */
 #endif /* TRENT_IS_HERE */
 #include "SerialImp.h"
 
@@ -2047,13 +2042,13 @@ void report_error(char *msg)
 #define DEBUG_MW
 void report(char *msg)
 {
-//#ifdef DEBUG
-//#	ifndef DEBUG_MW
-//		fprintf(stderr, msg);
-//#	else
+#ifdef DEBUG
+#	ifndef DEBUG_MW
+		fprintf(stderr, msg);
+#	else
 		mexPrintf( msg );
-//#	endif /* DEBUG_MW */
-//#endif /* DEBUG */
+#	endif /* DEBUG_MW */
+#endif /* DEBUG */
 }
 
 #ifndef WIN32
