@@ -2042,8 +2042,6 @@ fi
 
 
 
-
-AUTOMAKE_OPTIONS=
 JHOME=
 RXTX_PATH=
 EXTENSION="c"
@@ -2763,7 +2761,6 @@ AIX)
 ;;
 
 Compaq\'s\ Digital\ Unix | OSF1 )
-	AUTOMAKE_OPTIONS = foreign
 	TARGETLIB="\$(target_alias)/libSerial.la"
 	RXTX_PATH="\$(JPATH)/jre/lib/\$(OS_ARCH)"
 	JHOME=$JPATH/"lib"
@@ -2995,7 +2992,6 @@ s%@LINK@%$LINK%g
 s%@COMPILE@%$COMPILE%g
 s%@OBJECT_EXTENSION@%$OBJECT_EXTENSION%g
 s%@LIB_EXTENSION@%$LIB_EXTENSION%g
-s%@AUTOMAKE_OPTIONS@%$AUTOMAKE_OPTIONS%g
 
 CEOF
 EOF
