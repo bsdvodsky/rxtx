@@ -2515,6 +2515,7 @@ int is_device_locked( const char *filename )
 		/* check if its a stale lock */
 		fd=open( file, O_RDONLY );
 		read( fd, pid_buffer, 11 );
+		/* FIXME null terminiate pid_buffer? need to check in Solaris */
 		close( fd );
 		sscanf( pid_buffer, "%d", &pid );
 
