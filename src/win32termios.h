@@ -363,6 +363,7 @@ void cfmakeraw(struct termios *s_termios);
 
 /* ioctl errors */
 #define ENOIOCTLCMD	515
+#define EBADFD		 77
 /* modem lines */
 #define TIOCM_LE    0x001
 #define TIOCM_DTR   0x002
