@@ -16,7 +16,7 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
-package javax.comm;
+package gnu.io;
 import java.io.*;
 import java.util.*;
 import java.lang.Math;
@@ -24,7 +24,7 @@ import java.lang.Math;
 
 /**
 * @author Trent Jarvi
-* @version $Id: Raw.java,v 1.1.2.8 2001-06-28 19:02:07 jarvi Exp $
+* @version $Id: Raw.java,v 1.1.2.9 2001-09-17 22:44:55 jarvi Exp $
 * @since JDK1.0
 */
 
@@ -434,7 +434,7 @@ final class Raw  extends  RawPort {
 	}
 	public String getVersion()
 	{
-		String Version="$Id: Raw.java,v 1.1.2.8 2001-06-28 19:02:07 jarvi Exp $";
+		String Version="$Id: Raw.java,v 1.1.2.9 2001-09-17 22:44:55 jarvi Exp $";
 		return(Version);
 	}
 }
