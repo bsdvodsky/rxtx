@@ -94,3 +94,4 @@ int get_java_var( JNIEnv *, jobject, char *, char * );
 int get_java_fd( JNIEnv *, jobject );
 void send_modem_events( JNIEnv *, jobject, jmethodID, int, int, int );
 void throw_java_exception( JNIEnv *, char *, char *, char * );
+#define LINUX_KERNEL_VERSION_ERROR "\n\n\nRXTX WARNING:  This library was compiled to run with OS release %s and you are currently running OS release %s.  In some cases this can be a problem.  Try recompiling RXTX if you notice strange behavior.  If you just compiled RXTX make sure /usr/include/linux is a symbolic link to the include files that came with the kernel source and not an older copy.\n\n\npress enter to continue\n"

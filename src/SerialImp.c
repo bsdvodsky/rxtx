@@ -91,7 +91,8 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_Initialize(
 	}
 	if(strcmp(name.release,UTS_RELEASE)!=0)
 	{
-		fprintf(stderr, "\n\n\nRXTX WARNING:  This library was compiled to run with OS release %s and you are currently running OS release %s.  In some cases this can be a problem.  Try recompiling RXTX if you notice strange behavior.  If you just compiled RXTX make sure /usr/include/linux is a symbolic link to the include files that came with the kernel source and not an older copy.\n\n\npress enter to continue\n",UTS_RELEASE,name.release);
+		fprintf(stderr, LINUX_KERNEL_VERSION_ERROR ,UTS_RELEASE,
+			name.release);
 		getchar();
 	}
 #endif /* __linux__ */
@@ -479,7 +480,8 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_NativegetReceiveTimeout(
 	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
 	return(ttyset.c_cc[ VTIME ] * 100);
 fail:
-	throw_java_exception( env, IO_EXCEPTION, "getReceiveTimeout", strerror( errno ) );
+	throw_java_exception( env, IO_EXCEPTION, "getReceiveTimeout", 
+		strerror( errno ) );
 	return -1;
 }
 
@@ -502,7 +504,8 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_NativeisReceiveTimeoutEnabled(
 	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
 	return(ttyset.c_cc[ VTIME ] > 0 ? JNI_TRUE:JNI_FALSE);
 fail:
-	throw_java_exception( env, IO_EXCEPTION, "isReceiveTimeoutEnabled", strerror( errno ) );
+	throw_java_exception( env, IO_EXCEPTION, "isReceiveTimeoutEnabled", 
+		strerror( errno ) );
 	return JNI_FALSE;
 }
 
@@ -771,7 +774,8 @@ NativeEnableReceiveTimeoutThreshold
                 canonical input mode.
 ----------------------------------------------------------*/ 
  
-JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_NativeEnableReceiveTimeoutThreshold(JNIEnv *env, jobject jobj, jint vtime, jint threshold, jint buffer)
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_NativeEnableReceiveTimeoutThreshold(
+	JNIEnv *env, jobject jobj, jint vtime, jint threshold, jint buffer)
 {
 	int fd = get_java_var( env, jobj,"fd","I" );
 	struct termios ttyset;
@@ -783,7 +787,8 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_NativeEnableReceiveTimeoutThreshold(
 
 	return;
 fail:
-	throw_java_exception( env, IO_EXCEPTION, "TimeoutThreshold", strerror( errno ) );
+	throw_java_exception( env, IO_EXCEPTION, "TimeoutThreshold", 
+		strerror( errno ) );
 	return;
 }
 
@@ -877,7 +882,8 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_nativeavailable( JNIEnv *env,
 
 	if( ioctl( fd, FIONREAD, &result ) ) 
 	{
-		throw_java_exception( env, IO_EXCEPTION, "nativeavailable", strerror( errno ) );
+		throw_java_exception( env, IO_EXCEPTION, "nativeavailable", 
+			strerror( errno ) );
 		return -1;
 	}
 	else return (jint)result;
@@ -1234,26 +1240,30 @@ JNIEXPORT jboolean  JNICALL Java_gnu_io_RXTXCommDriver_IsDeviceGood(JNIEnv *env,
 	(*env)->ReleaseStringUTFChars(env, tty_name, name);
 	return(result);
 }
-JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setInputBufferSize(JNIEnv *env, jobject jobj,  jint size )
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setInputBufferSize(JNIEnv *env, 
+	jobject jobj,  jint size )
 {
 #ifdef DEBUG
 	fprintf(stderr,"setInputBufferSize is not implemented\n");
 #endif
 }
-JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_getInputBufferSize(JNIEnv *env, jobject jobj)
+JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_getInputBufferSize(JNIEnv *env, 
+	jobject jobj)
 {
 #ifdef DEBUG
 	fprintf(stderr,"getInputBufferSize is not implemented\n");
 #endif
 	return(1);
 }
-JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setOutputBufferSize(JNIEnv *env, jobject jobj, jint size )
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setOutputBufferSize(JNIEnv *env, 
+	jobject jobj, jint size )
 {
 #ifdef DEBUG
 	fprintf(stderr,"setOutputBufferSize is not implemented\n");
 #endif
 }
-JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_getOutputBufferSize(JNIEnv *env, jobject jobj)
+JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_getOutputBufferSize(JNIEnv *env, 
+	jobject jobj)
 {
 #ifdef DEBUG
 	fprintf(stderr,"getOutputBufferSize is not implemented\n");
