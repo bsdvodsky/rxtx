@@ -122,6 +122,10 @@
 #	define DEVICEDIR ""
 #	define LOCKDIR ""
 #	define LOCKFILEPREFIX ""
+#else	define OPEN open
+#	define CLOSE close
+#	define WRITE write
+#	define READ read
 #endif /* WIN32 */
 
 /*  That should be all you need to look at in this file for porting */

@@ -1912,6 +1912,30 @@ void report(char *msg)
 #endif /* DEBUG */
 }
 
+/*----------------------------------------------------------
+ println
+
+   accept:      string to send to print in Java
+   perform:     if DEBUG is defined send the string System.out.println()
+   return:      none
+   exceptions:  none
+   comments:    This has not been confirmed to work yet.
+----------------------------------------------------------*/
+
+void println( JNIEnv *env, jobject jobj, char *message )
+{
+#ifdef DEBUG
+	jmethodID foo;
+	jclass jclazz;
+
+	jclazz = (*env)->GetObjectClass( env, jobj );
+	foo = (*env)->GetMethodID( env, jclazz, "Report","(Ljava/lang/String)V" );
+	(*env)->CallVoidMethod( env, jobj, foo,
+		(*env)->NewStringUTF(env, message));
+	(*env)->DeleteLocalRef( env, jclazz );
+#endif /* DEBUG */
+}
+
 #ifndef WIN32
 /*----------------------------------------------------------
  fhs_lock

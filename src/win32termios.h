@@ -32,6 +32,7 @@
 #	define ENTER(x)
 #	define LEAVE(x)
 #endif /* TRACE */
+/*
 #define YACK() \
 { \
 	char *allocTextBuf; \
@@ -48,6 +49,34 @@
 		NULL ); \
 	fprintf( stderr, "Error 0x%x at %s(%d): %s", errorCode, __FILE__, __LINE__, allocTextBuf); \
 	LocalFree(allocTextBuf); \
+}
+*/
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+
+#define YACK() \
+{ \
+	char *allocTextBuf; \
+	char message[160]; \
+	int fd; \
+	unsigned long nChars; \
+	unsigned int errorCode = GetLastError(); \
+	nChars = FormatMessage ( \
+		FORMAT_MESSAGE_ALLOCATE_BUFFER | \
+		FORMAT_MESSAGE_FROM_SYSTEM, \
+		NULL, \
+		errorCode, \
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), \
+		(LPSTR)&allocTextBuf, \
+		16, \
+		NULL ); \
+	sprintf( message, "Error 0x%x at %s(%d): %s", errorCode, __FILE__, __LINE__, allocTextBuf); \
+	LocalFree(allocTextBuf); \
+	fd = open( "rxtx.log", O_CREAT|O_APPEND ); \
+	write( fd, message, strlen(message) ); \
+	close(fd); \
 }
 
 typedef unsigned char   cc_t;
@@ -108,6 +137,7 @@ struct serial_icounter_struct {
 };
 
 int serial_open(const char *File, int flags, ... );
+int serial_close(int fd);
 int serial_read(int fd, void *b, int size);
 int serial_write(int fd, char *Str, int length);
 /*
@@ -118,9 +148,10 @@ int serial_select(int, struct fd_set *, struct fd_set *, struct fd_set *, struct
 #define select serial_select
 #endif
 
-#define open serial_open
-#define read serial_read
-#define write serial_write
+#define OPEN serial_open
+#define CLOSE serial_close
+#define READ serial_read
+#define WRITE serial_write
 
 struct termios_list *find_port( int );
 void usleep(unsigned long usec);
