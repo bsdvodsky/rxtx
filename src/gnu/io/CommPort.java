@@ -16,12 +16,10 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
-package gnu.io;
+package javax.comm;
 
 import java.io.*;
 import java.util.*;
-import javax.comm.*;
-
 
 /**
   * SerialPort
@@ -29,7 +27,7 @@ import javax.comm.*;
 public abstract class CommPort extends Object {
 	protected String name;
 
-	public abstract void enableReceiveFraming( int f );
+	public abstract void enableReceiveFraming( int f ) throws UnsupportedCommOperationException;
 	public abstract void disableReceiveFraming();
 	public abstract boolean isReceiveFramingEnabled();
 	public abstract int getReceiveFramingByte();
@@ -45,10 +43,10 @@ public abstract class CommPort extends Object {
 	public abstract int getInputBufferSize();
 	public abstract void setOutputBufferSize( int size );
 	public abstract int getOutputBufferSize();
-	public abstract void close();
+	public void close() {};
 
-	xpublic abstract InputStream getInputStream() throws IOException;
-	xpublic abstract OutputStream getOutputStream() throws IOException;
+	public abstract InputStream getInputStream() throws IOException;
+	public abstract OutputStream getOutputStream() throws IOException;
 
 	public String getName()
 	{

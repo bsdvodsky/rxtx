@@ -18,8 +18,7 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
-package gnu.io;
-
+package javax.comm;
 import java.util.*;
 
 public interface I2CPortEventListener extends EventListener

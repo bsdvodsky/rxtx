@@ -18,21 +18,21 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
-package gni.io;
+package javax.comm;
 import java.util.*;
 
 public class RS485PortEvent extends EventObject
 {
-	public int DATA_AVAILABLE       1;
-	public int OUTPUT_BUFFER_EMPTY  2;
-	public int CTS                  3;
-	public int DSR                  4;
-	public int RI                   5;
-	public int CD                   6;
-	public int OE                   7;
-	public int PE                   8;
-	public int FE                   9;
-	public int BI                  10;
+	public int DATA_AVAILABLE      =1;
+	public int OUTPUT_BUFFER_EMPTY =2;
+	public int CTS                 =3;
+	public int DSR                 =4;
+	public int RI                  =5;
+	public int CD                  =6;
+	public int OE                  =7;
+	public int PE                  =8;
+	public int FE                  =9;
+	public int BI                 =10;
 
 	private boolean OldValue;
 	private boolean NewValue;
@@ -41,9 +41,9 @@ public class RS485PortEvent extends EventObject
 
 	public RS485PortEvent(RS485Port srcport, int eventtype, boolean oldvalue, boolean newvalue)
 	{
-		super( src );	
+		super( srcport );	
 		OldValue=oldvalue;
-		NewValue-newvalue;
+		NewValue=newvalue;
 		eventType=eventtype;
 	}
 	public int getEventType()

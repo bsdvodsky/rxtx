@@ -16,13 +16,13 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
-package gni.io;
+package javax.comm;
 import java.util.*;
 
 public class ParallelPortEvent extends EventObject
 {
-	public int  PAR_EV_ERROR    1
-	public int  PAR_EV_BUFFER   2
+	public int  PAR_EV_ERROR   =1;
+	public int  PAR_EV_BUFFER  =2;
 
 
 	private boolean OldValue;
@@ -32,9 +32,9 @@ public class ParallelPortEvent extends EventObject
 
 	public ParallelPortEvent(ParallelPort srcport, int eventtype, boolean oldvalue, boolean newvalue)
 	{
-		super( srcprt );	
+		super( srcport );	
 		OldValue=oldvalue;
-		NewValue-newvalue;
+		NewValue=newvalue;
 		eventType=eventtype;
 	}
 	public int getEventType()

@@ -16,14 +16,14 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
-package gnu.io;
-import java.util;
+package javax.comm;
+import java.util.*;
 
 public interface CommPortOwnershipListener extends EventListener
 {
-	public static int PORT_OWNED;
-	public static int PORT_OWNERSHIP_REQUESTED;
-	public static int PORT_UNOWNED;
+	public static int PORT_OWNED               =1;
+	public static int PORT_UNOWNED             =2;
+	public static int PORT_OWNERSHIP_REQUESTED =3;
 
 	public abstract void ownershipChange( int type );
 }

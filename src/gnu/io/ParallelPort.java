@@ -16,23 +16,22 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
-package gnu.io;
+package javax.comm;
 
 import java.io.*;
 import java.util.*;
-import javax.comm.*;
 
 
 /**
   * ParallelPort
   */
-final class ParallelPort extends CommPort {
-	public int  LPT_MODE_ANY    0
-	public int  LPT_MODE_SPP    1
-	public int  LPT_MODE_PS2    2
-	public int  LPT_MODE_EPP    3
-	public int  LPT_MODE_ECP    4
-	public int  LPT_MODE_NIBBLE 5
+public  abstract class ParallelPort extends CommPort {
+	public int  LPT_MODE_ANY   =0;
+	public int  LPT_MODE_SPP   =1;
+	public int  LPT_MODE_PS2   =2;
+	public int  LPT_MODE_EPP   =3;
+	public int  LPT_MODE_ECP   =4;
+	public int  LPT_MODE_NIBBLE=5;
 
 	public abstract int getMode();
 	public abstract int setMode(int mode);
