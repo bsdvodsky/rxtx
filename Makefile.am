@@ -48,11 +48,13 @@ $(target_alias)/lib%.so: $(SPATH)/%Imp.@EXTENSION@ $(CLASSES)
 #  compile src/SerialImp.c and similar files into libraries.
 #  LIBTOOL_FIX handles problems encountered on some OS's.  See configure.in
 #  If a LIBTOOL_FIX is added be sure to provide a trailing ';' in configure.in
+
 $(target_alias)/lib%.@LIB_EXTENSION@: $(SPATH)/%Imp.c $(CLASSES) $(SPATH)/%Imp.h
 	@(							\
 	$(LIBTOOL_FIX)						\
 	cd $(DEST); 						\
-	$(LIBTOOLC) ../$(SPATH)/$*Imp.@EXTENSION@ -o $(TOP)/$(DEST)/$*Imp.@OBJECT_EXTENSION@; \
+	$(LIBTOOLC) ../$(SPATH)/$*Imp.@EXTENSION@ -o		\
+		$(TOP)/$(DEST)/$*Imp.@OBJECT_EXTENSION@;	\
 	@LINK@ $(TOP)/$(DEST)/$*Imp.lo				\
 	)
 
