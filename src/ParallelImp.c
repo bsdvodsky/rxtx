@@ -65,15 +65,34 @@ JNIEXPORT jint JNICALL Java_gnu_io_LPRPort_getOutputBufferFree(JNIEnv *env,
 /*----------------------------------------------------------
 /*----------------------------------------------------------
 LPRPort.setLPRMode
-   accept:      
-   perform:     
-   return:      
-   exceptions:  
+   accept:     mode 
+   perform:    set the Printer communication mode 
+	LPT_MODE_ANY:     pick the best possible mode
+	LPT_MODE_SPP:     compatibility mode/unidirectional
+	LPT_MODE_PS2:     byte mode/bidirectional
+	LPT_MODE_EPP:     extended parallel port
+	LPT_MODE_ECP:     enhanced capabilities port
+	LPT_MODE_NIBBLE:  Nibble Mode. Bi-directional. HP Bi-tronics. 
+	                  4 bits at a time.
+   return:     none 
+   exceptions: UnsupportedCommOperationException
    comments:    
 ----------------------------------------------------------*/ 
 JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_setLPRMode(JNIEnv *env,
-        jclass jclazz) {
-/*throws UnsupportedCommOperationException;*/
+        jclass jclazz, jint mode) {
+	switch(mode){
+		case LPT_MODE_ANY:
+			break;
+		case LPT_MODE_SPP:
+		case LPT_MODE_PS2:
+		case LPT_MODE_EPP:
+		case LPT_MODE_ECP:
+		case LPT_MODE_NIBBLE:
+		default:
+			UnsupportedCommOperationException(env, "setLPRMode was unable to proced the requested mode" );
+
+	}
+
 }
 /*----------------------------------------------------------
 LPRPort.isPaperOut

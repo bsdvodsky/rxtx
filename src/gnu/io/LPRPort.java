@@ -55,22 +55,22 @@ final class LPRPort extends ParallelPort {
 
 	/** return current mode LPT_MODE_SPP, LPT_MODE_PS2, LPT_MODE_EPP, 
 	    or LPT_MODE_ECP */
-	private int lprmode;
+	private int lprmode=LPT_MODE_ANY;
 	public int getMode() { return lprmode; }
 	public int setMode(int mode) {
-		lprmode = mode;
 		try {
-			setLPRMode();
+			setLPRMode(mode);
 		} catch(UnsupportedCommOperationException e) {
 			e.printStackTrace();
                         return -1;
 		}
+		lprmode = mode;
 		return(0);
 	}
 	public void restart(){};
 	public void suspend(){};
 	
-	public native boolean setLPRMode() throws UnsupportedCommOperationException;
+	public native boolean setLPRMode(int mode) throws UnsupportedCommOperationException;
 	public native boolean isPaperOut();
 	public native boolean isPrinterBusy();
 	public native boolean isPrinterError();

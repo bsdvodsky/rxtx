@@ -19,16 +19,16 @@
 
 /* javax.comm.ParallelPort constants */
 /*  this appears to be handled in /usr/src/linux/misc/parport_pc.c */
-#define LPT_MODE_ANY
-#define LPT_MODE_ECP
-#define LPT_MODE_EPP
-#define LPT_MODE_NIBBLE
-#define LPT_MODE_PS2
-#define LPT_MODE_SPP
+#define LPT_MODE_ANY	0
+#define LPT_MODE_SPP	1
+#define LPT_MODE_PS2	2
+#define LPT_MODE_EPP	3
+#define LPT_MODE_ECP	4
+#define LPT_MODE_NIBBLE	5
 
 /* javax.comm.ParallelPortEvent constants */
-#define PAR_EV_BUFFER
-#define PAR_EV_ERROR
+#define PAR_EV_ERROR	1
+#define PAR_EV_BUFFER	2
 
 /*
 Flow Control defines inspired by reading how mgetty by Gert Doering does it
