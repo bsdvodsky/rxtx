@@ -1041,7 +1041,11 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 
 /*------------------------  END OF CommAPI -----------------------------*/
 
+	private native int nativeGetParityErrorChar( )
+		throws UnsupportedCommOperationException;
 	private native boolean nativeSetParityErrorChar( byte b )
+		throws UnsupportedCommOperationException;
+	private native int nativeGetEndOfInputChar( )
 		throws UnsupportedCommOperationException;
 	private native boolean nativeSetEndOfInputChar( byte b )
 		throws UnsupportedCommOperationException;
@@ -1072,6 +1076,8 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 	*  @param b Parity Error Character
 	*  @return boolean true on success
 	*  @throws UnsupportedCommOperationException;
+	*
+	*  Anyone know how to do this in Unix?
 	*/
 
 	boolean setParityErrorChar( byte b )
