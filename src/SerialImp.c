@@ -4329,12 +4329,12 @@ registerKnownSerialPorts(JNIEnv *env, jobject jobj, jint portType) /* dima */
     } else {
 	jclass cls; /* dima */
 	jmethodID mid; /* dima */
-        cls = (*env)->FindClass(env,"javax.comm/CommPortIdentifier" ); /* dima */
+        cls = (*env)->FindClass(env,"javax/comm/CommPortIdentifier" ); /* dima */
         if (cls == 0) { /* dima */
-            report( "can't find class of javax.comm/CommPortIdentifier\n" ); /* dima */
+            report( "can't find class of javax/comm/CommPortIdentifier\n" ); /* dima */
             return numPorts; /* dima */
         } /* dima */
-        mid = (*env)->GetStaticMethodID(env, cls, "addPortName", "(Ljava/lang/String;ILjavax.comm/CommDriver;)V" ); /* dima */
+        mid = (*env)->GetStaticMethodID(env, cls, "addPortName", "(Ljava/lang/String;ILjavax/comm/CommDriver;)V" ); /* dima */
 
         if (mid == 0) {
             printf( "getMethodID of CommDriver.addPortName failed\n" );
