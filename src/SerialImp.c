@@ -3090,7 +3090,7 @@ int different_from_LOCKDIR(const char* ld)
    exceptions:  none
    comments:    check if the device is already locked
 ----------------------------------------------------------*/
-int is_device_locked( const char *filename )
+int is_device_locked( const char *port_filename )
 {
 	const char *lockdirs[] = { "/etc/locks", "/usr/spool/kermit",
 		"/usr/spool/locks", "/usr/spool/uucp", "/usr/spool/uucp/",
@@ -3098,85 +3098,77 @@ int is_device_locked( const char *filename )
 		"/var/spool/lock", "/var/spool/locks", "/var/spool/uucp",
 		LOCKDIR, NULL
 	};
-	const char *lockprefixes[] = { "LK..", "lk..", "LK.", NULL }; 
+	const char *lockprefixes[] = { "LK.", "lk..", "LK..", NULL }; 
 	char *p, file[80], pid_buffer[20], message[80];
 	int i = 0, j, k, fd , pid;
 	struct stat buf;
 	struct stat buf2;
 
-	i = strlen( filename );
-	p = ( char * ) filename+i;
-	while( *( p-1 ) != '/' && i-- !=1 ) p--;
-	sprintf( file, "%s/%s%s", LOCKDIR, LOCKFILEPREFIX, p );
+	j = strlen( port_filename );
+	p = ( char * ) port_filename+j;
+	while( *( p-1 ) != '/' && j-- !=1 ) p--;
 
 	while( lockdirs[i] )
 	{
 		/*
 		   Look for lockfiles in all known places other than the
 		   defined lock directory for this system
+		   report any unexpected lockfiles.
+
+		   Is the suspect lockdir there?
+		   if it is there is it not the expected lock dir?
 		*/
-		if( ( stat( file, &buf2 ) == 0 ) &&
-			strncmp( lockdirs[i], LOCKDIR, strlen( lockdirs[i] ) )
-		)
+		if( !stat( lockdirs[i], &buf2 ) &&
+			strncmp( lockdirs[i], LOCKDIR, strlen( lockdirs[i] ) ) )
 		{
-			/*
-				Here is the check for symbolic links
-				see also:
-
-				 different_from_LOCKDIR()
-			*/
-
-			if ( ( buf2.st_dev != buf.st_dev ) ||
-				( buf2.st_ino != buf.st_ino ) )
-			{
-				j = strlen( filename );
-				p = ( char *  ) filename + j;
-				
+			j = strlen( port_filename );
+			p = ( char *  ) port_filename + j;
 		/*
 		   SCO Unix use lowercase all the time
 			taj
 		*/
-				while( *( p - 1 ) != '/' && j-- != 1 )
-				{
+			while( *( p - 1 ) != '/' && j-- != 1 )
+			{
 #if defined ( __unixware__ )
-					*p = tolower( *p );
+				*p = tolower( *p );
 #endif /* __unixware__ */
-					p--;
-				}
-				k=0;
-				while ( lockprefixes[k] )
+				p--;
+			}
+			k=0;
+			while ( lockprefixes[k] )
+			{
+				/* FHS style */
+				sprintf( file, "%s/%s%s", lockdirs[i],
+					lockprefixes[k], p );
+				if( stat( file, &buf ) == 0 )
 				{
-					/* FHS style */
-					sprintf( file, "%s/%s%s", lockdirs[i],
-						lockprefixes[k], p );
-					if( stat( file, &buf ) == 0 )
-					{
-						sprintf( message,
-							UNEXPECTED_LOCK_FILE );
-						report( message );
-						return 1;
-					}
-
-					/* UUCP style */
-					sprintf( file, "%s/%s%03d.%03d.%03d",
-						lockdirs[i],
-						lockprefixes[k],
-						(int) major( buf.st_dev ),
-						(int) major( buf.st_rdev ),
-						(int) minor( buf.st_rdev )
-					);
-					if( stat( file, &buf ) == 0 )
-					{
-						sprintf( message, UNEXPECTED_LOCK_FILE );
-						report( message );
-						return 1;
-					}
-					k++;
+					sprintf( message, UNEXPECTED_LOCK_FILE,
+						file );
+					report( message );
+					return 1;
 				}
+
+				/* UUCP style */
+				stat(port_filename , &buf );
+				sprintf( file, "%s/%s%03d.%03d.%03d",
+					lockdirs[i],
+					lockprefixes[k],
+					(int) major( buf.st_dev ),
+					(int) major( buf.st_rdev ),
+					(int) minor( buf.st_rdev )
+				);
+				if( stat( file, &buf ) == 0 )
+				{
+					sprintf( message, UNEXPECTED_LOCK_FILE,
+						file );
+					report( message );
+					return 1;
+				}
+				k++;
 			}
 		}
-		i++;
 	}
+	i++;
 
 	/*
 		OK.  We think there are no unexpect lock files for this device
@@ -3186,27 +3178,33 @@ int is_device_locked( const char *filename )
 		 
 #ifdef FHS
 	/*  FHS standard locks */
-		i = strlen( filename );
-		p = ( char * ) filename + i;
-		while( *(p-1) != '/' && i-- != 1) p--;
-		sprintf( file, "%s/%s%s", LOCKDIR, LOCKFILEPREFIX, p );
+	i = strlen( port_filename );
+	p = ( char * ) port_filename + i;
+	while( *(p-1) != '/' && i-- != 1)
+	{
+#if defined ( __unixware__ )
+		*p = tolower( *p );
+#endif /* __unixware__ */
+		p--;
+	}
+	sprintf( file, "%s/%s%s", LOCKDIR, LOCKFILEPREFIX, p );
 #else 
 	/*  UUCP standard locks */
-		if ( stat( filename, &buf ) != 0 )
-		{
-			report( "RXTX is_device_locked() could not find device.\n" );
+	if ( stat( port_filename, &buf ) != 0 )
+	{
+		report( "RXTX is_device_locked() could not find device.\n" );
 			return 1;
-		}
-		sprintf( file, "%s/LK.%03d.%03d.%03d",
-			LOCKDIR,
-			(int) major( buf.st_dev ),
-	 		(int) major( buf.st_rdev ),
-			(int) minor( buf.st_rdev )
-		);
+	}
+	sprintf( file, "%s/LK.%03d.%03d.%03d",
+		LOCKDIR,
+		(int) major( buf.st_dev ),
+ 		(int) major( buf.st_rdev ),
+		(int) minor( buf.st_rdev )
+	);
 
 #endif /* FHS */
 
-	if( stat( file, &buf )==0 )
+	if( stat( file, &buf ) == 0 )
 	{
 
 		/* check if its a stale lock */
