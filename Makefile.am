@@ -33,7 +33,7 @@ LIBTOOL = $(SHELL) $(TOP)/libtool
 LINK = $(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(LDFLAGS) -version-info 1:0:1
 SERIAL_HEADER = $(TOP)/$(target_alias)/gnu_io_RXTXPort.h 
 PARALLEL_HEADER = $(TOP)/$(target_alias)/gnu_io_LPRPort.h
-CLEANFILES = CLEANFILES = $(TOP)/*.class $(TOP)/gnu/io/*.class $(TOP)/jcl.jar
+CLEANFILES = $(TOP)/*.class $(TOP)/gnu/io/*.class $(TOP)/jcl.jar
 #LTLIBRARIES =     $(lib_LTLIBRARIES)
 #BUILT_SOURCES = $(TOP)/$(target_alias)/libSerial.la
 SUFFIXES = .java .class
