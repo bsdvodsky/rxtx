@@ -112,14 +112,9 @@ int cfmakeraw ( struct termios *term )
 #endif /* HAVE_GRP_H */
 
 extern int errno;
-#include "SerialImp.h"
 #define DEBUG
 #define DEBUG_MW  /* use Mathwork's mexPrintf for debugging */
-#ifdef DEBUG_MW
-extern void mexWarnMsgTxt( const char * );
-extern int mexPrintf( const char *, ... );
-#	define printf mexPrintf
-#endif DEBUG_MW
+#include "SerialImp.h"
 
 /* this is so diff will not generate noise when merging 1.4 and 1.5 changes
  * It will eventually be removed.
@@ -1370,27 +1365,13 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 	int fd;
 	const char *name = (*env)->GetStringUTFChars(env, tty_name, 0);
 	int ret = JNI_TRUE;
-/*
-	int output = open("rxtx.log", O_RDWR|O_CREAT);
-	char message[80];
-	jmethodID foo;
-	jclass jclazz;
 
-	printf("testRead(%s)", name);
-	sprintf(message, "testRead(%s)\n", name);
-	jclazz = (*env)->GetObjectClass( env, jobj );
-	foo = (*env)->GetMethodID( env, jclazz, "Report","(Ljava/lang/String)V" );
-	(*env)->CallVoidMethod( env, jobj, foo,
-		(*env)->NewStringUTF(env, message));
-	(*env)->DeleteLocalRef( env, jclazz );
-	//exit(0);
-	write(output, message, strlen(message));
-	close(output);
+#ifdef TRENT_IS_HERE
 	if ( strcmp( name, "COM1" ) )
 		return( JNI_TRUE );
 	else
 		return( JNI_FALSE );
-*/
+#endif TRENT_IS_HERE
 	
 
 	/* 
@@ -1408,7 +1389,8 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 	}
 
 	/* CLOCAL eliminates open blocking on modem status lines */
-	if ((fd = OPEN(name, O_RDONLY | CLOCAL)) <= 0) {
+	if ((fd = OPEN(name, O_RDONLY | CLOCAL)) <= 0)
+	{
 		report_error( "testRead() open failed\n" );
 		ret = JNI_FALSE;
 		goto END;
@@ -1435,7 +1417,8 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 		}
 
 		/* save, restore later */
-		if ( ( saved_flags = fcntl(fd, F_GETFL ) ) < 0) {
+		if ( ( saved_flags = fcntl(fd, F_GETFL ) ) < 0)
+		{
 			report_error( "testRead() fcntl(F_GETFL) failed\n" );
 			ret = JNI_FALSE;
 			goto END;
@@ -1443,7 +1426,8 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 
 		memcpy( &saved_termios, &ttyset, sizeof( struct termios ) );
 
-		if ( fcntl( fd, F_SETFL, O_NONBLOCK ) < 0 ) {
+		if ( fcntl( fd, F_SETFL, O_NONBLOCK ) < 0 )
+		{
 			report_error( "testRead() fcntl(F_SETFL) failed\n" );
 			ret = JNI_FALSE;
 			goto END;
@@ -1452,7 +1436,8 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 		cfmakeraw(&ttyset);
 		ttyset.c_cc[VMIN] = ttyset.c_cc[VTIME] = 0;
 
-		if ( tcsetattr( fd, TCSANOW, &ttyset) < 0 ) {
+		if ( tcsetattr( fd, TCSANOW, &ttyset) < 0 )
+		{
 			report_error( "testRead() tcsetattr failed\n" );
 			ret = JNI_FALSE;
 			tcsetattr( fd, TCSANOW, &saved_termios );
@@ -1902,6 +1887,24 @@ void throw_java_exception( JNIEnv *env, char *exc, char *foo, char *msg )
 }
 
 /*----------------------------------------------------------
+ report_warning
+
+   accept:      string to send to report as an message
+   perform:     send the string to stderr or however it needs to be reported.
+   return:      none
+   exceptions:  none
+   comments:
+----------------------------------------------------------*/
+void report_warning(char *msg)
+{
+#ifndef DEBUG_MW
+	fprintf(stderr, msg);
+#else
+	mexWarnMsgTxt( msg );
+#endif / *DEBUG_MW */
+}
+
+/*----------------------------------------------------------
  report_error
 
    accept:      string to send to report as an error
@@ -1915,6 +1918,7 @@ void report_error(char *msg)
 #ifndef DEBUG_MW
 	fprintf(stderr, msg);
 #else
+	//mexErrMsgTxt( msg );
 	mexWarnMsgTxt( msg );
 #endif / *DEBUG_MW */
 }

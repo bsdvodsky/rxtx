@@ -27,7 +27,7 @@
 #include <io.h>
 #ifdef TRACE
 #	define ENTER(x) printf("entering "x" \n");
-#	define LEAVE(x) printf("leavine "x" \n");
+#	define LEAVE(x) printf("leaving "x" \n");
 #else
 #	define ENTER(x)
 #	define LEAVE(x)

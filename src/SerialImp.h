@@ -186,6 +186,12 @@ Flow Control defines inspired by reading how mgetty by Gert Doering does it
 #endif
 
 /* PROTOTYPES */
+#ifdef DEBUG_MW
+extern void mexWarnMsgTxt( const char * );
+extern void mexErrMsgTxt( const char *, ...);
+extern int mexPrintf( const char *, ... );
+#	define printf mexPrintf
+#endif /* DEBUG_MW */
 #ifdef __BEOS__
 data_rate translate_speed( JNIEnv*, jint  );
 int translate_data_bits( JNIEnv *, data_bits *, jint );
@@ -203,6 +209,7 @@ jboolean is_interrupted(JNIEnv *, jobject );
 int send_event(JNIEnv *, jobject, jint, int );
 void dump_termios(char *,struct termios *);
 void report_error(char *);
+void report_warning(char *);
 void report(char *);
 void throw_java_exception( JNIEnv *, char *, char *, char * );
 int lock_device( const char * );
