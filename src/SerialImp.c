@@ -69,7 +69,11 @@
 #ifdef HAVE_SYS_FILE_H
 #   include <sys/file.h>
 #endif /* HAVE_SYS_FILE_H */
-
+#ifdef LFS  /* File Lock Server */
+#	include <sys/socket.h>
+#	include <netinet/in.h>
+#	include <arpa/inet.h>
+#endif /* FLS */
 #if defined(__linux__)
 #	include <linux/types.h> /* fix for linux-2.3.4? kernels */
 #	include <linux/serial.h>
@@ -98,20 +102,20 @@
 #ifdef HAVE_GRP_H
 #include 	<grp.h>
 #endif /* HAVE_GRP_H */
+#include <math.h>
 
 extern int errno;
 #ifdef TRENT_IS_HERE
-#define DEBUG
 #define TRACE
-/*
-#undef TIOCSERGETLSR
+#define DEBUG
 #define DEBUG_MW
-#define DONT_USE_OUTPUT_BUFFER_EMPTY_CODE
-notes:
-	TIOCGSERIAL
-*/
+#define DEBUG_VERBOSE
+#undef TIOCSERGETLSR
 #endif /* TRENT_IS_HERE */
 #include "SerialImp.h"
+
+
+struct preopened *preopened_port = NULL;
 
 /* this is so diff will not generate noise when merging 1.4 and 1.5 changes
  * It will eventually be removed.
@@ -119,7 +123,7 @@ notes:
 #define RXTXPort(foo) Java_gnu_io_RXTXPort_ ## foo
 #define RXTXCommDriver(foo) Java_gnu_io_RXTXCommDriver_ ## foo
 
-#if defined(__sun__)
+#if defined(__sun__) || defined(__hpux__)
 /*----------------------------------------------------------
 cfmakeraw
 
@@ -142,10 +146,45 @@ int cfmakeraw ( struct termios *term )
 	LEAVE( "cfmakeraw" );
 	return( 0 );
 }
-#endif /* __sun__ */
+#endif /* __sun__  || __hpux__ */
+
+#ifdef DEBUG_TIMING
+struct timeval snow, enow, seloop, eeloop;
+#define report_time_eventLoop( ) { \
+	if ( seloop.tv_sec == eeloop.tv_sec && seloop.tv_usec == eeloop.tv_usec ) \
+	{ \
+		gettimeofday(&eeloop, NULL); \
+		seloop.tv_sec = eeloop.tv_sec; \
+		seloop.tv_usec = eeloop.tv_usec; \
+		mexPrintf("%8i sec : %8i usec\n", eeloop.tv_sec - seloop.tv_sec, eeloop.tv_usec - seloop.tv_usec); \
+	} \
+}
+#define report_time( ) \
+{ \
+	struct timeval now; \
+	gettimeofday(&now, NULL); \
+	mexPrintf("%8s : %5i : %8i sec : %8i usec\n", __TIME__, __LINE__, now.tv_sec, now.tv_usec); \
+}
+#define report_time_start( ) \
+{ \
+	gettimeofday(&snow, NULL); \
+	mexPrintf("%8s : %5i : %8i sec : %8i usec", __TIME__, __LINE__, snow.tv_sec, snow.tv_usec); \
+}
+#define report_time_end( ) \
+{ \
+	gettimeofday(&enow, NULL); \
+	mexPrintf("%8i sec : %8i usec\n", enow.tv_sec - snow.tv_sec, enow.tv_sec - snow.tv_sec?snow.tv_usec-enow.tv_usec:enow.tv_usec - snow.tv_usec); \
+}
+#else
+#define report_time_eventLoop( ){};
+#define report_time( ) {}
+#define report_time_start( ) {}
+#define report_time_end( ) {}
+
+#endif /* DEBUG_TIMING */
+
 
 struct event_info_struct *master_index = NULL;
-//int eventloop_interrupted = 0;
 
 /*----------------------------------------------------------
 RXTXPort.Initialize
@@ -191,6 +230,12 @@ JNIEXPORT void JNICALL RXTXPort(Initialize)(
 	} 
 #endif /* !WIN32 */
 	ENTER( "RXTXPort:Initialize" );
+#ifdef DEBUG_MW
+	mexPrintf("RXTX Prerelease for testing  Sat Jan 26 15:32:04 MST 2002\n");
+#endif /* DEBUG_MW */
+#if DEBUG_TIMING
+	gettimeofday(&seloop, NULL);
+#endif /* DEBUG_TIMING */
 #if defined(DEBUG) && defined(__linux__)
 	/* Lets let people who upgraded kernels know they may have problems */
 	if (uname (&name) == -1)
@@ -208,6 +253,65 @@ JNIEXPORT void JNICALL RXTXPort(Initialize)(
 	}
 	LEAVE( "RXTXPort:Initialize" );
 #endif /* DEBUG && __linux__ */
+}
+
+/*----------------------------------------------------------
+RXTXPort.find_preopened_ports
+   accept:      The device to find if preopened.  ie "/dev/ttyS0"
+   perform:     find the filedescriptor if preopened
+   return:      fd
+   exceptions:  none
+   comments:    see
+			RXTXPort.nativeStaticSetDTR
+			RXTXPort.nativeStaticSetRTS
+		This is used so people can setDTR low before calling the
+		Java open().
+----------------------------------------------------------*/
+int find_preopened_ports( const char *filename )
+{
+	int fd;
+	struct preopened *p = preopened_port;
+
+	if( !p )
+	{
+		return(0);
+	}
+	for(;;)
+	{
+		if( !strcmp( p->filename, filename) )
+		{
+			fd = p->fd;
+			if( p->prev && p->next )
+			{
+				p->prev->next = p->next;
+				p->next->prev = p->prev;
+			}
+			else if ( p->prev )
+			{
+				p->prev->next = NULL;
+			}
+			else if ( p->next )
+			{
+				p->next->prev = NULL;
+			}
+			else
+			{
+				free( p );
+				preopened_port = NULL;
+				return( fd );
+			}
+			free( p );
+			return( fd );
+		}
+		if( p->next )
+		{
+			p = p->next;
+		}
+		else
+		{
+			return(0);
+		}
+	}
 }
 
 /*----------------------------------------------------------
@@ -235,6 +339,7 @@ JNIEXPORT jint JNICALL RXTXPort(open)(
 	const char *filename;
 	jclass jclazz = (*env)->GetObjectClass( env, jobj );
 	jfieldID jfid = (*env)->GetFieldID( env, jclazz, "pid", "I" );
+	report_time_start( );
 
 	if( !jfid ) {
 		(*env)->ExceptionDescribe( env );
@@ -261,7 +366,7 @@ JNIEXPORT jint JNICALL RXTXPort(open)(
 	*/
 			
 	ENTER( "RXTXPort:open" );
-	if ( LOCK( filename) )
+	if ( LOCK( filename, pid ) )
 	{
 		sprintf( message, "open: locking has failed for %s\n",
 			filename );
@@ -272,6 +377,13 @@ JNIEXPORT jint JNICALL RXTXPort(open)(
 	{
 		sprintf( message, "open: locking worked for %s\n", filename );
 		report( message );
+	}
+	/* This is used so DTR can remain low on 'open()' */
+	fd = find_preopened_ports( filename );
+	if( fd )
+	{
+		(*env)->ReleaseStringUTFChars( env, jstr, filename );
+		return (jint)fd;
 	}
 
 	do {
@@ -305,6 +417,7 @@ JNIEXPORT jint JNICALL RXTXPort(open)(
 	sprintf( message, "open: fd returned is %i\n", fd );
 	report( message );
 	LEAVE( "RXTXPort:open" );
+	report_time_end( );
 	return (jint)fd;
 
 fail:
@@ -330,10 +443,11 @@ JNIEXPORT void JNICALL RXTXPort(nativeClose)( JNIEnv *env,
 	int fd = get_java_var( env, jobj,"fd","I" );
 	const char *filename = (*env)->GetStringUTFChars( env, jstr, 0 );
 	jclass jclazz = (*env)->GetObjectClass( env, jobj );
+	report_time_start( );
 	pid = get_java_var( env, jobj,"pid","I" );
 
 	report(">nativeClose pid\n");
-	usleep(10000);
+	//usleep(10000);
 	if( !pid ) {
 		(*env)->ExceptionDescribe( env );
 		(*env)->ExceptionClear( env );
@@ -364,6 +478,7 @@ JNIEXPORT void JNICALL RXTXPort(nativeClose)( JNIEnv *env,
 	report("nativeClose: release filename\n");
 	(*env)->ReleaseStringUTFChars( env, jstr, filename );
 	LEAVE( "RXTXPort:nativeClose" );
+	report_time_end( );
 	return;
 }
 
@@ -382,9 +497,11 @@ JNIEXPORT void JNICALL RXTXPort(nativeSetSerialPortParams)(
 	struct termios ttyset;
 	int fd = get_java_var( env, jobj,"fd","I" );
 	int cspeed = translate_speed( env, speed );
-#ifdef TIOCGSERIAL
+	int result = 0;
+#if defined(TIOCGSERIAL) && !defined( WIN32 )
 	struct serial_struct sstruct;
-#endif /* TIOCGSERIAL */
+#endif /* TIOCGSERIAL && !WIN32 */
+	report_time_start( );
 	if (cspeed == -1)
 	{
 		throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,
@@ -394,11 +511,6 @@ JNIEXPORT void JNICALL RXTXPort(nativeSetSerialPortParams)(
 
 
 	ENTER( "RXTXPort:nativeSetSerialPortParams" );
-	if( !cspeed )
-	{
-		report( "nativeSetSerialPortParams: Invalid Speed Selected\n" );
-		goto fail;
-	}
 
 	if( tcgetattr( fd, &ttyset ) < 0 )
 	{
@@ -410,7 +522,6 @@ JNIEXPORT void JNICALL RXTXPort(nativeSetSerialPortParams)(
 	{
 		report( "nativeSetSerialPortParams: Invalid Data Bits Selected\n" );
 		goto fail;
-		return;
 	}
 
 	if( !translate_stop_bits( env, &(ttyset.c_cflag), stopBits ) )
@@ -487,7 +598,16 @@ JNIEXPORT void JNICALL RXTXPort(nativeSetSerialPortParams)(
 		report( "nativeSetSerialPortParams: Cannot Set Speed\n" );
 		goto fail;
 	}
-#else
+#endif  /* __FreeBSD__ */
+	if( !cspeed )
+	{
+		/* hang up the modem aka drop DTR  */
+		/* Unix should handle this */
+		ioctl( fd, TIOCMGET, &result );
+		result &= ~TIOCM_DTR;
+		ioctl( fd, TIOCMSET, &result );
+	}
+	else {
 	if(
 		cfsetispeed( &ttyset, cspeed ) < 0 ||
 		cfsetospeed( &ttyset, cspeed ) < 0 )
@@ -495,7 +615,7 @@ JNIEXPORT void JNICALL RXTXPort(nativeSetSerialPortParams)(
 		report( "nativeSetSerialPortParams: Cannot Set Speed\n" );
 		goto fail;
 	}
-#endif  /* __FreeBSD__ */
+	}
 
 	if( tcsetattr( fd, TCSANOW, &ttyset ) < 0 )
 	{
@@ -503,6 +623,7 @@ JNIEXPORT void JNICALL RXTXPort(nativeSetSerialPortParams)(
 	}
 
 	LEAVE( "RXTXPort:nativeSetSerialPortParams" );
+	report_time_end( );
 	return;
 
 fail:
@@ -681,253 +802,65 @@ int translate_parity( JNIEnv *env, tcflag_t *cflag, jint parity )
 		"", "parity value not supported" );
 	return 0;
 }
+#if !defined(TIOCSERGETLSR) && !defined(WIN32)
 /*----------------------------------------------------------
-thread_write()
+drain_loop()
 
    accept:      
-   perform:     
+   perform:	call tcdrain() and report an event when it succeds  
    return:      none
    exceptions:  
-   comments:	
+   comments:  	
 ----------------------------------------------------------*/
-
-#if !defined(TIOCSERGETLSR) && !defined( WIN32 )
-void *thread_write( void *arg )
+void *drain_loop( void *arg )
 {
 	struct event_info_struct *eis = ( struct event_info_struct * ) arg;
-	struct tpid_info_struct *t = eis->tpid;
 	char msg[80];
-	int result;
-	int pid=getpid();
+	int i;
+	pthread_detach( pthread_self() );
 
-	sprintf(msg, "thread_write[%i]: mutex_lock writing\n", pid);
-	report( msg );
-	pthread_mutex_lock( t->mutex_writing );
-	sprintf(msg, "thread_write[%i]: mutex lock closing\n", pid);
-	report( msg );
-	pthread_mutex_lock( t->mutex_closing );
-	if( t->closing == 1 )
+	for(i=0;;i++)
 	{
-		pthread_mutex_lock( t->mutex_writing );
-		pthread_mutex_unlock( t->mutex_closing );
-		sprintf(msg, "thread_write[%i]: closing going to fail\n", pid);
-		report( msg );
-		goto fail;
-	}
-	else report("got mutex_lock\n");
-	if( !eis->jclazz )
-	{
-		pthread_mutex_lock( t->mutex_writing );
-		pthread_mutex_unlock( t->mutex_closing );
-		sprintf(msg, "thread_write[%i]: jclazz is borked\n", pid);
-		report( msg );
-		pthread_exit( NULL );
-		/* -Wall ?fix */
-		return( NULL );
-	}
-	sprintf(msg, "thread_write[%i]: have jclazz\n", pid);
-	report( msg );
-	sprintf(msg, "thread_write[%i]: mutex_lock draining\n", pid);
-	report( msg );
-	pthread_mutex_lock( t->mutex_draining );
-	while( t->tcdrain == 1 )
-	{
-		/* this causes a 'race' */
-		sprintf(msg, "thread_write[%i]: waiting for a drain\n", pid);
-		report( msg );
-		pthread_cond_wait( t->cpt_draining, t->mutex_draining );
-	}
-	
-	sprintf(msg, "thread_write[%i]: mutex_unlock draining\n", pid);
-	report( msg );
-	pthread_mutex_unlock( t->mutex_draining );
-	sprintf(msg, "thread_write[%i]: mutex_lock event\n", pid);
-	report( msg );
-	pthread_mutex_lock( t->mutex_event );
-	if( !t->closing )
-	{
-		result = write( eis->fd, t->buff, t->length );
-		t->length = result;
-		sprintf(msg, "thread_write[%i]: cond_signal writing\n", pid);
-		report( msg );
-		pthread_cond_signal( t->cpt_writing );
-		sprintf(msg, "thread_write[%i]: mutex_unlock writing\n", pid);
-		report( msg );
-		pthread_mutex_unlock( t->mutex_writing );
-	}
-	else
-	{
-		t->length = 0;
-		sprintf(msg, "thread_write[%i]: cond_signal writing\n", pid);
-		report( msg );
-		pthread_cond_signal( t->cpt_writing );
-		sprintf(msg, "thread_write[%i]: mutex_unlock writing\n", pid);
-		report( msg );
-		pthread_mutex_unlock( t->mutex_writing );
-		pthread_mutex_unlock( t->mutex_closing );
-		goto fail;
-	}
-	if( t->closing == 1 ) goto fail;
-	sprintf(msg, "thread_write[%i]: mutex_lock draining\n", pid);
-	report( msg );
-	pthread_mutex_lock( t->mutex_draining );
-	t->tcdrain = 1;
-	if( tcdrain( eis->fd ) == 0 )
-	{
-		sprintf(msg, "thread_write[%i]: mutex_lock event\n", pid);
-		report( msg );
-		while( eis->output_buffer_empty_flag == 1 ) 
+		report("drain_loop:  looping\n");
+		// TIME usleep(10000);
+		// system_wait();
+		if( eis->eventloop_interrupted )
 		{
-			sprintf(msg, ">thread_write[%i]: cond_wait event\n", pid);
-			report( msg );
-			pthread_cond_wait( t->cpt_event, t->mutex_event );
-			sprintf(msg, "<thread_write[%i]: cond_wait event\n", pid);
-			report( msg );
+			goto end;
 		}
-		if( eis ) 
+		if( tcdrain( eis->fd ) == 0 )
 		{
-			sprintf(msg, "thread_write[%i]: setting OUTPUT_BUFFER_EMPTY\n", pid );
-			report( msg );
-			eis->output_buffer_empty_flag = 1;
+			if( eis && eis->writing )
+			{
+				//sprintf(msg, "drain_loop: setting OUTPUT_BUFFER_EMPTY\n" );
+				//report( msg );
+				eis->output_buffer_empty_flag = 1;
+				eis->writing=JNI_FALSE;
+			}
+			else
+			{
+				if( !eis )
+				{
+					goto end;
+				}
+				report("drain_loop:  writing not set\n");
+			}
 		}
 		else
 		{
-			pthread_cond_signal( t->cpt_draining );
-			sprintf(msg, "thread_write[%i]: mutex_unlock draining\n", pid);
-			report( msg );
-			pthread_mutex_unlock( t->mutex_draining );
-			pthread_mutex_unlock( t->mutex_closing );
-			pthread_mutex_unlock( t->mutex_event );
-			goto fail;
+			report("drain_loop:  tcdrain bad fd\n");
+			goto end;
 		}
-		sprintf(msg, "thread_write[%i]: mutex_unlock event\n", pid);
-		report( msg );
-		pthread_mutex_unlock( t->mutex_event );
 	}
-	else
-	{
-		sprintf(msg, "thread_write[%i]: NOT sending the blasted OUTPUT_BUFFER_EMPTY\n", pid );
-		report( msg );
-	}
-	t->tcdrain = 0;
-	sprintf(msg, "thread_write[%i]: pthread_exit(NULL)\n", pid );
-	report( msg );
-/*
-	sprintf(msg, "thread_write[%i]: cond_signal closing\n", pid);
-	report( msg );
-	pthread_cond_signal( t->cpt_closing );
-*/
-	
-	sprintf(msg, "thread_write[%i]: cond_signal draining\n", pid);
-	report( msg );
-	pthread_cond_signal( t->cpt_draining );
-	sprintf(msg, "thread_write[%i]: mutex_unlock draining\n", pid);
-	report( msg );
-	pthread_mutex_unlock( t->mutex_draining );
-	sprintf(msg, "thread_write[%i]: mutex_unlock closing\n", pid);
-	report( msg );
-	pthread_mutex_unlock( t->mutex_closing );
-
+end:
+	report("------------------ drain_loop exiting ---------------------\n");
+	eis->closing = 1;
 	pthread_exit( NULL );
-	/* -Wall ?fix */
-	return( NULL );
-fail:
-	sprintf(msg, "thread_write[%i]: thread_write returning with errors\n", pid);
-	report( msg );
-	pthread_exit( NULL );
-	/* -Wall ?fix */
 	return( NULL );
 }
-
+#endif /* !defined(TIOCSERGETLSR) && !defined(WIN32) */
 /*----------------------------------------------------------
-spawn_write_thread()
-
-   accept:      
-   perform:     
-   return:      none
-   exceptions:  
-   comments:	
-----------------------------------------------------------*/
-
-int spawn_write_thread( int fd, char *buff, int length,
-			JNIEnv *env, jobject *jobj)
-{
-	struct event_info_struct *eis;
-	struct tpid_info_struct *t;
-	char msg[80];
-
-	report("spawn_write_thread: entering\n");
-
-#ifdef DONT_USE_OUTPUT_BUFFER_EMPTY_CODE
-	return(write( fd, buff, length )); 
-#else
-
-	eis = (struct event_info_struct * )
-		get_java_var( env, *jobj, "eis", "I" );
-	sprintf( msg, "spawn_write_thread: got eis %i\n", (int) eis );
-	report( msg );
-
-	/*
-	   The eventLoop has not started. just write and return since
-	   Nothing is there to get OUTPUT_BUFFER_EMPTY
-	*/
-	if ( ! eis )
-	{
-		report_warning( "spqn_write_thread: NO EVENT LOOP!!\n");
-		return( write( fd, buff, length )); 
-	}
-
-	t = eis->tpid;
-	t->inuse = 1;
-	if ( t->closing )
-	{
-		report_warning( "spawn_write_thread: closing\n");
-		return( write( fd, buff, length )); 
-	}
-
-	//report("spawn_write_thread: mutex_lock closing\n");
-	//pthread_mutex_lock( t->mutex_closing );
-	report("spawn_write_thread: mutex_lock writing\n");
-	pthread_mutex_lock( t->mutex_writing );
-	while( t->write_counter )
-	{
-		report("spawn_write_thread: writing mutex locked\n");
-		pthread_cond_wait( t->cpt_writing, t->mutex_writing );
-		if( t->closing ) return -1;
-	}
-
-	if( t->closing ) return( 0 );
-
-	/* info for the thread to write and send event when output is empty */
-	t->length = length;
-	t->buff = buff;
-
-	/* queue next write */
-	t->write_counter++;
-
-	/*----------------------------------------------*/
-	//report("spawn_write_thread: mutex_unlock closing\n");
-	//pthread_mutex_unlock( t->mutex_closing );
-	report("spawn_write_thread: create thread_write\n");
-	pthread_create( &t->tpid, NULL, thread_write, eis );
-	pthread_detach( t->tpid );
-	/*----------------------------------------------*/
-	report(">spawn_write_thread: cond_wait writing\n");
-	pthread_cond_wait( t->cpt_writing, t->mutex_writing );
-	report("<spawn_write_thread: cond_wait writing\n");
-	t->write_counter--;
-	report("spawn_write_thread: mutex_unlock writing\n");
-	pthread_mutex_unlock( t->mutex_writing );
-	//report("spawn_write_thread: mutex_unlock closing\n");
-	//pthread_mutex_unlock( t->mutex_closing );
-	sprintf(msg, "spawn_write_thread: returning return = %i\n", t->length );
-	report( msg );
-	return(t->length);
-#endif /* DONT_USE_OUTPUT_BUFFER_EMPTY_CODE */
-}
-#endif /* TIOCSERGETLSR !WIN32 */
-/*----------------------------------------------------------
-finalize_thread_write( )
+finalize_threads( )
 
    accept:      event_info_struct used to access java and communicate with
 	        eventLoop().
@@ -944,86 +877,20 @@ finalize_thread_write( )
 	once the drain has finished, we let the eventLoop know that the
 	output buffer is empty and the Signal is sent.
 ----------------------------------------------------------*/
-void finalize_thread_write( struct event_info_struct *eis )
+void finalize_threads( struct event_info_struct *eis )
 {
 #if     !defined(TIOCSERGETLSR) && !defined( WIN32 )
 	/* used to shut down any remaining write threads */
 
-	eis->tpid->closing = 1;
 	eis->output_buffer_empty_flag = 0;
-	report("finalize_thread_write: cond_broadcast event\n");
-	pthread_cond_broadcast( eis->tpid->cpt_event );
-	report("entering finalize_thread_write\n");
-	report("finalize_thread_write: mutex_lock closing\n");
-	pthread_mutex_lock( eis->tpid->mutex_closing );
-	eis->tpid->closing = 1;
-	eis->output_buffer_empty_flag = 0;
-/*
-	if( ! eis ) return;
-	if( ! eis->tpid ) return;
-	report("finalize_thread_write: mutex_lock draining\n");
-	pthread_mutex_lock( eis->tpid->mutex_draining );
-*/
-	while( eis->tpid->write_counter )
-	{
-		report("finalize_thread_write: close mutex locked\n");
-		pthread_cond_wait( eis->tpid->cpt_writing, eis->tpid->mutex_closing );
-	}
-/*
-	report("finalize_thread_write: mutex_unlock drianing\n");
-	pthread_mutex_unlock( eis->tpid->mutex_draining );
-*/
-	if ( eis->tpid->cpt_writing && eis->tpid->cpt_closing )
-	{
-		pthread_cond_destroy( eis->tpid->cpt_writing );
-		pthread_cond_destroy( eis->tpid->cpt_event );
-		report(">finalize_thread_write: destroy cpt_writing/cpt_closing\n");
-		free( eis->tpid->cpt_writing );
-		free( eis->tpid->cpt_event );
-		report("finalize_thread_write: mutex_unlock closing\n");
-		pthread_mutex_unlock( eis->tpid->mutex_closing );
-		usleep(10000);
-		pthread_cond_destroy( eis->tpid->cpt_closing );
-		free( eis->tpid->cpt_closing );
-		report("<finalize_thread_write: free event/cpt_closing\n");
-	}
-	report(">finalize_thread_write: free tpid\n");
-	if ( eis->tpid ) free( eis->tpid );
-	report("<finalize_thread_write: free tpid\n");
+	ENTER("finalize_threads\n");
 
 	/* need to clean up again after working events */
-	report("leaving finalize_thread_write\n");
+	LEAVE("---------------- finalize_threads ---------------");
 #endif /* TIOCSERGETLSR & !WIN32 */
 }
 
-/*----------------------------------------------------------
-add_tpid
-
-   accept:      struct tpid_info_struct pointer,,
-   perform:     
-   return:      
-   exceptions:  None
-   comments:    This is used to cleanup threads and make sure the
-		write()'s happen in order on systems without access to the LSR
-----------------------------------------------------------*/
 #if !defined(TIOCSERGETLSR) && !defined( WIN32 )
-struct tpid_info_struct *add_tpid( struct tpid_info_struct *p )
-{
-	struct tpid_info_struct *q;
-
-	/* FIXME TRENT.  Do we need to use key funcitons here? */
-	q = malloc( sizeof(struct tpid_info_struct) );
-	if( !q )
-	{
-		report_error("add_tpid: RXTX: Out of Memory\n");
-		return( NULL );
-	}
-	q->tpid = 0;
-	q->closing = 0;
-	q->write_counter = 0;
-	q->tcdrain = 0;
-	return( q );
-}
 static void warn_sig_abort( int signo )
 {
 	char msg[80];
@@ -1033,7 +900,7 @@ static void warn_sig_abort( int signo )
 #endif /* TIOCSERGETLSR */
 
 /*----------------------------------------------------------
-init_thread_write( )
+init_threads( )
 
    accept:      none
    perform:     
@@ -1041,15 +908,16 @@ init_thread_write( )
    exceptions:  none
    comments:	
 ----------------------------------------------------------*/
-int init_thread_write( struct event_info_struct *eis )
+int init_threads( struct event_info_struct *eis )
 {
 #if !defined(TIOCSERGETLSR) & !defined(WIN32)
-	struct tpid_info_struct *t = add_tpid( NULL);
 	sigset_t newmask, oldmask;
 	struct sigaction newaction, oldaction;
 	jfieldID jeis;
+	pthread_t tid;
 
-	report("init_thread_write:  start\n");
+	report_time_start( );
+	report("init_threads:  start\n");
 	sigemptyset(&newmask);
 	sigaddset(&newmask, SIGCHLD);
 	newaction.sa_handler = warn_sig_abort;
@@ -1079,32 +947,16 @@ int init_thread_write( struct event_info_struct *eis )
 	pthread_sigmask( SIG_BLOCK, &newmask, &oldmask );
 	sigprocmask( SIG_SETMASK, &newmask, &oldmask );
 
-	eis->tpid = t;
-	t->mutex_writing = malloc(sizeof(pthread_mutex_t));
-	t->mutex_draining = malloc(sizeof(pthread_mutex_t));
-	t->mutex_closing = malloc(sizeof(pthread_mutex_t));
-	t->mutex_event = malloc(sizeof(pthread_mutex_t));
-	t->cpt_writing = malloc(sizeof(pthread_cond_t));
-	t->cpt_draining = malloc(sizeof(pthread_cond_t));
-	t->cpt_closing = malloc(sizeof(pthread_cond_t));
-	t->cpt_event = malloc(sizeof(pthread_cond_t));
-
-	report("init_thread_write: init mutex\n");
-	pthread_mutex_init( t->mutex_writing, NULL );
-	pthread_mutex_init( t->mutex_draining, NULL );
-	pthread_mutex_init( t->mutex_closing, NULL );
-	pthread_mutex_init( t->mutex_event, NULL );
-	report("init_thread_write: init cond\n");
-	pthread_cond_init( t->cpt_writing, NULL );
-	pthread_cond_init( t->cpt_draining, NULL );
-	pthread_cond_init( t->cpt_closing, NULL );
-	pthread_cond_init( t->cpt_event, NULL );
-	report("init_thread_write: get eis\n");
+	report("init_threads: get eis\n");
 	jeis  = (*eis->env)->GetFieldID( eis->env, eis->jclazz, "eis", "I" );
-	report("init_thread_write: set eis\n");
+	report("init_threads: set eis\n");
 	(*eis->env)->SetIntField(eis->env, *eis->jobj, jeis, ( jint ) eis );
+	report("init_threads: creating drain_loop\n");
+	pthread_create( &tid, NULL, drain_loop, (void *) eis );
+	pthread_detach( tid );
 #endif /* TIOCSERGETLSR */
-	report("init_thread_write:  stop\n");
+	report("init_threads:  stop\n");
+	report_time_end( );
 	return( 1 );
 }
 
@@ -1119,35 +971,35 @@ RXTXPort.writeByte
 JNIEXPORT void JNICALL RXTXPort(writeByte)( JNIEnv *env,
 	jobject jobj, jint ji )
 {
+	struct event_info_struct *index = master_index;
 	unsigned char byte = (unsigned char)ji;
 	int fd = get_java_var( env, jobj,"fd","I" );
 	int result;
 	char msg[80];
 
+	report_time_start();
 	ENTER( "RXTXPort:writeByte" );
-	/*
-	   jobject and env are passed to the thread_write code above for
-	   systems that do not have access to the LSR used to detect if
-	   output outputbuffer is empty
-
-	   win32 implements its own write in termios.c
-	
-	   other systems use the API write directly
-	*/
 	do {
 		sprintf( msg, "writeByte %c>>\n", byte );
 		report( msg );
-#ifdef TIOCSERGETLSR
 		result=WRITE (fd, &byte, sizeof(unsigned char));
-#else
-		result=spawn_write_thread (fd, &byte, sizeof(unsigned char),
-						env, &jobj);
-		report("writeByte<<\n");
-#endif /* TIOCSERGETLSR */
 	}  while (result < 0 && errno==EINTR);
+#ifndef TIOCSERGETLSR
+	index = master_index;
+	if( index )
+	{
+		while( index->fd != fd &&
+			index->next ) index = index->next;
+	}
+	index->writing = 1;
+	report( "writeByte:  index->writing = 1" );
+#endif
+	sprintf( msg, "RXTXPort:writeByte %i\n", result );
+	report( msg );
 	LEAVE( "RXTXPort:writeByte" );
 	if(result >= 0)
 	{
+		report_time_end();
 		return;
 	}
 	throw_java_exception( env, IO_EXCEPTION, "writeByte",
@@ -1167,6 +1019,7 @@ RXTXPort.writeArray
 JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 	jobject jobj, jbyteArray jbarray, jint offset, jint count )
 {
+	struct event_info_struct *index = master_index;
 	int fd = get_java_var( env, jobj,"fd","I" );
 	int result=0,total=0;
 	jbyte *body = (*env)->GetByteArrayElements( env, jbarray, 0 );
@@ -1178,34 +1031,29 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 	retspec.tv_nsec = 50000;
 #endif /* __sun__ */
 
+	report_time_start();
 	ENTER( "writeArray" );
 	/* warning Will Rogers */
-	sprintf( message, "::::RXTXPort:writeArray(%s);\n", (char *) body );
-	report_verbose( message );
-
-	/*
-	   jobject and env are passed to the thread_write code above for
-	   systems that do not have access to the LSR used to detect if
-	   output outputbuffer is empty
-
-	   win32 implements its own write in termios.c
-	
-	   other systems use the API write directly
-	*/
+	//sprintf( message, "::::RXTXPort:writeArray(%s);\n", (char *) body );
+	//report_verbose( message );
 
 	do {
-#ifdef TIOCSERGETLSR
 		result=WRITE (fd, body + total + offset, count - total); /* dima */
-#else
-		result=spawn_write_thread (fd, body + total + offset,
-						count - total, env, &jobj);
-#endif /* TIOCSERGETLSR */
 		if(result >0){
 			total += result;
 		}
 		report("writeArray()\n");
 	}  while ( ( total < count ) || (result < 0 && errno==EINTR ) );
 	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
+#ifndef TIOCSERGETLSR
+	if( index )
+	{
+		while( index->fd != fd &&
+			index->next ) index = index->next;
+	}
+	index->writing = 1;
+	report( "writeArray:  index->writing = 1" );
+#endif
 	/*
 		50 ms sleep to make sure read can get in
 
@@ -1219,6 +1067,7 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 		Things just start spinning out of control after that.
 	*/
 	LEAVE( "RXTXPort:writeArray" );
+	report_time_end();
 	if( result < 0 ) throw_java_exception( env, IO_EXCEPTION,
 		"writeArray", strerror( errno ) );
 }
@@ -1245,6 +1094,7 @@ JNIEXPORT void JNICALL RXTXPort(nativeDrain)( JNIEnv *env,
 	char message[80];
 
 	ENTER( "SerialImp.c:drain()" );
+	report_time_start( );
 	do {
 		report_verbose( "nativeDrain: trying tcdrain\n" );
 		result=tcdrain(fd);
@@ -1256,6 +1106,7 @@ JNIEXPORT void JNICALL RXTXPort(nativeDrain)( JNIEnv *env,
 	LEAVE( "RXTXPort:drain()" );
 	if( result ) throw_java_exception( env, IO_EXCEPTION, "nativeDrain",
 		strerror( errno ) );
+	report_time_end( );
 	return;
 }
 
@@ -1271,8 +1122,10 @@ JNIEXPORT void JNICALL RXTXPort(sendBreak)( JNIEnv *env,
 	jobject jobj, jint duration )
 {
 	int fd = get_java_var( env, jobj,"fd","I" );
+	report_time_start( );
 	ENTER( "RXTXPort:sendBreak()" );
 	tcsendbreak( fd, (int)( duration / 250 ) );
+	report_time_end( );
 	LEAVE( "RXTXPort:sendBreak()" );
 }
 
@@ -1485,7 +1338,6 @@ JNIEXPORT void JNICALL RXTXPort(setRTS)( JNIEnv *env,
 	if( state == JNI_TRUE ) result |= TIOCM_RTS;
 	else result &= ~TIOCM_RTS;
 	ioctl( fd, TIOCMSET, &result );
-	if( state == JNI_TRUE ) result |= TIOCM_DSR;
 	sprintf( message, "setRTS( %i )\n", state );
 	report( message );
 	LEAVE( "RXTXPort:setRTS" );
@@ -1576,13 +1428,188 @@ JNIEXPORT void JNICALL RXTXPort(setDTR)( JNIEnv *env,
 	LEAVE( "RXTXPort:setDTR" );
 	return;
 }
+/*----------------------------------------------------------
+RXTXPort.static_add_filename
+
+   accept:      filename and fd to save
+   perform:     add a struct holding the info to a linked list
+   return:      none
+   exceptions:  none
+   comments:    the info is checked on open() if its in the list no
+		changes are performed on the file on open()
+
+   comments:    see
+			RXTXPort.nativeStaticSetDTR
+			RXTXPort.nativeStaticSetRTS
+		This is used so people can setDTR low before calling the
+-----------------------------------------------------------*/
+
+void static_add_filename( const char *filename, int fd)
+{
+	struct preopened *newp, *p = preopened_port;
+
+	newp = malloc( sizeof( struct preopened ) );
+	strcpy( newp->filename, filename );
+	newp->fd = fd;
+
+	if( !p )
+	{
+		newp->next = NULL;
+		newp->prev = NULL;
+		preopened_port = newp;
+		return;
+	}
+	for(;;)
+	{
+		if( !strcmp( p->filename, filename) )
+		{
+			/* already open */
+			return;
+		}
+		if( p->next )
+		{
+			p = p->next;
+		}
+		else
+		{
+			/* end of list */
+			newp->next = NULL;
+			newp->prev = p;
+			p->next = newp;
+			preopened_port = p;
+			return;
+		}
+	}
+}
+
+/*----------------------------------------------------------
+RXTXPort.nativeStaticSetRTS
+
+   accept:      new RTS state
+   perform:     if flag is true, TIOCM_RTS is set
+                if flag is false, TIOCM_RTS is unset
+   return:      none
+   exceptions:  none
+   comments:    Set the RTS so it does not raise on the next open
+		needed for some funky test boards?
+
+		This is static so we can not call the open() setDTR()
+		we dont have the jobject.
+
+		First introduced in rxtx-1.5-9
+----------------------------------------------------------*/
+JNIEXPORT jboolean JNICALL RXTXPort(nativeStaticSetRTS) (JNIEnv *env,
+	jclass jclazz, jstring jstr, jboolean flag)
+{
+	int fd;
+	int  pid = -1;
+	int result;
+	const char *filename = (*env)->GetStringUTFChars( env, jstr, 0 );
+
+	ENTER( "RXTXPort:nativeStaticSetRTS" );
+#ifndef WIN32
+	pid = getpid();
+#endif /* WIN32 */
+
+	/* Open and lock the port so nothing else changes the setting */
+
+	if ( LOCK( filename, pid ) ) goto fail;;
+	
+	do {
+		fd = OPEN (filename, O_RDWR | O_NOCTTY | O_NONBLOCK );
+	}  while (fd < 0 && errno==EINTR);
+	if ( fd < 0 ) goto fail;
+
+	/* raise the RTS */
+
+	ioctl( fd, TIOCMGET, &result );
+	if( flag == JNI_TRUE ) result |= TIOCM_RTS;
+	else result &= ~TIOCM_RTS;
+	ioctl( fd, TIOCMSET, &result );
+
+	/* Unlock the port.  Good luck! :) */
+
+	UNLOCK( filename,  pid );
+
+	static_add_filename( filename, fd );
+	
+	/* dont close the port.  Its not clear if the RTS would remain high */
+	(*env)->ReleaseStringUTFChars( env, jstr, filename );
+	LEAVE( "RXTXPort:nativeStaticSetRTS" );
+	return( JNI_TRUE );
+fail:
+	(*env)->ReleaseStringUTFChars( env, jstr, filename );
+	LEAVE( "RXTXPort:nativeStaticSetRTS" );
+	return( JNI_FALSE );
+}
+
+/*----------------------------------------------------------
+RXTXPort.nativeStaticSetDTR
+
+   accept:      new DTR state
+   perform:     if flag is true, TIOCM_DTR is set
+                if flag is false, TIOCM_DTR is unset
+   return:      none
+   exceptions:  none
+   comments:    Set the DTR so it does not raise on the next open
+		needed for some funky test boards?
+
+		This is static so we can not call the open() setDTR()
+		we dont have the jobject.
+
+		First introduced in rxtx-1.5-9
+----------------------------------------------------------*/
+JNIEXPORT jboolean JNICALL RXTXPort(nativeStaticSetDTR) (JNIEnv *env,
+	jclass jclazz, jstring jstr, jboolean flag)
+{
+	int fd;
+	int  pid = -1;
+	const char *filename = (*env)->GetStringUTFChars( env, jstr, 0 );
+	int result;
+
+	ENTER( "RXTXPort:nativeStaticSetDTR" );
+#ifndef WIN32
+	pid = getpid();
+#endif /* WIN32 */
+
+	/* Open and lock the port so nothing else changes the setting */
+
+	if ( LOCK( filename, pid ) ) goto fail;;
+	
+	do {
+		fd = OPEN (filename, O_RDWR | O_NOCTTY | O_NONBLOCK );
+	}  while (fd < 0 && errno==EINTR);
+	if ( fd < 0 ) goto fail;
+
+	/* raise the DTR */
+
+	ioctl( fd, TIOCMGET, &result );
+	if( flag == JNI_TRUE ) result |= TIOCM_DTR;
+	else result &= ~TIOCM_DTR;
+	ioctl( fd, TIOCMSET, &result );
+
+	/* Unlock the port.  Good luck! :) */
+
+	UNLOCK( filename,  pid );
+
+	static_add_filename( filename, fd );
+	/* dont close the port.  Its not clear if the DTR would remain high */
+
+	(*env)->ReleaseStringUTFChars( env, jstr, filename );
+	LEAVE( "RXTXPort:nativeStaticSetDTR" );
+	return( JNI_TRUE );
+fail:
+	(*env)->ReleaseStringUTFChars( env, jstr, filename );
+	LEAVE( "RXTXPort:nativeStaticSetDTR" );
+	return( JNI_FALSE );
+}
 
 /*----------------------------------------------------------
 RXTXPort.nativeGetParityErrorChar
 
    accept:      -
    perform:     check the ParityErrorChar
-   return:      The ParityErrorChar as an int.
+   return:      The ParityErrorChar as an jbyte.
    exceptions:  UnsupportedCommOperationException if not implemented
    comments:    It appears the Parity char is usually \0.  The windows
 		API allows for this to be changed.  I cant find may
@@ -1591,14 +1618,14 @@ RXTXPort.nativeGetParityErrorChar
 		Use a direct call to the termios file until we find a
 		solution.
 ----------------------------------------------------------*/
-JNIEXPORT jint JNICALL RXTXPort(nativeGetParityErrorChar)( JNIEnv *env,
+JNIEXPORT jbyte JNICALL RXTXPort(nativeGetParityErrorChar)( JNIEnv *env,
 	jobject jobj )
 {
 	unsigned int result = 0;
 
 	ENTER( "nativeGetParityErrorChar" );
 #ifdef WIN32
-	result = ( jint ) termiosGetParityErrorChar(
+	result = ( jbyte ) termiosGetParityErrorChar(
 			get_java_var(env, jobj, "fd", "I" ) );
 #else
 	/*
@@ -1609,7 +1636,7 @@ JNIEXPORT jint JNICALL RXTXPort(nativeGetParityErrorChar)( JNIEnv *env,
 
 #endif /* WIN32 */
 	LEAVE( "nativeGetParityErrorChar" );
-	return( ( jint ) result );
+	return( ( jbyte ) result );
 }
 
 /*----------------------------------------------------------
@@ -1617,11 +1644,11 @@ RXTXPort.nativeGetEndOfInputChar
 
    accept:      -
    perform:     check the EndOf InputChar
-   return:      the EndOfInputChar as an int.  -1 on error
+   return:      the EndOfInputChar as an jbyte.  -1 on error
    exceptions:  UnsupportedCommOperationException if not implemented
    comments:    
 ----------------------------------------------------------*/
-JNIEXPORT jint JNICALL RXTXPort(nativeGetEndOfInputChar)( JNIEnv *env,
+JNIEXPORT jbyte JNICALL RXTXPort(nativeGetEndOfInputChar)( JNIEnv *env,
 	jobject jobj )
 {
 	int fd = get_java_var( env, jobj,"fd","I" );
@@ -1630,11 +1657,11 @@ JNIEXPORT jint JNICALL RXTXPort(nativeGetEndOfInputChar)( JNIEnv *env,
 	ENTER( "nativeGetEndOfInputChar" );
 	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
 	LEAVE( "nativeGetEndOfInputChar" );
-	return( (jint) ttyset.c_cc[VEOF] );
+	return( (jbyte) ttyset.c_cc[VEOF] );
 fail:
 	LEAVE( "nativeGetEndOfInputChar" );
 	report( "nativeGetEndOfInputChar failed\n" );
-	return( ( jint ) -1 );
+	return( ( jbyte ) -1 );
 }
 
 /*----------------------------------------------------------
@@ -1711,6 +1738,21 @@ fail:
 	return( JNI_FALSE );
 }
 
+#ifndef WIN32
+long
+GetTickCount()
+{
+	/* return milliseconds */
+	struct timeval now;
+
+	gettimeofday(&now, NULL);
+	report_verbose("gettimeofday\n");
+
+	return (now.tv_sec * 1000) + ceil(now.tv_usec / 1000);
+}
+
+#endif /* WIN32 */
+
 /*----------------------------------------------------------
 read_byte_array
 
@@ -1729,6 +1771,49 @@ read_byte_array
 		The nuts and bolts are documented in
 		NativeEnableReceiveTimeoutThreshold()
 ----------------------------------------------------------*/
+int read_byte_array(	JNIEnv *env,
+			jobject *jobj,	
+			int fd,
+			unsigned char *buffer,
+			int length,
+			int timeout )
+{
+	int ret, left, bytes = 0;
+	long now, start = 0;
+	char msg[80];
+
+	report_time_start();
+	ENTER( "read_byte_array" );
+	sprintf(msg, "read_byte_array requests %i\n", length);
+	report( msg );
+	left = length;
+	if (timeout >= 0)
+		start = GetTickCount();
+	while( bytes < length )
+	{
+		if (timeout >= 0) {
+			now = GetTickCount();
+			if (now-start >= timeout)
+				return bytes;
+		}
+RETRY:	if ((ret = READ( fd, buffer + bytes, left )) < 0 )
+		{
+			if (errno == EINTR)
+				goto RETRY;
+			report( "read_byte_array: read returned -1\n" );
+			LEAVE( "read_byte_array" );
+			return -1;
+		}
+		bytes += ret;
+		left -= ret;
+	}
+	sprintf(msg, "read_byte_array returns %i\n", bytes);
+	report( msg );
+	LEAVE( "read_byte_array" );
+	report_time_end();
+	return bytes;
+}
+#ifdef asdf
 int read_byte_array(	JNIEnv *env,
 			jobject *jobj,	
 			int fd,
@@ -1806,6 +1891,7 @@ int read_byte_array(	JNIEnv *env,
 	LEAVE( "read_byte_array" );
 	return bytes;
 }
+#endif /* asdf */
 
 /*----------------------------------------------------------
 NativeEnableReceiveTimeoutThreshold
@@ -1824,7 +1910,8 @@ JNIEXPORT void JNICALL RXTXPort(NativeEnableReceiveTimeoutThreshold)(
 
 	ENTER( "RXTXPort:NativeEnableRecieveTimeoutThreshold" );
 	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
-	ttyset.c_cc[ VMIN ] = threshold;
+	/* TESTING ttyset.c_cc[ VMIN ] = threshold; */
+	ttyset.c_cc[ VMIN ] = 0;
 	ttyset.c_cc[ VTIME ] = vtime/100;
 	if( tcsetattr( fd, TCSANOW, &ttyset ) < 0 ) goto fail;
 
@@ -1855,6 +1942,7 @@ JNIEXPORT jint JNICALL RXTXPort(readByte)( JNIEnv *env,
 	char msg[80];
 
 	ENTER( "RXTXPort:readByte" );
+	report_time_start( );
 	bytes = read_byte_array( env, &jobj, fd, buffer, 1, timeout );
 	if( bytes < 0 ) {
 		LEAVE( "RXTXPort:readByte" );
@@ -1865,6 +1953,7 @@ JNIEXPORT jint JNICALL RXTXPort(readByte)( JNIEnv *env,
 	LEAVE( "RXTXPort:readByte" );
 	sprintf( msg, "readByte return(%i)\n", bytes ? buffer[ 0 ] : -1 );
 	report( msg );
+	report_time_end( );
 	return (bytes ? (jint)buffer[ 0 ] : -1);
 }
 
@@ -1885,10 +1974,12 @@ JNIEXPORT jint JNICALL RXTXPort(readArray)( JNIEnv *env,
 {
 	int bytes;
 	jbyte *body;
+	char msg[80];
 	int fd = get_java_var( env, jobj, "fd", "I" );
 	int timeout = get_java_var( env, jobj, "timeout", "I" );
 
 	ENTER( "readArray" );
+	report_time_start( );
 	if( length > SSIZE_MAX || length < 0 ) {
 		report( "RXTXPort:readArray length > SSIZE_MAX" );
 		LEAVE( "RXTXPort:readArray" );
@@ -1906,6 +1997,9 @@ JNIEXPORT jint JNICALL RXTXPort(readArray)( JNIEnv *env,
 			strerror( errno ) );
 		return -1;
 	}
+	sprintf( msg, "RXTXPort:readArray: %i %i\n", (int) length, bytes);
+	report( msg );
+	report_time_end( );
 	LEAVE( "RXTXPort:readArray" );
 	return (bytes ? bytes : -1);
 }
@@ -1942,6 +2036,9 @@ JNIEXPORT jint JNICALL RXTXPort(nativeavailable)( JNIEnv *env,
 		goto fail;
 	}
 #endif /* FIORDCHK */
+	sprintf(message, "    nativeavailable: FIORDCHK result %d, \
+		errno %d\n", result , result == -1 ? errno : 0);
+	report( message );
 	if (result == -1) {
 		goto fail;
 	}
@@ -2044,6 +2141,7 @@ int check_line_status_register( struct event_info_struct *eis )
 
 	if( ! eis->eventflags[SPE_OUTPUT_BUFFER_EMPTY] )
 	{
+		report( "check_line_status_registe OUPUT_BUFFER_EMPTY not set\n" );
 		return 0;
 	}
 	if ( fstat( eis->fd, &fstatbuf ) )
@@ -2066,16 +2164,10 @@ int check_line_status_register( struct event_info_struct *eis )
 	if( eis->output_buffer_empty_flag == 1 && 
 		eis->eventflags[SPE_OUTPUT_BUFFER_EMPTY] )
 	{
-		report("check_line_status_register: sending SPE_OUTPUT_BUFFER_EMPTY\n");
-		report("check_line_status_register: mutex_lock event\n");
-		pthread_mutex_lock( eis->tpid->mutex_event );
+		report_verbose("check_line_status_register: sending SPE_OUTPUT_BUFFER_EMPTY\n");
 		send_event( eis, SPE_OUTPUT_BUFFER_EMPTY, 1 );
 		//send_event( eis, SPE_DATA_AVAILABLE, 1 );
 		eis->output_buffer_empty_flag = 0;
-		report("check_line_status_register: cond_signal event\n");
-		pthread_cond_signal( eis->tpid->cpt_event );
-		report("check_line_status_register: mutex_unlock event\n");
-		pthread_mutex_unlock( eis->tpid->mutex_event );
 	}
 #endif /* TIOCSERGETLSR */
 	return( 0 );
@@ -2201,7 +2293,7 @@ void check_tiocmget_changes( struct event_info_struct * eis )
 	unsigned int mflags;
 	int change = eis->change;
 
-	report_verbose("enterming check_tiocmget_changes\n");
+	report_verbose("entering check_tiocmget_changes\n");
 	if( ioctl( eis->fd, TIOCMGET, &mflags ) )
 	{
 		report( "=======================================\n");
@@ -2226,6 +2318,7 @@ void check_tiocmget_changes( struct event_info_struct * eis )
 	if( change ) send_event( eis, SPE_CD, change );
 
 	eis->omflags = mflags;
+	report_verbose("leaving check_tiocmget_changes\n");
 }
 
 /*----------------------------------------------------------
@@ -2240,7 +2333,6 @@ system_wait
 void system_wait()
 {
 #if defined (__sun__ )
-/*
 	struct timespec retspec, tspec;
 	retspec.tv_sec = 0;
 	retspec.tv_nsec = 100000000;
@@ -2248,6 +2340,7 @@ void system_wait()
 		tspec = retspec;
 		nanosleep( &tspec, &retspec );
 	} while( tspec.tv_nsec != 0 );
+/* Trent
 */
 #else
 #ifdef TRENT_IS_HERE_DEBUGGING_THREADS
@@ -2311,19 +2404,21 @@ void report_serial_events( struct event_info_struct *eis )
 
 	check_tiocmget_changes( eis );
 
-	if(!eis->eventflags[SPE_DATA_AVAILABLE] )
-	{
-		report_verbose("report_serial_events: ignoring DATA_AVAILABLE\n");
-		return;
-	}
-
 	if( port_has_changed_fionread( eis ) )
 	{
+		if(!eis->eventflags[SPE_DATA_AVAILABLE] )
+		{
+			report_verbose("report_serial_events: ignoring DATA_AVAILABLE\n");
+			//report(".");
+			// TIME usleep(20000);
+			return;
+		}
 		report("report_serial_events: sending DATA_AVAILABLE\n");
 		if(!send_event( eis, SPE_DATA_AVAILABLE, 1 ))
 		{
 			/* select wont block */
-			system_wait();
+			// TIME usleep(20000);
+			//system_wait();
 		}
 	}
 }
@@ -2365,7 +2460,10 @@ int initialise_event_info_struct( struct event_info_struct *eis )
 	for( i = 0; i < 11; i++ ) eis->eventflags[i] = 0;
 #if !defined(TIOCSERGETLSR) && !defined(WIN32)
 	eis->output_buffer_empty_flag = 0;
+	eis->writing = 0;
 #endif /* TIOCSERGETLSR */
+	eis->eventloop_interrupted = 0;
+	eis->closing = 0;
 
 	eis->fd = get_java_var( env, jobj, "fd", "I" );
 	eis->has_tiocsergetlsr = has_line_status_register_access( eis->fd );
@@ -2379,7 +2477,6 @@ int initialise_event_info_struct( struct event_info_struct *eis )
 		"(IZ)Z" );
 	if(eis->send_event == NULL)
 		goto fail;
-	eis->eventloop_interrupted = 0;
 end:
 	FD_ZERO( &eis->rfds );
 	FD_SET( eis->fd, &eis->rfds );
@@ -2404,10 +2501,6 @@ finalize_event_info_struct
 ----------------------------------------------------------*/
 void finalize_event_info_struct( struct event_info_struct *eis )
 {
-	report("finalize_thread_write: mutex_lock closing\n");
-#if !defined(TIOCSERGETLSR) && !defined(WIN32)
-	pthread_mutex_lock( eis->tpid->mutex_closing );
-#endif /* !TIOCSERGETLSR && !WIN32 */
 	if( eis->jclazz)
 	{
 		(*eis->env)->DeleteLocalRef( eis->env, eis->jclazz );
@@ -2425,9 +2518,6 @@ void finalize_event_info_struct( struct event_info_struct *eis )
 	else if( eis->prev )
 		eis->prev->next = NULL;
 	else master_index = NULL;
-#if !defined(TIOCSERGETLSR) && !defined(WIN32)
-	pthread_mutex_unlock( eis->tpid->mutex_closing );
-#endif /* !TIOCSERGETLSR && !WIN32 */
 }
 
 /*----------------------------------------------------------
@@ -2450,26 +2540,29 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 	eis.jobj = &jobj;
 	eis.initialised = 0;
 
-	report( ">RXTXPort:eventLoop\n" );
+	ENTER( "eventLoop\n" );
 	if ( !initialise_event_info_struct( &eis ) ) goto end;
-	if ( !init_thread_write( &eis ) ) goto end;
+	if ( !init_threads( &eis ) ) goto end;
 	unlock_monitor_thread( &eis );
 	do{
-		/* report( "." ); */
+		report_time_eventLoop( );
 		do {
+			/* report( "." ); */
 			eis.ret = SELECT( eis.fd + 1, &eis.rfds, NULL, NULL,
 					&eis.tv_sleep );
 			/* nothing goes between this call and select */
-			if( eis.eventloop_interrupted )
+			if( eis.closing )
 			{
 				report("eventLoop: got interrupt\n");
-				finalize_thread_write( &eis );
+				finalize_threads( &eis );
 				finalize_event_info_struct( &eis );
 				(*env)->SetBooleanField( env, jobj,
 							jfid, JNI_FALSE );
+				LEAVE("eventLoop");
 				return;
 			}
-			usleep(1000);
+			// TIME usleep(10000);
+			// Trent system_wait();
 		}  while ( eis.ret < 0 && errno == EINTR );
 		if( eis.ret >= 0 )
 		{
@@ -2478,7 +2571,25 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 		initialise_event_info_struct( &eis );
 	} while( 1 );
 end:
-	report( "<RXTXPort:eventLoop\n" );
+	LEAVE( "eventLoop:  Bailing!\n" );
+}
+
+/*----------------------------------------------------------
+RXTXCommDriver.nativeGetVersion
+
+   accept:      none
+   perform:     return the current version 
+   return:      version
+   exceptions:  none
+   comments:    This is used to avoid mixing versions of the .jar and
+		native library.
+		First introduced in rxtx-1.5-9
+		
+----------------------------------------------------------*/
+JNIEXPORT jstring JNICALL RXTXCommDriver(nativeGetVersion) (JNIEnv *env,
+	jclass jclazz )
+{
+	return (*env)->NewStringUTF( env, "RXTX-1.4-16pre1" );
 }
 
 /*----------------------------------------------------------
@@ -2509,6 +2620,10 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 	const char *name = (*env)->GetStringUTFChars(env, tty_name, 0);
 	int ret = JNI_TRUE;
 	int pid = -1;
+	/* We opened the file in this thread, use this pid to unlock */
+#ifndef WIN32
+	pid = getpid();
+#endif /* WIN32 */
 
 	ENTER( "RXTXPort:testRead" );
 #ifdef WIN32
@@ -2536,7 +2651,7 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 			system_does_not_lock	Win32
 	*/
 
-	if ( LOCK( name ) )
+	if ( LOCK( name, pid ) )
 	{
 		(*env)->ReleaseStringUTFChars(env, tty_name, name);
 		LEAVE( "RXTXPort:testRead no lock" );
@@ -2625,10 +2740,6 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 	*/
 
 END:
-	/* We opened the file in this thread, use this pid to unlock */
-#ifndef WIN32
-	pid = getpid();
-#endif /* WIN32 */
 	UNLOCK(name, pid );
 	(*env)->ReleaseStringUTFChars( env, tty_name, name );
 	CLOSE( fd );
@@ -2980,10 +3091,21 @@ JNIEXPORT void JNICALL RXTXPort(interruptEventLoop)(JNIEnv *env,
 		if( searching )
 		{
 			report("@");
-			usleep(1000);
+			// TIME usleep(1000);
 		}
 	}
 	index->eventloop_interrupted = 1;
+	/*
+	Many OS's need a thread running to determine if output buffer is
+	empty.  For Linux and Win32 it is not needed.  So closing is used to
+	shut down the thread in the write order on OS's that don't have
+	kernel support for output buffer empty.
+
+	In rxtx TIOCSERGETLSR is defined for win32 and Linux
+	*/
+#ifdef TIOCSERGETLSR
+	index->closing=1;
+#endif /* TIOCSERGETLSR */
 #ifdef WIN32
 	termios_interrupt_event_loop( index->fd, 1 );
 #endif /* WIN32 */
@@ -3069,20 +3191,30 @@ int send_event( struct event_info_struct *eis, jint type, int flag )
 	JNIEnv *env = eis->env;
 
 	ENTER( "send_event" );
+	if( eis->eventloop_interrupted > 1 )
+	{
+		report("event loop interrupted\n");
+		return JNI_TRUE;
+	}
+	report_verbose("send_event: !eventloop_interupted\n");
 	if(eis->jclazz == NULL) return JNI_TRUE;
+	report_verbose("send_event: jclazz\n");
 
 	(*env)->ExceptionClear(env);
 
+	report_verbose("send_event: calling\n");
 	result = (*env)->CallBooleanMethod( env, *eis->jobj, eis->send_event,
 		type, flag > 0 ? JNI_TRUE : JNI_FALSE );
+	report_verbose("send_event: called\n");
 
-#ifdef DEBUG
+#ifdef asdf
 	if((*eis->env)->ExceptionOccurred(eis->env)) {
 		report ( "send_event: an error occured calling sendEvent()\n" );
 		(*eis->env)->ExceptionDescribe(eis->env);
 		(*eis->env)->ExceptionClear(eis->env);
 	}
-#endif /* DEBUG */
+#endif /* asdf */
+	/* report("e"); */
 	LEAVE( "send_event" );
 	return(result);
 }
@@ -3183,7 +3315,7 @@ void report_warning(char *msg)
 void report_verbose(char *msg)
 {
 #ifdef DEBUG_VERBOSE
-#ifndef DEBUG_MW
+#ifdef DEBUG_MW
 	mexErrMsgTxt( msg );
 #else
 	fprintf(stderr, msg);
@@ -3229,6 +3361,94 @@ void report(char *msg)
 }
 
 #ifndef WIN32
+#ifdef LFS
+/*----------------------------------------------------------
+ lfs_lock
+
+   accept:      The name of the device to try to lock
+   perform:     Create a lock file if there is not one already using a
+                lock file server.
+   return:      1 on failure 0 on success
+   exceptions:  none
+   comments:    
+
+----------------------------------------------------------*/
+int lfs_lock( const char *filename, int pid )
+{
+	int s;
+	int ret;
+	int size = 1024;
+	char *buffer = malloc(size);
+	struct sockaddr_in addr;
+
+	if ( !( s = socket( AF_INET, SOCK_STREAM, 0 ) ) > 0 )
+		return 1;
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons( 50001 );
+	addr.sin_addr.s_addr = inet_addr( "127.0.0.1" );
+   
+	if ( !connect( s, ( struct sockaddr * ) &addr, sizeof( addr ) ) == 0 )
+		return 1;
+	ret=recv( s, buffer, size, 0 );
+	sprintf( buffer, "lock %s %i\n", filename, pid );
+	/* printf( "%s", buffer ); */
+	send( s, buffer, strlen(buffer), 0 );
+	ret=recv( s, buffer, size, 0 );
+	if ( ret > 0 )
+	{
+		buffer[ret] = '\0';
+		/* printf( "Message recieved: %s", buffer ); */
+	}
+	send( s, "quit\n", strlen( "quit\n" ), 0 );
+	close(s);
+	/* printf("%s\n", buffer); */
+	if( buffer[0] == '2' ) return 0;
+	return 1;
+}
+
+/*----------------------------------------------------------
+ lfs_unlock
+
+   accept:      The name of the device to try to unlock
+   perform:     Remove a lock file if there is one using a
+                lock file server.
+   return:      1 on failure 0 on success
+   exceptions:  none
+   comments:    
+
+----------------------------------------------------------*/
+int lfs_unlock( const char *filename, int pid )
+{
+	int s;
+	int ret;
+	int size = 1024;
+	char *buffer = malloc(size);
+	struct sockaddr_in addr;
+
+	if ( !( s = socket( AF_INET, SOCK_STREAM, 0 ) ) > 0 )
+		return 1;
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons( 50001 );
+	addr.sin_addr.s_addr = inet_addr( "127.0.0.1" );
+   
+	if ( !connect( s, ( struct sockaddr * ) &addr, sizeof( addr ) ) == 0 )
+		return 1;
+	sprintf( buffer, "unlock %s %i\n", filename, pid );
+	/* printf( "%s", buffer ); */
+	send( s, buffer, strlen(buffer), 0 );
+	ret = recv( s, buffer, size, 0 );
+	if ( ret > 0 )
+	{
+		buffer[ret] = '\0';
+		/* printf( "Message recieved: %s", buffer ); */
+	}
+	send( s, "quit\n", strlen( "quit\n" ), 0 );
+	close(s);
+	if( buffer[0] == '2' ) return 0;
+	return 1;
+}
+#endif /* LFS */
+
 /*----------------------------------------------------------
  fhs_lock
 
@@ -3244,7 +3464,7 @@ void report(char *msg)
 		more reading:
 
 ----------------------------------------------------------*/
-int fhs_lock( const char *filename )
+int fhs_lock( const char *filename, int pid )
 {
 	/*
 	 * There is a zoo of lockdir possibilities
@@ -3335,7 +3555,7 @@ int fhs_lock( const char *filename )
 		rather than an exercise, we will handle them.
 
 ----------------------------------------------------------*/
-int uucp_lock( const char *filename )
+int uucp_lock( const char *filename, int pid )
 {
 	char lockfilename[80], lockinfo[12], message[80];
 	char name[80];
@@ -3814,7 +4034,7 @@ int is_device_locked( const char *port_filename )
    exceptions:  none
    comments:    OS's like Win32 may not have lock files.
 ----------------------------------------------------------*/
-int system_does_not_lock( const char * filename )
+int system_does_not_lock( const char * filename, int pid )
 {
 	return 0;
 }

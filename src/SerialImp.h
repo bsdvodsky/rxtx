@@ -65,29 +65,13 @@
 #define B256000		1010004
 #endif /* dima */
 
-#if !defined(TIOCSERGETLSR) && !defined(WIN32)
-struct tpid_info_struct
+struct preopened
 {
-	/* threads, bean counting, and lifespan */
-	int write_counter, closing, tcdrain;
-	pthread_t tpid;
-
-	pthread_mutex_t *mutex_writing;
-	pthread_mutex_t *mutex_draining;
-	pthread_mutex_t *mutex_closing;
-	pthread_mutex_t *mutex_event;
-	pthread_cond_t *cpt_writing;
-	pthread_cond_t *cpt_draining;
-	pthread_cond_t *cpt_closing;
-	pthread_cond_t *cpt_event;
-	//pthread_attr_t *attr;
-
-	int length;
-	int done;
-	int inuse;
-	char *buff;
+	char filename[40];
+	int fd;
+	struct preopened *next;
+	struct preopened *prev;
 };
-#endif /* !defined(TIOCSERGETLSR) && !defined(WIN32) */
 
 struct event_info_struct
 {
@@ -110,9 +94,10 @@ struct event_info_struct
 	struct event_info_struct *next, *prev;
 	fd_set rfds;
 	struct timeval tv_sleep;
+	int closing;
 #if !defined(TIOCSERGETLSR) && !defined(WIN32)
+	int writing;
 	int output_buffer_empty_flag;
-	struct tpid_info_struct *tpid;
 #endif /* !TIOCSERGETLSR !WIN32 */
 #	if defined(TIOCGICOUNT)
 	struct serial_icounter_struct osis;
@@ -182,7 +167,7 @@ as I said before, we use the same binary javax.comm files for both
 UnixWare/Open UNIX and OpenServer.  Thus we can't #ifdef one or the
 other; it would have to be a runtime test.  Your code and your macros
 aren't set up for doing this (understandably!).  So I didn't implement
-these; the javx.comm locks won't fully work on UnixWare/Open UNIX
+these; the javax.comm locks won't fully work on UnixWare/Open UNIX
 as a result, which I mentioned in the Release Notes.
 
 
@@ -204,8 +189,8 @@ Trent
 #if defined(__hpux__)
 /* modif cath */
 #	define DEVICEDIR "/dev/"
-#	define LOCKDIR "/usr/spool/uucp"
-#	define LOCKFILEPREFIX "LK."
+#	define LOCKDIR "/var/spool/uucp"
+#	define LOCKFILEPREFIX "LCK."
 #	define UUCP
 #endif /* __hpux__ */
 #if defined(__osf__)  /* Digital Unix */
@@ -243,6 +228,51 @@ Trent
 #	define WRITE write
 #	define READ read
 #	define SELECT select
+struct timeval snow, enow, seloop, eeloop;
+#define report_time_start_rs( ) \
+{ \
+	gettimeofday(&snow, NULL); \
+}
+#define report_time_end_rs( ) \
+{ \
+	gettimeofday(&enow, NULL); \
+	mexPrintf("%8i sec : %8i usec\n", enow.tv_sec - snow.tv_sec, enow.tv_sec - snow.tv_sec?snow.tv_usec-enow.tv_usec:enow.tv_usec - snow.tv_usec); \
+}
+#ifdef DEBUG_TIMING
+struct timeval snow, enow, seloop, eeloop;
+#define report_time_eventLoop( ) { \
+	if ( seloop.tv_sec == eeloop.tv_sec && seloop.tv_usec == eeloop.tv_usec ) \
+	{ \
+		gettimeofday(&eeloop, NULL); \
+		seloop.tv_sec = eeloop.tv_sec; \
+		seloop.tv_usec = eeloop.tv_usec; \
+		mexPrintf("%8i sec : %8i usec\n", eeloop.tv_sec - seloop.tv_sec, eeloop.tv_usec - seloop.tv_usec); \
+	} \
+}
+#define report_time( ) \
+{ \
+	struct timeval now; \
+	gettimeofday(&now, NULL); \
+	mexPrintf("%8s : %5i : %8i sec : %8i usec\n", __TIME__, __LINE__, now.tv_sec, now.tv_usec); \
+}
+#define report_time_start( ) \
+{ \
+	gettimeofday(&snow, NULL); \
+	mexPrintf("%8s : %5i : %8i sec : %8i usec", __TIME__, __LINE__, snow.tv_sec, snow.tv_usec); \
+}
+#define report_time_end( ) \
+{ \
+	gettimeofday(&enow, NULL); \
+	mexPrintf("%8i sec : %8i usec\n", enow.tv_sec - snow.tv_sec, enow.tv_sec - snow.tv_sec?snow.tv_usec-enow.tv_usec:enow.tv_usec - snow.tv_usec); \
+}
+#else
+#define report_time_eventLoop( ){};
+#define report_time( ) {}
+#define report_time_start( ) {}
+#define report_time_end( ) {}
+
+#endif /* DEBUG_TIMING */
+
 /* #define TRACE */
 #ifdef TRACE
 #define ENTER(x) report("entering "x" \n");
@@ -267,7 +297,10 @@ Trent
 #endif /* DISABLE_LOCKFILES */
 
 /*  That should be all you need to look at in this file for porting */
-#ifdef UUCP
+#ifdef LFS  /*  Use a Lock File Server */
+#	define LOCK lfs_lock
+#	define UNLOCK lfs_unlock
+#elif defined(UUCP)
 #	define LOCK uucp_lock
 #	define UNLOCK uucp_unlock
 #elif defined(OLDUUCP)
@@ -285,7 +318,7 @@ Trent
 #elif defined(FHS)
 #	define LOCK fhs_lock
 #	define UNLOCK fhs_unlock
-#else /* FSH */
+#else 
 #	define LOCK system_does_not_lock
 #	define UNLOCK system_does_not_unlock
 #endif /* UUCP */
@@ -371,11 +404,13 @@ int lock_device( const char * );
 void unlock_device( const char * );
 int is_device_locked( const char * );
 int check_lock_status( const char * );
+int lfs_unlock(const char *, int );
+int lfs_lock( const char *, int);
 void fhs_unlock(const char *, int );
-int fhs_lock( const char *);
+int fhs_lock( const char *, int);
 void uucp_unlock( const char *, int );
-int uucp_lock( const char * );
-int system_does_not_lock( const char * );
+int uucp_lock( const char *, int );
+int system_does_not_lock( const char *, int );
 void system_does_not_unlock( const char *, int );
 int check_group_uucp();
 int check_lock_pid( const char *, int );

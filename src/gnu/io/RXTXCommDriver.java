@@ -27,8 +27,8 @@ package gnu.io;
 
 import java.util.*;
 import java.io.*;
-import javax.comm.*;
 import java.util.StringTokenizer;
+import javax.comm.*;
 
 /**
    This is the JavaComm for Linux driver.
@@ -42,11 +42,33 @@ public class RXTXCommDriver implements CommDriver
 	{
 		if(debug ) System.out.println("RXTXCommDriver {}");
 		System.loadLibrary( "Serial" );
+
+		/*
+		   Perform a crude check to make sure people don't mix
+		   versions of the Jar and native lib
+
+		   Mixing the libs can create a nightmare.
+
+		   It could be possible to move this over to RXTXVersion
+		   but All we want to do is warn people when first loading
+		   the Library.
+		*/
+		String JarVersion = RXTXVersion.getVersion();
+		String LibVersion = nativeGetVersion();
+		if ( ! JarVersion.equals( LibVersion ) )
+		{
+			System.out.println( "WARNING:  RXTX Version mismatch\n\tJar version = " + JarVersion + "\n\tnative lib Version = " + LibVersion );
+		}
+		else if ( debug )
+		{
+			System.out.println( "RXTXCommDriver:\n\tJar version = " + JarVersion + "\n\tnative lib Version = " + LibVersion );
+		}
 	}
 
 	/** Get the Serial port prefixes for the running OS */
 	private String deviceDirectory;
 	private String osName;
+	private static native String nativeGetVersion();
 	private native boolean registerKnownPorts(int PortType);
 	private native boolean isPortPrefixValid(String dev);
 	private native boolean testRead(String dev, int type);

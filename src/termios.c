@@ -1,7 +1,7 @@
 #ifdef TRENT_IS_HERE
-#define TRACE
-#define DEBUG
-#define DEBUG_MW
+//#define TRACE
+//#define DEBUG
+//#define DEBUG_MW
 #ifdef DEBUG_MW
 	extern void mexWarMsgTxt( const char * );
 	extern void mexPrintf( const char *, ... );
@@ -1168,7 +1168,7 @@ int serial_open( const char *filename, int flags, ... )
 		index->open_flags = 0;
 
 
-	dump_termios_list( "open filename" );
+	//dump_termios_list( "open filename" );
 	if( !first_tl->hComm )
 	{
 		sprintf( message, "open():  Invalid Port Reference for %s\n",
@@ -1300,15 +1300,17 @@ serial_read()
 
 int serial_read( int fd, void *vb, int size )
 {
+	long start, now;
 	unsigned long nBytes = 0, total = 0, error;
 	/* unsigned long waiting = 0; */
-	int err, vmin;
+	int err, vmin; //, i;
 	struct termios_list *index;
 	char message[80];
 	COMSTAT stat;
 	clock_t c;
 	
 
+	start = GetTickCount();
 #ifdef DEBUG
 	ENTER( "serial_read" );
 #endif /* DEBUG */
@@ -1333,16 +1335,25 @@ int serial_read( int fd, void *vb, int size )
 
 	if ( index->open_flags & O_NONBLOCK  )
 	{
+		int ret;
 		vmin = 0;
+		/* pull mucho-cpu here? */
 		do {
 #ifdef DEBUG_VERBOSE
 			report("vmin=0\n");
 #endif /* DEBUG_VERBOSE */
-			error = ClearCommError( index->hComm, &error, &stat);
+			ret = ClearCommError( index->hComm, &error, &stat);
 			//usleep(1000);
 			//usleep(50);
-		}
-		while( stat.cbInQue < size && size > 1 );
+			/* we should use -1 instead of 0 for disabled timeout */
+			now = GetTickCount();
+			if ( index->ttyset->c_cc[VTIME] &&
+				now-start >= (index->ttyset->c_cc[VTIME]*100)) {
+				//sprintf( message, "now = %i start = %i time = %i total =%i\n", now, start, index->ttyset->c_cc[VTIME]*100, total);
+				//report( message );
+				return total;	/* read timeout */
+			}
+		} while( stat.cbInQue < size && size > 1 );
 	}
 	else
 	{
@@ -1365,6 +1376,8 @@ int serial_read( int fd, void *vb, int size )
 
 	total = 0;
 	MexPrintf("R");
+	while ( size > 0 )
+	{
 	//while ( ( ( nBytes <= vmin ) || ( size > 0 ) ) && !waiting )
 	//{
 		nBytes = 0;
@@ -1408,6 +1421,22 @@ int serial_read( int fd, void *vb, int size )
 							return( total );
 						}
 					}
+					size -= nBytes;
+					total += nBytes;
+					if (size > 0) {
+						now = GetTickCount();
+						sprintf(message, "size > 0: spent=%ld have=%d\n", now-start, index->ttyset->c_cc[VTIME]*100);
+						report( message );
+						/* we should use -1 for disabled
+						   timouts */
+						if ( index->ttyset->c_cc[VTIME] && now-start >= (index->ttyset->c_cc[VTIME]*100)) {
+							report("TO ");
+							/* read timeout */
+							return total;
+						}
+					}
+					sprintf(message, "end nBytes=%ld] ", nBytes);
+					report( message );
 					//usleep(1000);
 					report("ERROR_IO_PENDING\n");
 					break;
@@ -1423,7 +1452,7 @@ int serial_read( int fd, void *vb, int size )
 			ClearCommError( index->hComm, &error, &stat);
 			return( total );
 		}
-	//}
+	}
 #ifdef DEBUG
 	LEAVE( "serial_read" );
 #endif /* DEBUG */
@@ -2013,10 +2042,10 @@ int tcsetattr( int fd, int when, struct termios *s_termios )
 #endif /* DEBUG_VERBOSE */
 	vtime = s_termios->c_cc[VTIME] * 100;
 	timeouts.ReadTotalTimeoutConstant = vtime;
-	timeouts.ReadIntervalTimeout = vtime;
+	timeouts.ReadIntervalTimeout = 0;
 	timeouts.ReadTotalTimeoutMultiplier = 0;
 	timeouts.WriteTotalTimeoutConstant = vtime;
-	timeouts.ReadTotalTimeoutMultiplier = 0;
+	timeouts.WriteTotalTimeoutMultiplier = 0;
 	/* max between bytes */
 	if ( s_termios->c_cc[VMIN] > 0 && vtime > 0 )
 	{

@@ -29,7 +29,7 @@ import javax.comm.*;
 * @see javax.comm.SerialPort
 */
 
-final class RXTXPort extends SerialPort
+final public class RXTXPort extends SerialPort
 {
 
 	private static boolean debug = false;
@@ -81,6 +81,7 @@ final class RXTXPort extends SerialPort
 		if (debug)
 			System.out.println("RXTXPort:RXTXPort("+name+") fd = " +
 				fd);
+		timeout = -1;	/* default disabled timeout */
 	}
 	private native synchronized int open( String name )
 		throws PortInUseException;
@@ -242,7 +243,7 @@ final class RXTXPort extends SerialPort
 
 
 	/** Receive timeout control */
-	private int timeout = 0;
+	private int timeout;
 
 	/** 
 	*  @return  int the timeout
@@ -509,7 +510,6 @@ final class RXTXPort extends SerialPort
 	*/
 	public boolean sendEvent( int event, boolean state )
 	{
-
 		if (debug_verbose)
 			System.out.print("RXTXPort:sendEvent(");
 		/* Let the native side know its time to die */
@@ -535,7 +535,7 @@ final class RXTXPort extends SerialPort
 			case SerialPortEvent.CTS:
 				if( debug_verbose )
 					System.out.println( "CTS " +
-						monThread.Output + ")" );
+						monThread.CTS + ")" );
 				break;
 			case SerialPortEvent.DSR:
 				if( debug_verbose )
@@ -545,32 +545,32 @@ final class RXTXPort extends SerialPort
 			case SerialPortEvent.RI:
 				if( debug_verbose )
 					System.out.println( "RI " +
-						monThread.Output + ")" );
+						monThread.RI + ")" );
 				break;
 			case SerialPortEvent.CD:
 				if( debug_verbose )
 					System.out.println( "CD " +
-						monThread.Output + ")" );
+						monThread.CD + ")" );
 				break;
 			case SerialPortEvent.OE:
 				if( debug_verbose )
 					System.out.println( "OE " +
-						monThread.Output + ")" );
+						monThread.OE + ")" );
 				break;
 			case SerialPortEvent.PE:
 				if( debug_verbose )
 					System.out.println( "PE " +
-						monThread.Output + ")" );
+						monThread.PE + ")" );
 				break;
 			case SerialPortEvent.FE:
 				if( debug_verbose )
 					System.out.println( "FE " +
-						monThread.Output + ")" );
+						monThread.FE + ")" );
 				break;
 			case SerialPortEvent.BI:
 				if( debug_verbose )
 					System.out.println( "BI " +
-						monThread.Output + ")" );
+						monThread.BI + ")" );
 				break;
 			default:
 				if( debug_verbose )
@@ -578,6 +578,8 @@ final class RXTXPort extends SerialPort
 						event + ")" );
 				break;
 		}
+		if( debug_verbose )
+			System.out.println( "checking flags " );
 
 		switch( event )
 		{
@@ -615,10 +617,22 @@ final class RXTXPort extends SerialPort
 				System.err.println("unknown event: " + event);
 				return(false);
 		}
+		if( debug_verbose )
+			System.out.println( "getting event" );
 		SerialPortEvent e = new SerialPortEvent(this, event, !state,
 			state );
+		if( debug_verbose )
+			System.out.println( "sending event" );
+		if(monThreadisInterrupted) 
+		{
+			if( debug_verbose )
+				System.out.println( "return" );
+			return(true);
+		}
 		if( SPEventListener != null ) SPEventListener.serialEvent( e );
 
+		if( debug_verbose )
+			System.out.println( "return" );
 
 		if (fd == 0 ||  SPEventListener == null || monThread == null) 
 		{
@@ -690,19 +704,31 @@ final class RXTXPort extends SerialPort
 			   using isInterrupted().
 			*/
 			MonitorThreadCloseLock = true;
+			if (debug)
+				System.out.println("RXTXPort:calling interruptEventLoop");
 			interruptEventLoop( );
+			if (debug)
+				System.out.print("RXTXPort:waiting on closelock");
 			while( MonitorThreadCloseLock )
 			{
+				if (debug)
+					System.out.print(".");
 				try {
 					Thread.sleep(100);
 				} catch( Exception e ) {}
 			}
+			if (debug)
+				System.out.println();
+			if (debug)
+				System.out.println("RXTXPort:calling monThread.join()");
 			try {
 				monThread.join(1000);
 			} catch (Exception ex) {
 				/* yikes */
 				ex.printStackTrace();
 			}
+			if (debug)
+				System.out.println("RXTXPort:waiting on isAlive()");
 			while( monThread.isAlive() )
 			{
 				if ( debug )
@@ -715,6 +741,8 @@ final class RXTXPort extends SerialPort
 			}
 			
 		}
+		if (debug)
+			System.out.println("RXTXPort:calling gc()");
 		monThread = null;
 		SPEventListener = null;
 		Runtime.getRuntime().gc();
@@ -730,7 +758,7 @@ final class RXTXPort extends SerialPort
 	 *	In worst case test cases this loops once or twice every time.
 	 */
 
-	private void waitForTheNativeCodeSilly()
+	protected void waitForTheNativeCodeSilly()
 	{
 		while( MonitorThreadLock )
 		{
@@ -906,16 +934,26 @@ final class RXTXPort extends SerialPort
 		}
 		setDTR(false);
 		setDSR(false);
+		if (debug)
+			System.out.println("RXTXPort:close( " + this.name + " ) setting monThreadisInterrupted"); 
 		if ( ! monThreadisInterrupted )
 		{
 			removeEventListener();
 		}
+		if (debug)
+			System.out.println("RXTXPort:close( " + this.name + " ) calling nativeClose"); 
 		nativeClose( this.name );
+		if (debug)
+			System.out.println("RXTXPort:close( " + this.name + " ) calling super.close"); 
 		super.close();
+		if (debug)
+			System.out.println("RXTXPort:close( " + this.name + " ) calling System.gc"); 
 
 		fd = 0;
 		Runtime.getRuntime().gc();
 		closeLock = false;
+		if (debug)
+			System.out.println("RXTXPort:close( " + this.name + " ) leaving"); 
 	}
 
 
@@ -938,6 +976,10 @@ final class RXTXPort extends SerialPort
 		{
 			if (debug_verbose)
 				System.out.println("RXTXPort:SerialOutputStream:write(int)");
+			if ( monThreadisInterrupted == true )
+			{
+				throw new IOException( "Port has been Closed" );
+			}
 			waitForTheNativeCodeSilly();
 			if ( fd == 0 ) throw new IOException();
 			writeByte( b );
@@ -951,6 +993,10 @@ final class RXTXPort extends SerialPort
 			if (debug_verbose)
 			{
 				System.out.println("Entering RXTXPort:SerialOutputStream:write(" + b.length + ") "/* + new String(b)*/ );
+			}
+			if ( monThreadisInterrupted == true )
+			{
+				throw new IOException( "Port has been Closed" );
 			}
 			if ( fd == 0 ) throw new IOException();
 			waitForTheNativeCodeSilly();
@@ -981,6 +1027,10 @@ final class RXTXPort extends SerialPort
 				System.out.println("Entering RXTXPort:SerialOutputStream:write(" + send.length + " " + off + " " + len + " " +") " /*+  new String(send) */ );
 			}
 			if ( fd == 0 ) throw new IOException();
+			if ( monThreadisInterrupted == true )
+			{
+				throw new IOException( "Port has been Closed" );
+			}
 			waitForTheNativeCodeSilly();
 			writeArray( send, 0, len );
 			if( debug )
@@ -993,6 +1043,15 @@ final class RXTXPort extends SerialPort
 			if (debug)
 				System.out.println("RXTXPort:SerialOutputStream:flush() enter");
 			if ( fd == 0 ) throw new IOException();
+			if ( monThreadisInterrupted == true )
+			{
+				return;
+				/* FIXME Trent this breaks
+					InstrumentControlSerialPort = hGetPort
+					in Matlab.
+				*/
+				//throw new IOException( "flush() Port has been Closed" );
+			}
 			waitForTheNativeCodeSilly();
 			nativeDrain();
 			if (debug)
@@ -1012,7 +1071,12 @@ final class RXTXPort extends SerialPort
 		{
 			if (debug_verbose)
 				System.out.println("RXTXPort:SerialInputStream:read()");
+			if ( monThreadisInterrupted ) return( -1 ) ;
 			if ( fd == 0 ) throw new IOException();
+			if ( monThreadisInterrupted == true )
+			{
+				throw new IOException( "Port has been Closed" );
+			}
 			waitForTheNativeCodeSilly();
 			int result = readByte();
 			if (debug)
@@ -1029,6 +1093,10 @@ final class RXTXPort extends SerialPort
 			int result;
 			if (debug_verbose)
 				System.out.println("RXTXPort:SerialInputStream:read(" + b.length + ")");
+			if ( monThreadisInterrupted == true )
+			{
+				throw new IOException( "Port has been Closed" );
+			}
 			waitForTheNativeCodeSilly();
 			result = read( b, 0, b.length);
 			if (debug)
@@ -1096,6 +1164,10 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 			 */
 				Minimum = Math.min(Minimum, threshold);
 			}
+			if ( monThreadisInterrupted == true )
+			{
+				throw new IOException( "Port has been Closed" );
+			}
 			waitForTheNativeCodeSilly();
 			result = readArray( b, off, Minimum);
 			if (debug)
@@ -1108,6 +1180,10 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 	*/
 		public int available() throws IOException
 		{
+			if ( monThreadisInterrupted == true )
+			{
+				throw new IOException( "Port has been Closed" );
+			}
 			int r = nativeavailable();
 			if ( debug_verbose && r > 0 )
 				System.out.println("available() returning " +
@@ -1165,11 +1241,17 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 
 /*------------------------  END OF CommAPI -----------------------------*/
 
-	private native int nativeGetParityErrorChar( )
+	private native static boolean nativeStaticSetDTR( String port,
+							boolean flag )
+		throws UnsupportedCommOperationException;
+	private native static boolean nativeStaticSetRTS( String port,
+							boolean flag )
+		throws UnsupportedCommOperationException;
+	private native byte nativeGetParityErrorChar( )
 		throws UnsupportedCommOperationException;
 	private native boolean nativeSetParityErrorChar( byte b )
 		throws UnsupportedCommOperationException;
-	private native int nativeGetEndOfInputChar( )
+	private native byte nativeGetEndOfInputChar( )
 		throws UnsupportedCommOperationException;
 	private native boolean nativeSetEndOfInputChar( byte b )
 		throws UnsupportedCommOperationException;
@@ -1198,16 +1280,64 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 	*  Extension to CommAPI
 	*  This is an extension to CommAPI.  It may not be supported on
 	*  all operating systems.
+	*
+	*  Open the port and set DTR.  remove lockfile and do not close
+	*  This is so some software can appear to set the DTR before opening
+	*  the port a second time later on.  Open will raise the DTR and
+	*  DTR when called again later so setting DTR low will not do much.
+	*
+	*  @return true on success
+	*  @throws UnsupportedCommOperationException;
+	*
+	*/
+
+	public static boolean staticSetDTR( String port, boolean flag )
+		throws UnsupportedCommOperationException
+	{
+		if ( debug )
+			System.out.println( "RXTXPort:staticSetDTR( " + port +
+						" " + flag );
+		return( nativeStaticSetDTR( port, flag ) );
+	}
+
+	/**
+	*  Extension to CommAPI
+	*  This is an extension to CommAPI.  It may not be supported on
+	*  all operating systems.
+	*
+	*  Open the port and set RTS.  remove lockfile and do not close
+	*  This is so some software can appear to set the RTS before opening
+	*  the port a second time later on.  Open will raise the RTS and
+	*  RTS when called again later so setting RTS low will not do much.
+	*
+	*  @return none
+	*  @throws UnsupportedCommOperationException;
+	*
+	*/
+
+	public static boolean staticSetRTS( String port, boolean flag )
+		throws UnsupportedCommOperationException
+	{
+		if ( debug )
+			System.out.println( "RXTXPort:staticSetRTS( " + port +
+						" " + flag );
+		return( nativeStaticSetRTS( port, flag ) );
+	}
+
+	/**
+	*  Extension to CommAPI
+	*  This is an extension to CommAPI.  It may not be supported on
+	*  all operating systems.
 	*  @return int the Parity Error Character
 	*  @throws UnsupportedCommOperationException;
 	*
 	*  Anyone know how to do this in Unix?
 	*/
 
-	int getParityErrorChar( )
+	public byte getParityErrorChar( )
 		throws UnsupportedCommOperationException
 	{
-		int ret;
+		byte ret;
 		if ( debug )
 			System.out.println( "getParityErrorChar()" );
 		ret = nativeGetParityErrorChar();
@@ -1228,7 +1358,7 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 	*  Anyone know how to do this in Unix?
 	*/
 
-	boolean setParityErrorChar( byte b )
+	public boolean setParityErrorChar( byte b )
 		throws UnsupportedCommOperationException
 	{
 		if ( debug )
@@ -1246,10 +1376,10 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 	*  Anyone know how to do this in Unix?
 	*/
 
-	int getEndOfInputChar( )
+	public byte getEndOfInputChar( )
 		throws UnsupportedCommOperationException
 	{
-		int ret;
+		byte ret;
 		if ( debug )
 			System.out.println( "getEndOfInputChar()" );
 		ret = nativeGetEndOfInputChar();
@@ -1268,7 +1398,7 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 	*  @throws UnsupportedCommOperationException;
 	*/
 
-	boolean setEndOfInputChar( byte b )
+	public boolean setEndOfInputChar( byte b )
 		throws UnsupportedCommOperationException
 	{
 		if ( debug )
@@ -1290,6 +1420,8 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 	public boolean setUARTType(String type, boolean test)
 		throws UnsupportedCommOperationException
 	{
+		if ( debug )
+			System.out.println( "RXTXPort:setUARTType()");
 		return nativeSetUartType(type, test);
 	}
 	/**
@@ -1317,6 +1449,8 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 	public boolean setBaudBase(int BaudBase)
 		throws UnsupportedCommOperationException
 	{
+		if ( debug )
+			System.out.println( "RXTXPort:setBaudBase()");
 		return nativeSetBaudBase(BaudBase);
 	}
 
@@ -1328,6 +1462,8 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 
 	public int getBaudBase() throws UnsupportedCommOperationException
 	{
+		if ( debug )
+			System.out.println( "RXTXPort:getBaudBase()");
 		return nativeGetBaudBase();
 	}
 
@@ -1340,6 +1476,8 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 	public boolean setDivisor(int Divisor)
 		throws UnsupportedCommOperationException
 	{
+		if ( debug )
+			System.out.println( "RXTXPort:setDivisor()");
 		return nativeSetDivisor(Divisor);
 	}
 
@@ -1351,6 +1489,8 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 
 	public int getDivisor() throws UnsupportedCommOperationException
 	{
+		if ( debug )
+			System.out.println( "RXTXPort:getDivisor()");
 		return nativeGetDivisor();
 	}
 
@@ -1362,6 +1502,8 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 
 	public boolean setLowLatency() throws UnsupportedCommOperationException
 	{
+		if ( debug )
+			System.out.println( "RXTXPort:setLowLatency()");
 		return nativeSetLowLatency();
 	}
 
@@ -1373,6 +1515,8 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 
 	public boolean getLowLatency() throws UnsupportedCommOperationException
 	{
+		if ( debug )
+			System.out.println( "RXTXPort:getLowLatency()");
 		return nativeGetLowLatency();
 	}
 
@@ -1385,6 +1529,8 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 	public boolean setCallOutHangup(boolean NoHup)
 		throws UnsupportedCommOperationException
 	{
+		if ( debug )
+			System.out.println( "RXTXPort:setCallOutHangup()");
 		return nativeSetCallOutHangup(NoHup);
 	}
 
@@ -1397,6 +1543,8 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 	public boolean getCallOutHangup()
 		throws UnsupportedCommOperationException
 	{
+		if ( debug )
+			System.out.println( "RXTXPort:getCallOutHangup()");
 		return nativeGetCallOutHangup();
 	}
 
