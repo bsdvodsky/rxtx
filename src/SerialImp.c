@@ -221,7 +221,7 @@ JNIEXPORT jint JNICALL RXTXPort(open)(
 	}
 
 	do {
-		fd=open (filename, O_RDWR | O_NOCTTY | O_NONBLOCK );
+		fd=OPEN (filename, O_RDWR | O_NOCTTY | O_NONBLOCK );
 	}  while (fd < 0 && errno==EINTR);
 	(*env)->ReleaseStringUTFChars( env, jstr, filename );
 	if( fd < 0 ) goto fail;
@@ -285,7 +285,7 @@ JNIEXPORT void JNICALL RXTXPort(nativeClose)( JNIEnv *env,
 	if (fd > 0)
 	{
 		do {
-			result=close (fd);
+			result=CLOSE (fd);
 		}  while (result < 0 && errno==EINTR);
 		UNLOCK(filename);
 	}
@@ -594,7 +594,7 @@ JNIEXPORT void JNICALL RXTXPort(writeByte)( JNIEnv *env,
 	int result;
 
 	do {
-		result=write (fd, &byte, sizeof(unsigned char));
+		result=WRITE (fd, &byte, sizeof(unsigned char));
 	}  while (result < 0 && errno==EINTR);
 	if(result >= 0)
 		return;
@@ -630,7 +630,7 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 	for( i = 0; i < count; i++ ) bytes[ i ] = body[ i + offset ];
 	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
 	do {
-		result=write (fd, bytes + total, count - total);
+		result=WRITE (fd, bytes + total, count - total);
 		if(result >0){
 			total += result;
 		}
@@ -998,7 +998,7 @@ int read_byte_array( int fd, unsigned char *buffer, int length, int timeout )
 		}  while (ret < 0 && errno==EINTR);
 		if( ret == 0 ) break;
 		if( ret < 0 ) return -1;
-		ret = read( fd, buffer + bytes, left );
+		ret = READ( fd, buffer + bytes, left );
 		if( ret == 0 ) break;
 		if( ret < 0 ) return -1;
 		bytes += ret;
@@ -1404,14 +1404,14 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 
 	/* CLOCAL eliminates open blocking on modem status lines */
 /*
-	if ((fd = open(name, O_RDONLY | CLOCAL)) <= 0) {
+	if ((fd = OPEN(name, O_RDONLY | CLOCAL)) <= 0) {
 		fprintf( stderr "testRead() open failed\n" );
 		ret = JNI_FALSE;
 		goto END;
 	}
 */
 	do {
-		fd=open ( name, O_RDWR | O_NOCTTY | O_NONBLOCK );
+		fd=OPEN ( name, O_RDWR | O_NOCTTY | O_NONBLOCK );
 	}  while ( fd < 0 && errno==EINTR );
 	if( fd < 0 )
 	{
@@ -1453,7 +1453,7 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 			tcsetattr( fd, TCSANOW, &saved_termios );
 			goto END;
 		}
-		if ( read( fd, &c, 1 ) < 0 )
+		if ( READ( fd, &c, 1 ) < 0 )
 		{
 #ifdef EWOULDBLOCK
 			if ( errno != EWOULDBLOCK )
@@ -1482,7 +1482,7 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 END:
 	UNLOCK(name);
 	(*env)->ReleaseStringUTFChars( env, tty_name, name );
-	close( fd );
+	CLOSE( fd );
 	return ret;
 }
 #if defined(__APPLE__)
@@ -1655,9 +1655,9 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(isPortPrefixValid)(JNIEnv *env,
 /* XXX the following hoses freebsd when it tries to open the port later on */
 #ifndef __FreeBSD__
 		if(S_ISCHR(mystat.st_mode)){
-			fd=open(teststring,O_RDONLY|O_NONBLOCK);
+			fd=OPEN(teststring,O_RDONLY|O_NONBLOCK);
 			if (fd>0){
-				close(fd);
+				CLOSE(fd);
 				result=JNI_TRUE;
 				break;
 			}
@@ -1677,9 +1677,9 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(isPortPrefixValid)(JNIEnv *env,
 #endif /* _GNU_SOURCE */
 	stat(teststring,&mystat);
 	if(S_ISCHR(mystat.st_mode)){
-		fd=open(teststring,O_RDONLY|O_NONBLOCK);
+		fd=OPEN(teststring,O_RDONLY|O_NONBLOCK);
 		if (fd>0){
-			close(fd);
+			CLOSE(fd);
 			result=JNI_TRUE;
 		}
 	}
