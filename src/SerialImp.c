@@ -22,7 +22,7 @@
 #   include <unistd.h>
 #else /* windows lcc compiler for fd_set. probably wrong */
 #   include<winsock.h>
-#endif
+#endif /* __LCC__ */
 #include <time.h>
 #include <stdio.h>
 #include <string.h>
@@ -43,33 +43,39 @@
 #endif /* WIN32 */
 #ifdef HAVE_TERMIOS_H
 #	include <termios.h>
-#endif
+#endif /* HAVE_TERMIOS_H */
 #ifdef HAVE_SIGNAL_H
 #   include <signal.h>
-#endif
+#endif /* HAVE_SIGNAL_H */
 #ifdef HAVE_SYS_SIGNAL_H
 #   include <sys/signal.h>
-#endif
+#endif /* HAVE_SYS_SIGNAL_H */
 #include <sys/types.h>
 #ifdef HAVE_SYS_TIME_H
 #   include <sys/time.h>
-#endif
+#endif /* HAVE_SYS_TIME_H */
 #   include <fcntl.h>
 #ifdef HAVE_SYS_FCNTL_H
 #   include <sys/fcntl.h>
-#endif
+#endif /* HAVE_SYS_FCNTL_H */
 #ifdef HAVE_SYS_FILE_H
 #   include <sys/file.h>
-#endif
+#endif /* HAVE_SYS_FILE_H */
 
 #if defined(__linux__)
 #	include <linux/types.h> /* fix for linux-2.3.4? kernels */
 #	include <linux/serial.h>
 #	include <linux/version.h>
-#endif
+#endif /* __linux__ */
 #if defined(__hpux__)
 #include <sys/modem.h>
-#endif
+#endif /* __hpux__ */
+#ifdef HAVE_PWD_H
+#include	<pwd.h>
+#endif /* HAVE_PWD_H */
+#ifdef HAVE_GRP_H
+#include 	<grp.h>
+#endif /* HAVE_GRP_H */
 
 extern int errno;
 #include "SerialImp.h"
@@ -1474,13 +1480,30 @@ int fhs_lock(const char *filename)
 		"/usr/spool/uucp/LCK", "/var/lock", "/var/lock/modem", 
 		"/var/spool/lock", "/var/spool/locks", "/var/spool/uucp",NULL
 	};
+	struct group *g=getgrnam("uucp");
+	struct passwd *user=getpwuid(geteuid());
+
+	/*  This checks if the effective user is in group uucp so we can
+	 *  create lock files.  If not we give them a warning and bail.
+	 */
+	while(*g->gr_mem)
+	{
+		if(!strcmp(*g->gr_mem,user->pw_name))
+			break;
+		*g->gr_mem++;
+	}
+	if(!*g->gr_mem)
+	{
+		printf(UUCP_ERROR);
+		return 0;
+	}
 
 	/* no lock dir? just return success */
 
 	if (stat(LOCKDIR,&buf)!=0)
 	{
 		report("could not find lock directory.\n");
-		return 0;
+		return 1;
 	}
 
 	/* 

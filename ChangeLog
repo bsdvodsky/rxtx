@@ -1,4 +1,4 @@
-This is ChangeLog Thu Jun 14 12:48:33 MDT 2001
+This is ChangeLog Wed Jun 20 10:47:21 MDT 2001
 
 rxtx-1.5 and rxtx-1.4 changes are kept in the same file.  skip to the version
 you downloaded.
@@ -33,8 +33,9 @@ you downloaded.
 1.4-9                 Steve Drach <drach@eng.sun.com>
                       Minor fix of error reporting in lockfiles
 		      Mac OS X port Joseph Goldstone <joseph@lp.com>
+		      enumeration speedups Wayne Roberts <wroberts1@home.com>
 		      Documentation changes for lockfiles
-		      build fixes for jdk 1.1.8
+		      build fixes for jdk 1.1.8, kaffe 0.61
 		      automation of build tests with support for $JAVA_HOME
 		      sync with 1.5
 1.4-8  Jan  8, 2001   irix build fixes (fine tuning required)
