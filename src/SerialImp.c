@@ -1365,12 +1365,20 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 	int fd;
 	const char *name = (*env)->GetStringUTFChars(env, tty_name, 0);
 	int ret = JNI_TRUE;
+/*
 	int output = open("rxtx.log", O_RDWR|O_CREAT);
 	char message[80];
+	jmethodID foo;
+	jclass jclazz;
 
-	//exit(0);
-	printf("testRead(%s)\n", name);
+	printf("testRead(%s)", name);
 	sprintf(message, "testRead(%s)\n", name);
+	jclazz = (*env)->GetObjectClass( env, jobj );
+	foo = (*env)->GetMethodID( env, jclazz, "Report","(Ljava/lang/String)V" );
+	(*env)->CallVoidMethod( env, jobj, foo,
+		(*env)->NewStringUTF(env, message));
+	(*env)->DeleteLocalRef( env, jclazz );
+	//exit(0);
 	write(output, message, strlen(message));
 	close(output);
 	if ( strcmp( name, "COM1" ) )
@@ -1378,6 +1386,7 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 	else
 		return( JNI_FALSE );
 	
+*/
 
 	/* 
 		LOCK is one of three functions defined in SerialImp.h
@@ -1824,6 +1833,7 @@ int send_event(JNIEnv *env, jobject jobj, jint type, int flag)
 	(*env)->DeleteLocalRef( env, jclazz );
 	return(result);
 }
+
 /*----------------------------------------------------------
 get_java_var
 
