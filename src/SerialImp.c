@@ -815,7 +815,8 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_readByte( JNIEnv *env,
 /*----------------------------------------------------------
 RXTXPort.readArray
 
-   accept:       offset (bytes to skip) and Length (bytes to read)
+   accept:       offset (offset to start storing data in the jbarray) and 
+                 Length (bytes to read)
    perform:      read bytes from the port into a byte array
    return:       bytes read on success
                  0 on read timeout
@@ -838,14 +839,14 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_readArray( JNIEnv *env,
 		return -1;
 	}
 
-	buffer = (unsigned char *)malloc( sizeof( unsigned char ) * (length + offset) );
+	buffer = (unsigned char *)malloc( sizeof( unsigned char ) * length );
 	if( buffer == 0 ) {
 		throw_java_exception( env, OUT_OF_MEMORY, "readArray",
 			"Unable to allocate buffer" );
 		return -1;
 	}
 
-	bytes = read_byte_array( fd, buffer, length + offset, timeout );
+	bytes = read_byte_array( fd, buffer, length, timeout );
 	if( bytes < 0 ) {
 		free( buffer );
 		throw_java_exception( env, IO_EXCEPTION, "readArray",
@@ -853,7 +854,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_readArray( JNIEnv *env,
 		return -1;
 	}
 	body = (*env)->GetByteArrayElements( env, jbarray, 0 );
-	memcpy(body, buffer + offset,bytes);
+	memcpy(body + offset, buffer, bytes);
 	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
 	free( buffer );
 	return (bytes ? bytes : -1);
