@@ -2489,7 +2489,7 @@ void report_warning(char *msg)
 ----------------------------------------------------------*/
 void report_verbose(char *msg)
 {
-#ifndef DEBUG_VERBOSE
+#ifdef DEBUG_VERBOSE
 	fprintf(stderr, msg);
 #else
 	mexErrMsgTxt( msg );
