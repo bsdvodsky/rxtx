@@ -46,6 +46,8 @@
 #include <sys/errno.h>
 #include <sys/param.h>
 #include <sys/time.h>
+#include <stdlib.h>
+
 #ifdef HAVE_TERMIOS_H
 #	include <termios.h>
 #endif
@@ -115,6 +117,7 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_setLPRMode(JNIEnv *env,
 			UnsupportedCommOperationException(env, "setLPRMode was unable to proced the requested mode" );
 
 	}
+		return(JNI_TRUE);
 
 }
 /*----------------------------------------------------------
@@ -263,7 +266,7 @@ LPRPort.open
 JNIEXPORT jint JNICALL Java_gnu_io_LPRPort_open( JNIEnv *env, jobject jobj,
 	jstring jstr )
 {
-	struct termios ttyset;
+	/*struct termios ttyset;*/
 	const char *filename = (*env)->GetStringUTFChars( env, jstr, 0 );
 	int fd = open( filename, O_RDWR | O_NONBLOCK );
 	(*env)->ReleaseStringUTFChars( env, jstr, NULL );
@@ -499,7 +502,7 @@ LPRPort.setHWFC
 JNIEXPORT void JNICALL Java_gnu_io_LPRPort_setHWFC( JNIEnv *env,
 	jobject jobj, jboolean state )
 {
-	int fd = get_java_fd( env, jobj );
+	/*int fd = get_java_fd( env, jobj );*/
 	return;
 }
 
@@ -525,7 +528,8 @@ struct lp_stats {
 JNIEXPORT void JNICALL Java_gnu_io_LPRPort_eventLoop( JNIEnv *env,
 	jobject jobj )
 {
-	int fd, ret, change;
+	int fd, ret; 
+	/*int change; */
 	unsigned int pflags;
 	fd_set rfds;
 	struct timeval sleep;
