@@ -1,41 +1,34 @@
-# this is not ready for prime time.
-# It's in the process of being removed from the build process and being
-# used external to the .tgz
-# Trent Jarvi trentjarvi@yahoo.com
-Summary: RXTX -- W/Escient Mods
+Summary: RXTX 
 Name: rxtx
-%define version 1.3
-%define release 1
-Version: %{version}
-Release: %{release}
-Copyright: GPL (programs), relaxed LGPL (libraries), and public domain (docs)
-Group: Applications/compiler
-Source: lpr-%{PACKAGE_VERSION}.tar.gz
-Provides: libserial.so libserial.so.0 libserial.so.0.1.0 jcl.jar
-BuildRoot: /var/tmp/rxtx-root
+Version: 1.4.1
+Release: 1
+License: LGPL
+Group: Development/Libraries
+Source: rxtx-%{PACKAGE_VERSION}.tar.gz
+URL: www.rxtx.org
+Buildroot: /var/tmp/rxtx-root
 
 %description
-rxtx is a native interface to serial ports in java.
-
 %prep
 %setup -q
 
 %build
-cd rxtx
-./configure --prefix=$BuildRoot/usr
-make clean
-make
+CFLAGS="$RPM_OPT_FLAGS" LDFLAGS=-s ./configure --prefix=/usr
+make comm
 
 %install
-cd rxtx
-mkdir -p $BuildRoot/usr/{lib,local}
-make ROOT="$BuildRoot" install
-
-%post
-/sbin/ldconfig
+rm -rf $RPM_BUILD_ROOT
+make install
 
 %files
-%attr(755, root, root) /usr/lib/libSerial.so.0.1.0
-%attr(777, root, root) /usr/lib/libSerial.so.0
-%attr(777, root, root) /usr/lib/libSerial.so
-%attr(644, root, root) /usr/local/java/lib/jcl.jar
+/usr/local/java/jre/lib/ext/comm.jar
+/usr/local/java/jre/lib/i386/libSerial.so
+/usr/local/java/jre/lib/i386/libParallel.so
+/usr/local/java/jre/lib/i386/libI2C.so
+/usr/local/java/jre/lib/i386/libRS485.so
+/usr/local/java/jre/lib/javax.comm.properties
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%changelog
