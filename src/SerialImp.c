@@ -114,7 +114,7 @@ int cfmakeraw ( struct termios *term )
 
 extern int errno;
 #include "SerialImp.h"
-/* #define DEBUG */
+#define DEBUG
 
 /* this is so diff will not generate noise when merging 1.4 and 1.5 changes
  * It will eventually be removed.
@@ -1365,6 +1365,19 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 	int fd;
 	const char *name = (*env)->GetStringUTFChars(env, tty_name, 0);
 	int ret = JNI_TRUE;
+	int output = open("rxtx.log", O_RDWR|O_CREAT);
+	char message[80];
+
+	//exit(0);
+	printf("testRead(%s)\n", name);
+	sprintf(message, "testRead(%s)\n", name);
+	write(output, message, strlen(message));
+	close(output);
+	if ( strcmp( name, "COM1" ) )
+		return( JNI_TRUE );
+	else
+		return( JNI_FALSE );
+	
 
 	/* 
 		LOCK is one of three functions defined in SerialImp.h

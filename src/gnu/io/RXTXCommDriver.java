@@ -36,7 +36,7 @@ import java.util.StringTokenizer;
 public class RXTXCommDriver implements CommDriver
 {
 
-	private static boolean debug = false;
+	private static boolean debug = true;
 
 	static
 	{
@@ -67,6 +67,8 @@ public class RXTXCommDriver implements CommDriver
 		*/
 
 		String ValidPortPrefixes[]=new String [256];
+		if (debug)
+			System.out.println("\nRXTXCommDriver:getValidPortPrefixes()");
 		if(CandidatePortPrefixes==null)
 		{
 			if (debug)
@@ -207,6 +209,8 @@ public class RXTXCommDriver implements CommDriver
 		final String pathSep = System.getProperty("path.separator", ":");
 		final StringTokenizer tok = new StringTokenizer(names, pathSep);
 
+		if (debug)
+			System.out.println("\nRXTXCommDriver:addSpecifiedPorts()");
 		while (tok.hasMoreElements())
 		{
 			String PortName = tok.nextToken();

@@ -1,4 +1,5 @@
-//#define TRACE
+#define TRACE
+#define DEBUG
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
 |   Copyright 1997-2001 by Trent Jarvi trentjarvi@yahoo.com.
@@ -496,7 +497,7 @@ int close( int fd )
 		//fprintf( stderr, "No info known about the port being closed %i\n", fd );
 		return -1;
 	}
-
+	WaitForSingleObject( index->wol.hEvent, INFINITE );
 	if ( index->hComm != INVALID_HANDLE_VALUE )
 	{
 		if ( !SetCommMask( index->hComm, EV_RXCHAR ) )
@@ -728,7 +729,7 @@ int open_port( struct termios_list *port )
 	if ( port->hComm == INVALID_HANDLE_VALUE )
 	{
 		YACK();
-		errno = EINVAL;
+		set_errno( EINVAL );
 		//printf( "open failed %s\n", port->filename );
 		return -1;
 	}
@@ -1098,7 +1099,10 @@ int serial_write( int fd, char *Str, int length )
 	}
 	
 			//if ( 	( pendingResult !=  WAIT_OBJECT_0 ) ||
-	GetOverlappedResult( index->hComm, &index->wol, &nBytes, FALSE );
+	if ( !GetOverlappedResult( index->hComm, &index->wol, &nBytes, FALSE ) )
+	{
+		YACK();
+	}
 	FlushFileBuffers( index->hComm );
 	/*
 		I'm sure there is a better way to do this but write() will
@@ -1187,7 +1191,7 @@ int serial_read( int fd, void *vb, int size )
 							&nBytes,
 							FALSE ) )
 			{
-				fprintf( stderr, "read error\n" );
+				YACK();
 			}
 			else
 			{
@@ -1353,7 +1357,7 @@ show_DCB()
 void show_DCB( myDCB )
 {
 
-#ifdef DEBUG
+#ifdef DEBUGS
 	printf( "DCBlength: %ld\n", myDCB.DCBlength );
 	printf( "BaudRate: %ld\n", myDCB.BaudRate );
 	if ( myDCB.fBinary )
