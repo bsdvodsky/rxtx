@@ -42,8 +42,13 @@ install: all jcl install-lib
 
 install-lib:
 	( cd $(TOP)/$(target_alias) ; \
-	$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) libSerial.la $(libdir));\
-	$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) libParallel.la $(libdir));\
+	if [ -f libSerial.la ];then \
+	$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) libSerial.la $(libdir);\
+	fi; \
+	if [ -f libParallel.la ];then \
+	$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) libParallel.la $(libdir);\
+	fi; \
+	)
 	$(INSTALL_PROGRAM) jcl.jar $(JPATH)lib/
 run: $(TOP)/test.class all jcl
 	(cd $(TOP)/;chmod 755 *.class;\
@@ -62,7 +67,7 @@ all: @TARGETLIB@
 	@echo "configure or editing the Makefile."
 	@echo ""
 
-jcl:  $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class $(TOP)/gnu/io/RXTTXPort.class
+jcl:  $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class $(TOP)/gnu/io/RXTXPort.class
 	$(JAR) jcl.jar gnu/io/*
 
 $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class \

@@ -326,8 +326,13 @@ install: all jcl install-lib
 
 install-lib:
 	( cd $(TOP)/$(target_alias) ; \
-	$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) libSerial.la $(libdir));\
-	$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) libParallel.la $(libdir));\
+	if [ -f libSerial.la ];then \
+	$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) libSerial.la $(libdir);\
+	fi; \
+	if [ -f libParallel.la ];then \
+	$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) libParallel.la $(libdir);\
+	fi; \
+	)
 	$(INSTALL_PROGRAM) jcl.jar $(JPATH)lib/
 run: $(TOP)/test.class all jcl
 	(cd $(TOP)/;chmod 755 *.class;\
@@ -346,7 +351,7 @@ all: @TARGETLIB@
 	@echo "configure or editing the Makefile."
 	@echo ""
 
-jcl:  $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class $(TOP)/gnu/io/RXTTXPort.class
+jcl:  $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class $(TOP)/gnu/io/RXTXPort.class
 	$(JAR) jcl.jar gnu/io/*
 
 $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class \
@@ -381,11 +386,7 @@ $(TOP)/$(target_alias)/SerialImp.lo: $(srcdir)/src/SerialImp.c \
 $(TOP)/%.class $(TOP)/gnu/io/%.class: $(srcdir)/src/%.java 
 	$(JAVAC) $< 
 
-$(SERIAL_HEADER): $(TOP)/gnu/io/RXTXPort.class
-	$(JAVAH) gnu.io.`echo $(@F) | sed s#\.h##|sed s#gnu_io_##`
-	touch $(TOP)/$(target_alias)/$(@F)
-
-$(PARALLEL_HEADER): $(TOP)/gnu/io/LPRPort.class
+$(SERIAL_HEADER) $(PARALLEL_HEADER): $(TOP)/gnu/io/RXTXPort.class
 	$(JAVAH) gnu.io.`echo $(@F) | sed s#\.h##|sed s#gnu_io_##`
 	touch $(TOP)/$(target_alias)/$(@F)
 
