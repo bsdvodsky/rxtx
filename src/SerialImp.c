@@ -163,6 +163,7 @@ JNIEXPORT jint JNICALL RXTXPort(open)(
  		(*env)->ReleaseStringUTFChars( env, jstr, filename );
   		printf("locking has failed\n");
   		goto fail;
+	}
 
 	do {
 		fd=open (filename, O_RDWR | O_NOCTTY | O_NONBLOCK );
