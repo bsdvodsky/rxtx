@@ -63,6 +63,26 @@
 #define B256000		1010004
 #endif /* dima */
 
+struct event_info_struct
+{
+	int initialised;
+	fd_set rfds;
+	struct timeval tv_sleep;
+	int ret, change;
+	unsigned int omflags;
+	char message[80];
+	int has_tiocsergetlsr;
+	int has_tiocgicount;
+	int fd;
+	JNIEnv *env;
+	jobject *jobj;
+	jclass jclazz;
+	jmethodID send_event;
+	jmethodID checkMonitorThread;
+#if defined(TIOCGICOUNT)
+	struct serial_icounter_struct osis;
+#endif /* TIOCGICOUNT */
+};
 
 /*  Ports known on the OS */
 #if defined(__linux__)
@@ -288,11 +308,14 @@ int translate_data_bits( JNIEnv *, tcflag_t *, jint );
 int translate_stop_bits( JNIEnv *, tcflag_t *, jint );
 int translate_parity( JNIEnv *, tcflag_t *, jint );
 #endif
+void system_wait();
+void finalize_event_info_struct( struct event_info_struct * );
 int read_byte_array( int, unsigned char *, int, int );
 int get_java_var( JNIEnv *, jobject, char *, char * );
-jboolean is_interrupted(JNIEnv *, jobject );
-int send_event(JNIEnv *, jobject, jint, int );
+jboolean is_interrupted( struct event_info_struct * );
+int send_event(struct event_info_struct *, jint, int );
 void dump_termios(char *,struct termios *);
+void report_verbose(char *);
 void report_error(char *);
 void report_warning(char *);
 void report(char *);

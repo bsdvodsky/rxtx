@@ -32,7 +32,7 @@ import javax.comm.*;
 final class RXTXPort extends SerialPort
 {
 
-	private static boolean debug = false;
+	private static boolean debug = true;
 	static
 	{
 		if(debug ) 
@@ -620,9 +620,17 @@ final class RXTXPort extends SerialPort
 	*  @param lsnr SerialPortEventListener
 	*  @throws TooManyListenersException
 	*/
+
+	boolean MonitorThreadLock = true;
+
 	public void addEventListener(
 		SerialPortEventListener lsnr ) throws TooManyListenersException
 	{
+		/*  Don't let and notification requests happen until the
+		    Eventloop is ready
+		*/
+		MonitorThreadLock = true;
+
 		if (debug)
 			System.out.println("RXTXPort:addEventListener()");
 		if( SPEventListener != null )
@@ -632,7 +640,6 @@ final class RXTXPort extends SerialPort
 			System.out.println("RXTXPort:Interrupt=false");
 		monThreadisInterrupted=false;
 		monThread = new MonitorThread();
-		monThread.setDaemon(true);
 		monThread.start();
 	}
 	/**
@@ -683,6 +690,10 @@ final class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnDataAvailable()");
+		//while( MonitorThreadLock )
+		//try {
+		//	Thread.sleep(10);
+		//} catch( Exception e ) {}
 		monThread.Data = enable;
 	}
 
@@ -693,6 +704,8 @@ final class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnOutputEmpty()");
+		//while( MonitorThreadLock )
+			//Thread.yield();
 		monThread.Output = enable;
 	}
 
@@ -703,6 +716,8 @@ final class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnCTS()");
+		//while( MonitorThreadLock )
+			//Thread.yield();
 		monThread.CTS = enable;
 	}
 	/**
@@ -712,6 +727,8 @@ final class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnDSR()");
+		//while( MonitorThreadLock )
+			//Thread.yield();
 		monThread.DSR = enable;
 	}
 	/**
@@ -721,6 +738,8 @@ final class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnRingIndicator()");
+		//while( MonitorThreadLock )
+			//Thread.yield();
 		monThread.RI = enable;
 	}
 	/**
@@ -730,6 +749,8 @@ final class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnCarrierDetect()");
+		//while( MonitorThreadLock )
+			//Thread.yield();
 		monThread.CD = enable;
 	}
 	/**
@@ -739,6 +760,8 @@ final class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnOverrunError()");
+		//while( MonitorThreadLock )
+			//Thread.yield();
 		monThread.OE = enable;
 	}
 	/**
@@ -748,6 +771,8 @@ final class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnParityError()");
+		//while( MonitorThreadLock )
+			//Thread.yield();
 		monThread.PE = enable;
 	}
 	/**
@@ -757,6 +782,8 @@ final class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnFramingError()");
+		//while( MonitorThreadLock )
+			//Thread.yield();
 		monThread.FE = enable;
 	}
 	/**
@@ -766,6 +793,8 @@ final class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnBreakInterrupt()");
+		//while( MonitorThreadLock )
+			//Thread.yield();
 		monThread.BI = enable;
 	}
 

@@ -198,7 +198,6 @@ JNIEXPORT void JNICALL RXTXPort(Initialize)(
 #endif /* DEBUG && __linux__ */
 }
 
-
 /*----------------------------------------------------------
 RXTXPort.open
 
@@ -667,7 +666,6 @@ int translate_parity( JNIEnv *env, tcflag_t *cflag, jint parity )
 	return 0;
 }
 
-
 /*----------------------------------------------------------
 RXTXPort.writeByte
 
@@ -690,16 +688,15 @@ JNIEXPORT void JNICALL RXTXPort(writeByte)( JNIEnv *env,
 	LEAVE( "RXTXPort:writeByte" );
 	if(result >= 0)
 	{
-#ifdef DEBUG_VERBOSE
-		report( "sending OUTPUT_BUFFER_EMPTY\n" );
-#endif /* DEBUG_VERBOSE */
+/*
+		report_verbose( "sending OUTPUT_BUFFER_EMPTY\n" );
 		send_event( env, jobj, SPE_OUTPUT_BUFFER_EMPTY, 1 );
+*/
 		return;
 	}
 	throw_java_exception( env, IO_EXCEPTION, "writeByte",
 		strerror( errno ) );
 }
-
 
 /*----------------------------------------------------------
 RXTXPort.writeArray
@@ -717,9 +714,7 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 	int fd = get_java_var( env, jobj,"fd","I" );
 	int result=0,total=0;
 	jbyte *body = (*env)->GetByteArrayElements( env, jbarray, 0 );
-#ifdef DEBUG_VERBOSE
 	char message[1000];
-#endif /* DEBUG_VERBOSE */
 #if defined ( __sun__ )
 	struct timespec retspec, tspec;
 
@@ -728,11 +723,9 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 #endif /* __sun__ */
 
 	ENTER( "writeArray" );
-#ifdef DEBUG_VERBOSE
 	/* warning Will Rogers */
 	sprintf( message, "::::RXTXPort:writeArray(%s);\n", (char *) body );
-	report( message );
-#endif /* DEBUG_VERBOSE */
+	report_verbose( message );
 	do {
 		result=WRITE (fd, body + total + offset, count - total); /* dima */
 		if(result >0){
@@ -752,30 +745,9 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 
 		Things just start spinning out of control after that.
 	*/
-#if defined (__sun__ )
-/*
-	do {
-		tspec = retspec;
-*/
-		nanosleep( &tspec, &retspec );
-/*
-	} while( tspec.tv_nsec != 0 );
-*/
-#else
-/*
-	usleep(50000);
-*/
-#endif /* __sun__ */
 	LEAVE( "RXTXPort:writeArray" );
 	if( result < 0 ) throw_java_exception( env, IO_EXCEPTION,
 		"writeArray", strerror( errno ) );
-#ifdef DEBUG_VERBOSE
-	report( "sending OUTPUT_BUFFER_EMPTY\n" );
-#endif /* DEBUG_VERBOSE */
-	send_event( env, jobj, SPE_OUTPUT_BUFFER_EMPTY, 1 );
-/*
-	usleep(50);
-*/
 }
 
 /*----------------------------------------------------------
@@ -797,23 +769,17 @@ JNIEXPORT void JNICALL RXTXPort(nativeDrain)( JNIEnv *env,
 	int fd = get_java_var( env, jobj,"fd","I" );
 	int result, count=0;
 
-#ifdef DEBUG_VERBOSE
 	char message[80];
-#endif /* DEBUG_VERBOSE */
 
 	ENTER( "SerialImp.c:drain()" );
 	do {
-#ifdef DEBUG_VERBOSE
-		report( "trying tcdrain\n" );
-#endif /* DEBUG_VERBOSE */
+		report_verbose( "trying tcdrain\n" );
 		result=tcdrain(fd);
 		count++;
 	}  while (result && errno==EINTR && count <5);
 
-#ifdef DEBUG_VERBOSE
 	sprintf( message, "RXTXPort:drain() returns: %i\n", result ); 
-	report( message );
-#endif /* DEBUG_VERBOSE */
+	report_verbose( message );
 	LEAVE( "RXTXPort:drain()" );
 	if( result ) throw_java_exception( env, IO_EXCEPTION, "nativeDrain",
 		strerror( errno ) );
@@ -836,7 +802,6 @@ JNIEXPORT void JNICALL RXTXPort(sendBreak)( JNIEnv *env,
 	tcsendbreak( fd, (int)( duration / 250 ) );
 	LEAVE( "RXTXPort:sendBreak()" );
 }
-
 
 /*----------------------------------------------------------
 RXTXPort.NativegetReceiveTimeout
@@ -1546,232 +1511,376 @@ fail:
 }
 
 /*----------------------------------------------------------
+unlock_monitor_thread
+
+   accept:      event_info_struct
+   perform:     unlock the monitor thread so event notification can start.
+   return:      none
+   exceptions:  none
+   comments:    Events can be missed otherwise.
+----------------------------------------------------------*/
+
+void unlock_monitor_thread( struct event_info_struct *eis )
+{
+	JNIEnv *env = eis->env;
+	jclass jclazz = (*env)->GetObjectClass( env, *eis->jobj );
+	jfieldID jfid = (*env)->GetFieldID( env, eis->jclazz,
+		"MonitorThreadLock", "Z" );
+	(*env)->SetBooleanField( env, *eis->jobj, jfid, JNI_FALSE );
+}
+
+/*----------------------------------------------------------
+check_line_status_register
+
+   accept:      event_info_struct
+   perform:     check for changes on the LSR
+   return:      0 on success
+   exceptions:  none
+   comments:    not supported on all devices/drivers.
+----------------------------------------------------------*/
+int check_line_status_register( struct event_info_struct *eis )
+{
+#if defined TIOCSERGETLSR
+	struct stat fstatbuf;
+
+	if ( fstat( eis->fd, &fstatbuf ) )
+	{
+		report( "check_line_status_register: fstat\n" );
+		return( 1 );
+	}
+	if( ioctl( eis->fd, TIOCSERGETLSR, &eis->change ) )
+	{
+		report( "TIOCSERGETLSR\n is nonnull\n" );
+		return( 1 );
+	}
+	else if( eis->change )
+	{
+		report_verbose( "sending OUTPUT_BUFFER_EMPTY\n" );
+		send_event( eis, SPE_OUTPUT_BUFFER_EMPTY, 1 );
+	}
+#endif /* TIOCSERGETLSR */
+	return( 0 );
+}
+
+/*----------------------------------------------------------
+has_line_status_register_access
+
+   accept:      fd of interest
+   perform:     check for access to the LSR
+   return:      0 if not available
+   exceptions:  none
+   comments:    not supported on all devices/drivers.
+		JK00: work around for multiport cards without TIOCSERGETLSR 
+		Cyclades is one of those :-(
+----------------------------------------------------------*/
+int has_line_status_register_access( int fd )
+{
+	int change;
+
+#if defined(TIOCSERGETLSR)
+	if( !ioctl( fd, TIOCSERGETLSR, &change ) ) {
+		return(1);
+	}
+#endif /* TIOCSERGETLSR */
+	report( "Port does not support TIOCSERGETLSR\n" );
+	return( 0 );
+}
+
+/*----------------------------------------------------------
+check_cgi_count
+
+   accept:      fd of interest
+   perform:     check for access to TIOCGICOUNT
+   return:      0 if not available
+   exceptions:  none
+   comments:    not supported on all devices/drivers.
+	 *	wait for RNG, DSR, CD or CTS  but not DataAvailable
+	 *      The drawback here is it never times out so if someone
+	 *      reads there will be no chance to try again.
+	 *      This may make sense if the program does not want to
+	 *      be notified of data available or errors.
+	 *	ret=ioctl(fd,TIOCMIWAIT);
+----------------------------------------------------------*/
+void check_cgi_count( struct event_info_struct *eis )
+{
+#if defined(TIOCGICOUNT)
+
+	/* JK00: only use it if supported by this port */
+
+	struct serial_icounter_struct sis;
+
+	if( ioctl( eis->fd, TIOCGICOUNT, &sis ) )
+	{
+		report( "TIOCGICOUNT\n is not 0\n" );
+		return;
+	}
+	while( sis.frame != eis->osis.frame ) {
+		send_event( eis, SPE_FE, 1);
+		eis->osis.frame++;
+	}
+	while( sis.overrun != eis->osis.overrun ) {
+		send_event( eis, SPE_OE, 1);
+		eis->osis.overrun++;
+	}
+	while( sis.parity != eis->osis.parity ) {
+		send_event( eis, SPE_PE, 1);
+		eis->osis.parity++;
+	}
+	while( sis.brk != eis->osis.brk ) {
+		send_event( eis, SPE_BI, 1);
+		eis->osis.brk++;
+	}
+	eis->osis = sis;
+#endif /*  TIOCGICOUNT */
+}
+
+/*----------------------------------------------------------
+port_has_changed_fionread
+
+   accept:      fd of interest
+   perform:     check if FIONREAD has changed
+   return:      0 if no data available
+   exceptions:  none
+   comments:    
+----------------------------------------------------------*/
+int port_has_changed_fionread( int fd )
+{
+	int change, rc;
+	char message[80];
+
+	rc = ioctl( fd, FIONREAD, &change );
+#ifdef __unixware__
+	/*
+	   On SCO OpenServer FIONREAD always fails for serial devices,
+	   so rely upon select() result to know whether data available.
+	*/
+	if( (rc != -1 && change) || (rc == -1 && ret > 0) ) 
+		return( 1 );
+#else
+	sprintf( message, "change is %i\n", change );
+	report_verbose( message );
+	if( change )
+		return( 1 );
+#endif /* __unixware__ */
+	return( 0 );
+		
+}
+		
+/*----------------------------------------------------------
+check_tiocmget_changes
+
+   accept:      event_info_struct
+   perform:     use TIOCMGET to report events
+   return:      0 if not available
+   exceptions:  none
+   comments:    not supported on all devices/drivers.
+----------------------------------------------------------*/
+unsigned int check_tiocmget_changes( struct event_info_struct * eis )
+{
+	unsigned int mflags;
+	int change = eis->change;
+
+	if( ioctl( eis->fd, TIOCMGET, &mflags ) )
+	{
+		report( "ioctl(TIOCMGET)\n" );
+		return;
+	}
+
+	change = (mflags&TIOCM_CTS) - (eis->omflags&TIOCM_CTS);
+	if( change ) send_event( eis, SPE_CTS, change );
+
+	change = (mflags&TIOCM_DSR) - (eis->omflags&TIOCM_DSR);
+	if( change ) send_event( eis, SPE_DSR, change );
+
+	change = (mflags&TIOCM_RNG) - (eis->omflags&TIOCM_RNG);
+	if( change ) send_event( eis, SPE_RI, change );
+
+	change = (mflags&TIOCM_CD) - (eis->omflags&TIOCM_CD);
+	if( change ) send_event( eis, SPE_CD, change );
+
+	eis->omflags = mflags;
+}
+
+/*----------------------------------------------------------
+system_wait
+
+   accept:      
+   perform:     
+   return:      
+   exceptions:  none
+   comments:    
+----------------------------------------------------------*/
+void system_wait()
+{
+#if defined (__sun__ )
+	struct timespec retspec, tspec;
+	retspec.tv_sec = 0;
+	retspec.tv_nsec = 100000000;
+/*
+	do {
+		tspec = retspec;
+		nanosleep( &tspec, &retspec );
+	} while( tspec.tv_nsec != 0 );
+*/
+#else
+	usleep(50000);
+#endif /* __sun__ */
+}
+
+/*----------------------------------------------------------
+driver_has_tiocgicount
+
+   accept:      fd of interest
+   perform:     check for access to TIOCGICOUNT
+   return:      0 if not available
+   exceptions:  none
+   comments:    not supported on all devices/drivers.
+		Some multiport serial cards do not implement TIOCGICOUNT ... 
+		So use the 'dumb' mode to enable using them after all! JK00
+----------------------------------------------------------*/
+int driver_has_tiocgicount( struct event_info_struct * eis )
+{
+#if defined(TIOCGICOUNT)
+
+	/* Some multiport serial cards do not implement TIOCGICOUNT ... */
+	/* So use the 'dumb' mode to enable using them after all! JK00 */
+
+	if( ioctl( eis->fd, TIOCGICOUNT, &eis->osis ) < 0 ) {
+		report_verbose( "Port does not support TIOCGICOUNT events\n" );
+		return(0);
+	}
+	else
+		return(1);
+#endif /*  TIOCGICOUNT */
+	return(0);
+	
+}
+
+/*----------------------------------------------------------
+report_serial_events
+
+   accept:      event_info_struct
+   perform:     send events if they occured
+   return:      0 if not available
+   exceptions:  none
+   comments:    not supported on all devices/drivers.
+----------------------------------------------------------*/
+void report_serial_events( struct event_info_struct *eis )
+{
+	/* JK00: work around for Multi IO cards without TIOCSERGETLSR */
+	if( eis->has_tiocsergetlsr )
+		if( check_line_status_register( eis ) )
+			return;
+
+	if ( eis->has_tiocgicount )
+		check_cgi_count( eis );
+
+	check_tiocmget_changes( eis );
+
+	if( port_has_changed_fionread( eis->fd ) )
+	{
+		if(!send_event( eis, SPE_DATA_AVAILABLE, 1 ))
+		{
+			/* select wont block */
+			system_wait();
+		}
+	}
+}
+
+/*----------------------------------------------------------
+initialise_event_info_struct
+
+   accept:      event_info_struct for this thread.
+   perform:     initialise or reset the event_info_struct
+   return:      1 on success
+   exceptions:  none
+   comments:    
+----------------------------------------------------------*/
+int initialise_event_info_struct( struct event_info_struct *eis )
+{
+	jobject jobj = *eis->jobj;
+	JNIEnv *env = eis->env;
+
+	if ( eis->initialised == 1 )
+		goto end;
+	eis->fd = get_java_var( env, jobj, "fd", "I" );
+	eis->has_tiocsergetlsr = has_line_status_register_access( eis->fd );
+	eis->has_tiocgicount = driver_has_tiocgicount( eis );
+
+	eis->jclazz = (*env)->GetObjectClass( env, jobj );
+	if(eis->jclazz == NULL) return 0;
+
+	if( ioctl( eis->fd, TIOCMGET, &eis->omflags) < 0 ) {
+		report( "Port does not support events\n" );
+ 		return( 0 );
+	}
+
+	eis->send_event = (*env)->GetMethodID( env, eis->jclazz, "sendEvent",
+		"(IZ)Z" );
+	if(eis->send_event == NULL) goto fail;
+
+	eis->checkMonitorThread = (*env)->GetMethodID( env, eis->jclazz,
+		"checkMonitorThread", "()Z" );
+	if(eis->checkMonitorThread == NULL) goto fail;
+
+
+end:
+	FD_ZERO( &eis->rfds );
+	FD_SET( eis->fd, &eis->rfds );
+	eis->tv_sleep.tv_sec = 0;
+	eis->tv_sleep.tv_usec = 10000;
+	eis->initialised = 1;
+	return( 1 );
+fail:
+	finalize_event_info_struct( eis );
+	return( 0 );
+}
+
+/*----------------------------------------------------------
+finalize_event_info_struct
+
+   accept:      event_info_struct for this thread.
+   perform:     free resources
+   return:      none
+   exceptions:  none
+   comments:    
+----------------------------------------------------------*/
+void finalize_event_info_struct( struct event_info_struct *eis )
+{
+	(*eis->env)->DeleteLocalRef( eis->env, eis->jclazz );
+}
+
+/*----------------------------------------------------------
 RXTXPort.eventLoop
 
    accept:      none
    perform:     periodically check for SerialPortEvents
    return:      none
    exceptions:  none
-   comments:
+   comments:	please keep this function clean.
 ----------------------------------------------------------*/
 JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 {
-	int fd, ret, change, rc;
-	fd_set rfds;
-#ifdef DEBUG_VERBOSE
-	char message[80];
-#endif /* DEBUG_VERBOSE */
-	unsigned int mflags, omflags;
-	jboolean interrupted = 0;
-#if defined TIOCSERGETLSR
-	struct stat fstatbuf;
-#endif /* TIOCSERGETLSR */
-
-#if defined(TIOCGICOUNT)
-	struct serial_icounter_struct sis, osis;
-	/* JK00: flag if this can be used on this port */
-	int has_tiocgicount = 1;
-#endif /* TIOCGICOUNT */
-
-#if defined(TIOCSERGETLSR)
-	int has_tiocsergetlsr = 1;
-#endif /* TIOCSERGETLSR */
-	struct timeval tv_sleep;
-#if defined (__sun__)
-	struct timespec retspec, tspec;
-	retspec.tv_sec = 0;
-	retspec.tv_nsec = 100000000;
-#endif  /* __sun__ */
+	struct event_info_struct eis;
+	eis.env = env;
+	eis.jobj = &jobj;
+	eis.initialised = 0;
 
 	ENTER( "RXTXPort:eventLoop" );
-	fd = get_java_var(env, jobj, "fd", "I" );
-
-#if defined(TIOCGICOUNT)
-	/* Some multiport serial cards do not implement TIOCGICOUNT ... */
-	/* So use the 'dumb' mode to enable using them after all! JK00 */
-	if( ioctl( fd, TIOCGICOUNT, &osis ) < 0 ) {
-#ifdef DEBUG_VERBOSE
-		report( "Port does not support TIOCGICOUNT events\n" );
-#endif /* DEBUG_VERBOSE */
-		has_tiocgicount = 0;
-	}
-#endif /*  TIOCGICOUNT */
-
-#if defined(TIOCSERGETLSR)
-	/* JK00: work around for multiport cards without TIOCSERGETLSR */
-	/* Cyclades is one of those :-(				       */
-	if( ioctl( fd, TIOCSERGETLSR, &change ) ) {
-		report( "Port does not support TIOCSERGETLSR\n" );
-			has_tiocsergetlsr = 0;
-	}
-#endif /* TIOCSERGETLSR */
-
-	if( ioctl( fd, TIOCMGET, &omflags) <0 ) {
-		report( "Port does not support events\n" );
-		LEAVE( "RXTXPort:eventLoop" );
- 		return;
-	}
-
-	FD_ZERO( &rfds );
-	while( !interrupted ) {
-		FD_SET( fd, &rfds );
-		tv_sleep.tv_sec = 0;
-		tv_sleep.tv_usec = 10000;
+	if ( !initialise_event_info_struct( &eis ) ) goto end;
+	unlock_monitor_thread( &eis );
+	do{
 		do {
-			ret=select( fd + 1, &rfds, NULL, NULL, &tv_sleep );
-		}  while (ret < 0 && errno==EINTR);
-		if( ret < 0 )
-		{
-			report( "eventLoop select returned < 0\n" );
-			break;
-		}
-
-		interrupted = is_interrupted(env, jobj);
-		if(interrupted)
-		{
-			report( "eventLoop detected interrupt. returning\n" );
-			LEAVE( "RXTXPort:eventLoop" );
-			return;
-		}
-		else
-		{
-#ifdef DEBUG_VERBOSE
-			report( "eventLoop did not detect MonThread closing\n" );
-#endif /* DEBUG_VERBOSE */
-		}
-
-
-#if defined TIOCSERGETLSR
-		/* JK00: work around for Multi IO cards without TIOCSERGETLSR */
-		if( has_tiocsergetlsr ) {
-			if (fstat(fd, &fstatbuf))
-			{
-				report( "eventLoop: fstat\n" );
-				break;
-			}
-			if( ioctl( fd, TIOCSERGETLSR, &change ) )
-			{
-				report( "TIOCSERGETLSR\n is nonnull\n" );
-				break;
-			}
-			else if( change )
-			{
-#ifdef DEBUG_VERBOSE
-				report( "sending OUTPUT_BUFFER_EMPTY\n" );
-#endif /* DEBUG_VERBOSE */
-				send_event( env, jobj, SPE_OUTPUT_BUFFER_EMPTY,
-					1 );
-			}
-		}
-#endif /* TIOCSERGETLSR */
-#if defined(TIOCGICOUNT)
-	/*	wait for RNG, DSR, CD or CTS  but not DataAvailable
-	 *      The drawback here is it never times out so if someone
-	 *      reads there will be no chance to try again.
-	 *      This may make sense if the program does not want to
-	 *      be notified of data available or errors.
-	 *	ret=ioctl(fd,TIOCMIWAIT);
-	 */
-		/* JK00: only use it if supported by this port */
-		if (has_tiocgicount) {
-			if( ioctl( fd, TIOCGICOUNT, &sis ) )
-			{
-				report( "TIOCGICOUNT\n is not 0\n" );
-				break;
-			}
-			while( sis.frame != osis.frame ) {
-				send_event( env, jobj, SPE_FE, 1);
-				osis.frame++;
-			}
-			while( sis.overrun != osis.overrun ) {
-				send_event( env, jobj, SPE_OE, 1);
-				osis.overrun++;
-			}
-			while( sis.parity != osis.parity ) {
-				send_event( env, jobj, SPE_PE, 1);
-				osis.parity++;
-			}
-			while( sis.brk != osis.brk ) {
-				send_event( env, jobj, SPE_BI, 1);
-				osis.brk++;
-			}
-			osis = sis;
-		}
-#endif /*  TIOCGICOUNT */
-		/* A Portable implementation */
-
-		if( ioctl( fd, TIOCMGET, &mflags ) )
-		{
-			report( "ioctl(TIOCMGET)\n" );
-			break;
-		}
-
-		change = (mflags&TIOCM_CTS) - (omflags&TIOCM_CTS);
-		if( change ) send_event( env, jobj, SPE_CTS, change );
-
-		change = (mflags&TIOCM_DSR) - (omflags&TIOCM_DSR);
-		if( change ) send_event( env, jobj, SPE_DSR, change );
-
-		change = (mflags&TIOCM_RNG) - (omflags&TIOCM_RNG);
-		if( change ) send_event( env, jobj, SPE_RI, change );
-
-		change = (mflags&TIOCM_CD) - (omflags&TIOCM_CD);
-		if( change ) send_event( env, jobj, SPE_CD, change );
-
-		omflags = mflags;
-
-		rc = ioctl( fd, FIONREAD, &change );
-#ifdef __unixware__
-		/*
-		   On SCO OpenServer FIONREAD always fails for serial devices,
-		   so rely upon select() result to know whether data available.
-		*/
-		if( (rc != -1 && change) || (rc == -1 && ret > 0) ) {
-#else
-#ifdef DEBUG_VERBOSE
-		sprintf( message, "change is %i\n", change );
-		report( message );
-#endif /* DEBUG_VERBOSE */
-		if( change )
-#endif /* __unixware__ */
-		{
-			if(!send_event( env, jobj, SPE_DATA_AVAILABLE, 1 ))
-			{
-				/* select wont block */
-#if defined (__sun__ )
-/*
-				do {
-					tspec = retspec;
-*/
-					nanosleep( &tspec, &retspec );
-/*
-				} while( tspec.tv_nsec != 0 );
-*/
-	/*
-		50 ms sleep to make sure read can get in
-
-		what I think is happening here is the data writen is causing
-		signals, the event loop can't select with data available
-
-		I think things like BlackBox with 2 ports open are getting
-		signals for both the reciever and transmitter since they
-		are the same PID.
-
-		Things just start spinning out of control after that.
-
-		sigh.. but this may be causing timeouts in some tests.
-	*/
-#else
-/*
-				usleep(10000);
-				usleep(50000);
-*/
-#endif /* __sun__ */
-			}
-		}
-	}
+			eis.ret = select( eis.fd + 1, &eis.rfds, NULL, NULL,
+					&eis.tv_sleep );
+		}  while ( eis.ret < 0 && errno == EINTR );
+		if( eis.ret >= 0 )
+			report_serial_events( &eis );
+		initialise_event_info_struct( &eis );
+	} while( !is_interrupted( &eis ) );
+	finalize_event_info_struct( &eis );
+end:
 	LEAVE( "RXTXPort:eventLoop" );
-	return;
 }
 
 /*----------------------------------------------------------
@@ -1920,6 +2029,7 @@ END:
 	LEAVE( "RXTXPort:testRead" );
 	return ret;
 }
+
 #if defined(__APPLE__)
 /*----------------------------------------------------------
  createSerialIterator()
@@ -2035,6 +2145,7 @@ registerKnownSerialPorts(JNIEnv *env, jobject jobj, jint portType) /* dima */
     return numPorts;
 }
 #endif /* __APPLE__ */
+
 /*----------------------------------------------------------
  registerKnownPorts
 
@@ -2079,7 +2190,6 @@ JNIEXPORT jboolean JNICALL RXTXCommDriver(registerKnownPorts)(JNIEnv *env,
 	return result;
 }
     
-
 /*----------------------------------------------------------
  isPortPrefixValid
 
@@ -2175,6 +2285,7 @@ JNIEXPORT void JNICALL RXTXPort(setInputBufferSize)(JNIEnv *env,
 {
 	report( "setInputBufferSize is not implemented\n" );
 }
+
 /*----------------------------------------------------------
  getIputBufferSize
 
@@ -2190,6 +2301,7 @@ JNIEXPORT jint JNICALL RXTXPort(getInputBufferSize)(JNIEnv *env,
 	report( "getInputBufferSize is not implemented\n" );
 	return(1);
 }
+
 /*----------------------------------------------------------
  setOutputBufferSize
 
@@ -2204,6 +2316,7 @@ JNIEXPORT void JNICALL RXTXPort(setOutputBufferSize)(JNIEnv *env,
 {
 	report( "setOutputBufferSize is not implemented\n" );
 }
+
 /*----------------------------------------------------------
  getOutputBufferSize
 
@@ -2223,29 +2336,21 @@ JNIEXPORT jint JNICALL RXTXPort(getOutputBufferSize)(JNIEnv *env,
 /*----------------------------------------------------------
  is_interrupted
 
-   accept:      
+   accept:      event_info_struct
    perform:     see if the port is being closed.
    return:      a positive value if the port is being closed.
    exceptions:  none
    comments:
 ----------------------------------------------------------*/
-jboolean is_interrupted(JNIEnv *env, jobject jobj)
+jboolean is_interrupted( struct event_info_struct *eis )
 {
-	jmethodID foo;
-	jclass jclazz;
 	int result;
-
-	(*env)->ExceptionClear(env);
+	JNIEnv *env = eis->env;
 
 	ENTER( "is_interrupted" );
-	jclazz = (*env)->GetObjectClass( env, jobj );
-	if(jclazz == NULL) return JNI_TRUE;
-
-	foo = (*env)->GetMethodID( env, jclazz, "checkMonitorThread", "()Z" );
-	if(foo == NULL) return JNI_TRUE;
-
-	result = (*env)->CallBooleanMethod( env, jobj, foo );
-
+	(*env)->ExceptionClear(env);
+	result = (*env)->CallBooleanMethod( env, *eis->jobj,
+			eis->checkMonitorThread );
 #ifdef DEBUG
 	if((*env)->ExceptionOccurred(env)) {
 		report ( "an error occured calling sendEvent()\n" );
@@ -2253,8 +2358,6 @@ jboolean is_interrupted(JNIEnv *env, jobject jobj)
 		(*env)->ExceptionClear(env);
 	}
 #endif /* DEBUG */
-	(*env)->DeleteLocalRef( env, jclazz );
-
 	LEAVE( "RXTXCommDriver:is_interrupted" );
 	return(result);
 }
@@ -2262,36 +2365,31 @@ jboolean is_interrupted(JNIEnv *env, jobject jobj)
 /*----------------------------------------------------------
  send_event
 
-   accept:      The event type and the event state
+   accept:      event_info_structure, event type and true/false
    perform:     if state is > 0 send a JNI_TRUE event otherwise send JNI_FALSE
    return:      a positive value if the port is being closed.
    exceptions:  none
    comments:
 ----------------------------------------------------------*/
-int send_event(JNIEnv *env, jobject jobj, jint type, int flag)
+int send_event( struct event_info_struct *eis, jint type, int flag )
 {
 	int result;
-	jmethodID foo;
-	jclass jclazz;
+	JNIEnv *env = eis->env;
 
 	ENTER( "send_event" );
-	jclazz = (*env)->GetObjectClass( env, jobj );
-	if(jclazz == NULL) return JNI_TRUE;
-	foo = (*env)->GetMethodID( env, jclazz, "sendEvent", "(IZ)Z" );
+	if(eis->jclazz == NULL) return JNI_TRUE;
 
 	(*env)->ExceptionClear(env);
 
-	result = (*env)->CallBooleanMethod( env, jobj, foo, type,
-		flag > 0 ? JNI_TRUE : JNI_FALSE );
+	result = (*env)->CallBooleanMethod( env, *eis->jobj, eis->send_event,
+		type, flag > 0 ? JNI_TRUE : JNI_FALSE );
 
 #ifdef DEBUG
-	if((*env)->ExceptionOccurred(env)) {
+	if((*eis->env)->ExceptionOccurred(eis->env)) {
 		report ( "an error occured calling sendEvent()\n" );
-		(*env)->ExceptionDescribe(env);
-		(*env)->ExceptionClear(env);
-	}
+		(*eis->env)->ExceptionDescribe(eis->env);
+		(*eis->env)->ExceptionClear(eis->env);
 #endif /* DEBUG */
-	(*env)->DeleteLocalRef( env, jclazz );
 	LEAVE( "send_event" );
 	return(result);
 }
@@ -2381,6 +2479,23 @@ void report_warning(char *msg)
 }
 
 /*----------------------------------------------------------
+ report_verbose
+
+   accept:      string to send to report as an verbose message
+   perform:     send the string to stderr or however it needs to be reported.
+   return:      none
+   exceptions:  none
+   comments:
+----------------------------------------------------------*/
+void report_verbose(char *msg)
+{
+#ifndef DEBUG_VERBOSE
+	fprintf(stderr, msg);
+#else
+	mexErrMsgTxt( msg );
+#endif /* DEBUG_VERBOSE */
+}
+/*----------------------------------------------------------
  report_error
 
    accept:      string to send to report as an error
@@ -2400,6 +2515,7 @@ void report_error(char *msg)
 	mexWarnMsgTxt( msg );
 #endif /* DEBUG_MW */
 }
+
 /*----------------------------------------------------------
  report
 
@@ -2484,6 +2600,7 @@ int fhs_lock( const char *filename )
 	close( fd );
 	return 0;
 }
+
 /*----------------------------------------------------------
  uucp_lock
 
@@ -2740,6 +2857,7 @@ int check_lock_pid( const char *file, int openpid )
 	}
 	return( 0 );
 }
+
 /*----------------------------------------------------------
  check_group_uucp
 
@@ -2775,14 +2893,15 @@ int check_group_uucp()
 	}
 	return 0;
 }
-/*
+
+/*----------------------------------------------------------
  The following should be able to follow symbolic links.  I think the stat
  method used below will work on more systems.  This was found while looking
  for information.
 
  * realpath() doesn't exist on all of the systems my code has to run
    on (HP-UX 9.x, specifically)
-
+----------------------------------------------------------
 int different_from_LOCKDIR(const char* ld)
 {
 	char real_ld[MAXPATHLEN];
