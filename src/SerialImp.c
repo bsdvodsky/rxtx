@@ -1540,7 +1540,29 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 
 		omflags = mflags;
 
-		ioctl( fd, FIONREAD, &change );
+		int rc = ioctl( fd, FIONREAD, &change );
+#ifdef __unixware__
+		/*
+		   On SCO OpenServer FIONREAD always fails for serial devices,
+		   so rely upon select() result to know whether data available.
+		*/
+		if( (rc != -1 && change) || (rc == -1 && ret > 0) ) {
+#else
+#ifdef DEBUG_VERBOSE
+		sprintf( message, "change is %i\n", change );
+		report( message );
+#endif /* DEBUG_VERBOSE */
+		if( change )
+#endif /* __unixware__ */
+		{
+			if(!send_event( env, jobj, SPE_DATA_AVAILABLE, 1 ))
+			{
+				/* select wont block */
+#if defined (__sun__ )
+			//	do {
+			//		tspec = retspec;
+					nanosleep( &tspec, &retspec );
+			//	} while( tspec.tv_nsec != 0 );
 	/*
 		50 ms sleep to make sure read can get in
 
@@ -1552,21 +1574,9 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 		are the same PID.
 
 		Things just start spinning out of control after that.
+
+		sigh.. but this may be causing timeouts in some tests.
 	*/
-#ifdef DEBUG_VERBOSE
-		sprintf( message, "change is %i\n", change );
-		report( message );
-#endif /* DEBUG_VERBOSE */
-		if( change )
-		{
-			if(!send_event( env, jobj, SPE_DATA_AVAILABLE, 1 ))
-			{
-				/* select wont block */
-#if defined (__sun__ )
-			//	do {
-			//		tspec = retspec;
-					nanosleep( &tspec, &retspec );
-			//	} while( tspec.tv_nsec != 0 );
 #else
 				//usleep(10000);
 				//usleep(50000);
