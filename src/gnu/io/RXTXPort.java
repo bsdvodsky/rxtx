@@ -32,13 +32,14 @@ import javax.comm.*;
 final public class RXTXPort extends SerialPort
 {
 
-	private static boolean debug = false;
-	private static boolean debug_verbose = false;
+	private final static boolean debug = false;
+	private final static boolean debug_verbose = false;
+	private final static boolean debug_events = false;
 	static
 	{
 		if(debug ) 
 			System.out.println("RXTXPort {}");
-		System.loadLibrary( "Serial" );
+		System.loadLibrary( "rxtxSerial" );
 		Initialize();
 	}
 
@@ -510,7 +511,7 @@ final public class RXTXPort extends SerialPort
 	*/
 	public boolean sendEvent( int event, boolean state )
 	{
-		if (debug_verbose)
+		if (debug_events)
 			System.out.print("RXTXPort:sendEvent(");
 		/* Let the native side know its time to die */
 
@@ -522,63 +523,63 @@ final public class RXTXPort extends SerialPort
 		switch( event )
 		{
 			case SerialPortEvent.DATA_AVAILABLE:
-				if( debug_verbose )
+				if( debug_events )
 					System.out.println( "DATA_AVAILABLE " +
 						monThread.Data + ")" );
 				break;
 			case SerialPortEvent.OUTPUT_BUFFER_EMPTY:
-				if( debug_verbose )
+				if( debug_events )
 					System.out.println(
 						"OUTPUT_BUFFER_EMPTY " +
 						monThread.Output + ")" );
 				break;
 			case SerialPortEvent.CTS:
-				if( debug_verbose )
+				if( debug_events )
 					System.out.println( "CTS " +
 						monThread.CTS + ")" );
 				break;
 			case SerialPortEvent.DSR:
-				if( debug_verbose )
+				if( debug_events )
 					System.out.println( "DSR " +
 						monThread.Output + ")" );
 				break;
 			case SerialPortEvent.RI:
-				if( debug_verbose )
+				if( debug_events )
 					System.out.println( "RI " +
 						monThread.RI + ")" );
 				break;
 			case SerialPortEvent.CD:
-				if( debug_verbose )
+				if( debug_events )
 					System.out.println( "CD " +
 						monThread.CD + ")" );
 				break;
 			case SerialPortEvent.OE:
-				if( debug_verbose )
+				if( debug_events )
 					System.out.println( "OE " +
 						monThread.OE + ")" );
 				break;
 			case SerialPortEvent.PE:
-				if( debug_verbose )
+				if( debug_events )
 					System.out.println( "PE " +
 						monThread.PE + ")" );
 				break;
 			case SerialPortEvent.FE:
-				if( debug_verbose )
+				if( debug_events )
 					System.out.println( "FE " +
 						monThread.FE + ")" );
 				break;
 			case SerialPortEvent.BI:
-				if( debug_verbose )
+				if( debug_events )
 					System.out.println( "BI " +
 						monThread.BI + ")" );
 				break;
 			default:
-				if( debug_verbose )
+				if( debug_events )
 					System.out.println( "XXXXXXXXXXXXXX " +
 						event + ")" );
 				break;
 		}
-		if( debug_verbose )
+		if( debug_events && debug_verbose )
 			System.out.println( "checking flags " );
 
 		switch( event )
@@ -617,22 +618,25 @@ final public class RXTXPort extends SerialPort
 				System.err.println("unknown event: " + event);
 				return(false);
 		}
-		if( debug_verbose )
+		if( debug_events && debug_verbose )
 			System.out.println( "getting event" );
 		SerialPortEvent e = new SerialPortEvent(this, event, !state,
 			state );
-		if( debug_verbose )
+		if( debug_events && debug_verbose )
 			System.out.println( "sending event" );
 		if(monThreadisInterrupted) 
 		{
-			if( debug_verbose )
+			if( debug_events )
 				System.out.println( "return" );
 			return(true);
 		}
-		if( SPEventListener != null ) SPEventListener.serialEvent( e );
+		if( SPEventListener != null )
+		{
+			SPEventListener.serialEvent( e );
+		}
 
-		if( debug_verbose )
-			System.out.println( "return" );
+		if( debug_events && debug_verbose )
+			System.out.println( "sendEvent return" );
 
 		if (fd == 0 ||  SPEventListener == null || monThread == null) 
 		{
@@ -976,10 +980,12 @@ final public class RXTXPort extends SerialPort
 		{
 			if (debug_verbose)
 				System.out.println("RXTXPort:SerialOutputStream:write(int)");
+	/* hmm this turns out to be a very bad idea
 			if ( monThreadisInterrupted == true )
 			{
 				throw new IOException( "Port has been Closed" );
 			}
+	*/
 			waitForTheNativeCodeSilly();
 			if ( fd == 0 ) throw new IOException();
 			writeByte( b );
@@ -994,10 +1000,12 @@ final public class RXTXPort extends SerialPort
 			{
 				System.out.println("Entering RXTXPort:SerialOutputStream:write(" + b.length + ") "/* + new String(b)*/ );
 			}
+	/* hmm this turns out to be a very bad idea
 			if ( monThreadisInterrupted == true )
 			{
 				throw new IOException( "Port has been Closed" );
 			}
+	*/
 			if ( fd == 0 ) throw new IOException();
 			waitForTheNativeCodeSilly();
 			writeArray( b, 0, b.length );
@@ -1027,10 +1035,12 @@ final public class RXTXPort extends SerialPort
 				System.out.println("Entering RXTXPort:SerialOutputStream:write(" + send.length + " " + off + " " + len + " " +") " /*+  new String(send) */ );
 			}
 			if ( fd == 0 ) throw new IOException();
+	/* hmm this turns out to be a very bad idea
 			if ( monThreadisInterrupted == true )
 			{
 				throw new IOException( "Port has been Closed" );
 			}
+	*/
 			waitForTheNativeCodeSilly();
 			writeArray( send, 0, len );
 			if( debug )
@@ -1043,15 +1053,14 @@ final public class RXTXPort extends SerialPort
 			if (debug)
 				System.out.println("RXTXPort:SerialOutputStream:flush() enter");
 			if ( fd == 0 ) throw new IOException();
+	/* hmm this turns out to be a very bad idea
 			if ( monThreadisInterrupted == true )
 			{
 				return;
-				/* FIXME Trent this breaks
-					InstrumentControlSerialPort = hGetPort
-					in Matlab.
-				*/
+				// FIXME Trent this breaks
 				//throw new IOException( "flush() Port has been Closed" );
 			}
+	*/
 			waitForTheNativeCodeSilly();
 			nativeDrain();
 			if (debug)
@@ -1071,12 +1080,16 @@ final public class RXTXPort extends SerialPort
 		{
 			if (debug_verbose)
 				System.out.println("RXTXPort:SerialInputStream:read()");
+	/* hmm this turns out to be a very bad idea
 			if ( monThreadisInterrupted ) return( -1 ) ;
+	*/
 			if ( fd == 0 ) throw new IOException();
+	/* hmm this turns out to be a very bad idea
 			if ( monThreadisInterrupted == true )
 			{
 				throw new IOException( "Port has been Closed" );
 			}
+	*/
 			waitForTheNativeCodeSilly();
 			int result = readByte();
 			if (debug)
@@ -1093,10 +1106,12 @@ final public class RXTXPort extends SerialPort
 			int result;
 			if (debug_verbose)
 				System.out.println("RXTXPort:SerialInputStream:read(" + b.length + ")");
+	/* hmm this turns out to be a very bad idea
 			if ( monThreadisInterrupted == true )
 			{
 				throw new IOException( "Port has been Closed" );
 			}
+	*/
 			waitForTheNativeCodeSilly();
 			result = read( b, 0, b.length);
 			if (debug)
@@ -1164,10 +1179,12 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 			 */
 				Minimum = Math.min(Minimum, threshold);
 			}
+	/* hmm this turns out to be a very bad idea
 			if ( monThreadisInterrupted == true )
 			{
 				throw new IOException( "Port has been Closed" );
 			}
+	*/
 			waitForTheNativeCodeSilly();
 			result = readArray( b, off, Minimum);
 			if (debug)
@@ -1180,10 +1197,12 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 	*/
 		public int available() throws IOException
 		{
+	/* hmm this turns out to be a very bad idea
 			if ( monThreadisInterrupted == true )
 			{
 				throw new IOException( "Port has been Closed" );
 			}
+	*/
 			int r = nativeavailable();
 			if ( debug_verbose && r > 0 )
 				System.out.println("available() returning " +
@@ -1241,12 +1260,42 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 
 /*------------------------  END OF CommAPI -----------------------------*/
 
+	private native static void nativeStaticSetSerialPortParams( String f,
+		int b, int d, int s, int p )
+		throws UnsupportedCommOperationException;
+	private native static boolean nativeStaticSetDSR( String port,
+							boolean flag )
+		throws UnsupportedCommOperationException;
 	private native static boolean nativeStaticSetDTR( String port,
 							boolean flag )
 		throws UnsupportedCommOperationException;
 	private native static boolean nativeStaticSetRTS( String port,
 							boolean flag )
 		throws UnsupportedCommOperationException;
+
+	private native static boolean nativeStaticIsDSR( String port )
+		throws UnsupportedCommOperationException;
+	private native static boolean nativeStaticIsDTR( String port )
+		throws UnsupportedCommOperationException;
+	private native static boolean nativeStaticIsRTS( String port )
+		throws UnsupportedCommOperationException;
+	private native static boolean nativeStaticIsCTS( String port )
+		throws UnsupportedCommOperationException;
+	private native static boolean nativeStaticIsCD( String port )
+		throws UnsupportedCommOperationException;
+	private native static boolean nativeStaticIsRI( String port )
+		throws UnsupportedCommOperationException;
+
+	private native static int nativeStaticGetBaudRate( String port )
+		throws UnsupportedCommOperationException;
+	private native static int nativeStaticGetDataBits( String port )
+		throws UnsupportedCommOperationException;
+	private native static int nativeStaticGetParity( String port )
+		throws UnsupportedCommOperationException;
+	private native static int nativeStaticGetStopBits( String port )
+		throws UnsupportedCommOperationException;
+
+
 	private native byte nativeGetParityErrorChar( )
 		throws UnsupportedCommOperationException;
 	private native boolean nativeSetParityErrorChar( byte b )
@@ -1281,10 +1330,137 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 	*  This is an extension to CommAPI.  It may not be supported on
 	*  all operating systems.
 	*
+	*  This is only accurate up to 38600 baud currently.
+	*
+	*  @param  port the name of the port thats been preopened
+	*  @return BaudRate on success
+	*  @throws UnsupportedCommOperationException;
+	*
+	*/
+	public static int staticGetBaudRate( String port )
+		throws UnsupportedCommOperationException
+	{
+		if ( debug )
+			System.out.println(
+				"RXTXPort:staticGetBaudRate( " + port + " )");
+		return(nativeStaticGetBaudRate( port ));
+	}
+	/**
+	*  Extension to CommAPI
+	*  This is an extension to CommAPI.  It may not be supported on
+	*  all operating systems.
+	*
+	*  @param  port the name of the port thats been preopened
+	*  @return DataBits on success
+	*  @throws UnsupportedCommOperationException;
+	*
+	*/
+	public static int staticGetDataBits( String port )
+		throws UnsupportedCommOperationException
+	{
+		if ( debug )
+			System.out.println(
+				"RXTXPort:staticGetDataBits( " + port + " )");
+		return(nativeStaticGetDataBits( port ) );
+	}
+
+	/**
+	*  Extension to CommAPI
+	*  This is an extension to CommAPI.  It may not be supported on
+	*  all operating systems.
+	*
+	*  @param  port the name of the port thats been preopened
+	*  @return Parity on success
+	*  @throws UnsupportedCommOperationException;
+	*
+	*/
+	public static int staticGetParity( String port )
+		throws UnsupportedCommOperationException
+	{
+		if ( debug )
+			System.out.println(
+				"RXTXPort:staticGetParity( " + port + " )");
+		return( nativeStaticGetParity( port ) );
+	}
+
+	/**
+	*  Extension to CommAPI
+	*  This is an extension to CommAPI.  It may not be supported on
+	*  all operating systems.
+	*
+	*  @param  port the name of the port thats been preopened
+	*  @return StopBits on success
+	*  @throws UnsupportedCommOperationException;
+	*
+	*/
+	public static int staticGetStopBits( String port )
+		throws UnsupportedCommOperationException
+	{
+		if ( debug )
+			System.out.println(
+				"RXTXPort:staticGetStopBits( " + port + " )");
+			return(nativeStaticGetStopBits( port ) );
+	}
+
+	/** 
+	*  Extension to CommAPI
+	*  This is an extension to CommAPI.  It may not be supported on
+	*  all operating systems.
+	*
+	*  Set the SerialPort parameters
+	*  1.5 stop bits requires 5 databits
+	*  @param  f filename
+	*  @param  b baudrate
+	*  @param  d databits
+	*  @param  s stopbits
+	*  @param  p parity
+	*
+	*  @throws UnsupportedCommOperationException
+	*  @see javax.comm.UnsupportedCommOperationException
+	*/
+
+	public static void staticSetSerialPortParams( String f, int b, int d,
+		int s, int p )
+		throws UnsupportedCommOperationException
+	{
+		if ( debug )
+			System.out.println(
+				"RXTXPort:staticSetSerialPortParams( " +
+				f + " " + b + " " + d + " " + s + " " + p );
+		nativeStaticSetSerialPortParams( f, b, d, s, p );
+	}
+
+	/**
+	*  Extension to CommAPI
+	*  This is an extension to CommAPI.  It may not be supported on
+	*  all operating systems.
+	*
+	*  Open the port and set DSR.  remove lockfile and do not close
+	*  This is so some software can appear to set the DSR before 'opening'
+	*  the port a second time later on.
+	*
+	*  @return true on success
+	*  @throws UnsupportedCommOperationException;
+	*
+	*/
+
+	public static boolean staticSetDSR( String port, boolean flag )
+		throws UnsupportedCommOperationException
+	{
+		if ( debug )
+			System.out.println( "RXTXPort:staticSetDSR( " + port +
+						" " + flag );
+		return( nativeStaticSetDSR( port, flag ) );
+	}
+
+	/**
+	*  Extension to CommAPI
+	*  This is an extension to CommAPI.  It may not be supported on
+	*  all operating systems.
+	*
 	*  Open the port and set DTR.  remove lockfile and do not close
-	*  This is so some software can appear to set the DTR before opening
-	*  the port a second time later on.  Open will raise the DTR and
-	*  DTR when called again later so setting DTR low will not do much.
+	*  This is so some software can appear to set the DTR before 'opening'
+	*  the port a second time later on.
 	*
 	*  @return true on success
 	*  @throws UnsupportedCommOperationException;
@@ -1306,9 +1482,8 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 	*  all operating systems.
 	*
 	*  Open the port and set RTS.  remove lockfile and do not close
-	*  This is so some software can appear to set the RTS before opening
-	*  the port a second time later on.  Open will raise the RTS and
-	*  RTS when called again later so setting RTS low will not do much.
+	*  This is so some software can appear to set the RTS before 'opening'
+	*  the port a second time later on.
 	*
 	*  @return none
 	*  @throws UnsupportedCommOperationException;
@@ -1323,6 +1498,128 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 						" " + flag );
 		return( nativeStaticSetRTS( port, flag ) );
 	}
+
+	/**
+	*  Extension to CommAPI
+	*  This is an extension to CommAPI.  It may not be supported on
+	*  all operating systems.
+	*
+	*  find the fd and return RTS without using a Java open() call
+	*
+	*  @param String port
+	*  @return boolean true if asserted
+	*  @throws UnsupportedCommOperationException;
+	*
+	*/
+
+	public static boolean staticIsRTS( String port )
+		throws UnsupportedCommOperationException
+	{
+		if ( debug )
+			System.out.println( "RXTXPort:staticIsRTS( " + port + " )" );
+		return( nativeStaticIsRTS( port ) );
+	}
+	/**
+	*  Extension to CommAPI
+	*  This is an extension to CommAPI.  It may not be supported on
+	*  all operating systems.
+	*
+	*  find the fd and return CD without using a Java open() call
+	*
+	*  @param String port
+	*  @return boolean true if asserted
+	*  @throws UnsupportedCommOperationException;
+	*
+	*/
+
+	public static boolean staticIsCD( String port )
+		throws UnsupportedCommOperationException
+	{
+		if ( debug )
+			System.out.println( "RXTXPort:staticIsCD( " + port + " )" );
+		return( nativeStaticIsCD( port ) );
+	}
+	/**
+	*  Extension to CommAPI
+	*  This is an extension to CommAPI.  It may not be supported on
+	*  all operating systems.
+	*
+	*  find the fd and return CTS without using a Java open() call
+	*
+	*  @param String port
+	*  @return boolean true if asserted
+	*  @throws UnsupportedCommOperationException;
+	*
+	*/
+
+	public static boolean staticIsCTS( String port )
+		throws UnsupportedCommOperationException
+	{
+		if ( debug )
+			System.out.println( "RXTXPort:staticIsCTS( " + port + " )" );
+		return( nativeStaticIsCTS( port ) );
+	}
+	/**
+	*  Extension to CommAPI
+	*  This is an extension to CommAPI.  It may not be supported on
+	*  all operating systems.
+	*
+	*  find the fd and return DSR without using a Java open() call
+	*
+	*  @param String port
+	*  @return boolean true if asserted
+	*  @throws UnsupportedCommOperationException;
+	*
+	*/
+
+	public static boolean staticIsDSR( String port )
+		throws UnsupportedCommOperationException
+	{
+		if ( debug )
+			System.out.println( "RXTXPort:staticIsDSR( " + port + " )" );
+		return( nativeStaticIsDSR( port ) );
+	}
+	/**
+	*  Extension to CommAPI
+	*  This is an extension to CommAPI.  It may not be supported on
+	*  all operating systems.
+	*
+	*  find the fd and return DTR without using a Java open() call
+	*
+	*  @param String port
+	*  @return boolean true if asserted
+	*  @throws UnsupportedCommOperationException;
+	*
+	*/
+
+	public static boolean staticIsDTR( String port )
+		throws UnsupportedCommOperationException
+	{
+		if ( debug )
+			System.out.println( "RXTXPort:staticIsDTR( " + port + " )" );
+		return( nativeStaticIsDTR( port ) );
+	}
+	/**
+	*  Extension to CommAPI
+	*  This is an extension to CommAPI.  It may not be supported on
+	*  all operating systems.
+	*
+	*  find the fd and return RI without using a Java open() call
+	*
+	*  @param String port
+	*  @return boolean true if asserted
+	*  @throws UnsupportedCommOperationException;
+	*
+	*/
+
+	public static boolean staticIsRI( String port )
+		throws UnsupportedCommOperationException
+	{
+		if ( debug )
+			System.out.println( "RXTXPort:staticIsRI( " + port + " )" );
+		return( nativeStaticIsRI( port ) );
+	}
+
 
 	/**
 	*  Extension to CommAPI

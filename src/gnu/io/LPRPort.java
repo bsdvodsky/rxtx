@@ -33,13 +33,13 @@ final class LPRPort extends ParallelPort
 {
 
 	static {
-		System.loadLibrary( "Parallel" );
+		System.loadLibrary( "rxtxParallel" );
 		Initialize();
 	}
 
 	/** Initialize the native library */
 	private native static void Initialize();
-	private static boolean debug = false;
+	private final static boolean debug = false;
 
 	/** Open the named port */
 	public LPRPort( String name ) throws PortInUseException

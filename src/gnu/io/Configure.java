@@ -74,7 +74,7 @@ class Configure extends Frame
 		int Height= 480;
 		cb = new Checkbox[128];
 		final Frame f = new Frame(
-			"Configure javax.comm.rxtx.properties");
+			"Configure gnu.io.rxtx.properties");
 		String fileSep = System.getProperty( "file.separator", "/" );
 		String devPath;
 		if( fileSep.compareTo( "/" ) != 0 )
@@ -157,6 +157,6 @@ class Configure extends Frame
 	{
 		new Configure();
 	}
-	String EnumMessage = new String( "javax.comm.comm.properties has not been detected.\n\nThere is no consistant means of detecting ports on this operating System.  It is necessary to indicate which ports are valid on this system before proper port enumeration can happen.  Please check the ports that are valid on this system and select Save");
+	String EnumMessage = new String( "gnu.io.comm.properties has not been detected.\n\nThere is no consistant means of detecting ports on this operating System.  It is necessary to indicate which ports are valid on this system before proper port enumeration can happen.  Please check the ports that are valid on this system and select Save");
 }
 

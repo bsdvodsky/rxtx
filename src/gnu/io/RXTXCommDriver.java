@@ -36,12 +36,12 @@ import javax.comm.*;
 public class RXTXCommDriver implements CommDriver
 {
 
-	private static boolean debug = false;
+	private final static boolean debug = false;
 
 	static
 	{
 		if(debug ) System.out.println("RXTXCommDriver {}");
-		System.loadLibrary( "Serial" );
+		System.loadLibrary( "rxtxSerial" );
 
 		/*
 		   Perform a crude check to make sure people don't mix
@@ -383,12 +383,12 @@ public class RXTXCommDriver implements CommDriver
 		{
 			String[] temp = 
 			/*
-					{ "//./COM1", "//./COM2", "//./COM3",
-					"//./COM4", "//./COM5", "//./COM6",
-					"//./COM7", "//./COM8" };
+					{ "//./COM1:", "//./COM2:", "//./COM3:",
+					"//./COM4:", "//./COM5:", "//./COM6:",
+					"//./COM7:", "//./COM8:" };
 			*/
-			{ "COM1", "COM2","COM3","COM4",
-			"COM5", "COM6", "COM7", "COM8" };
+			{ "COM1:", "COM2:","COM3:","COM4:",
+			"COM5:", "COM6:", "COM7:", "COM8:" };
 			CandidateDeviceNames=temp;
 		}
 		else if ( osName.equals("Solaris") || osName.equals("SunOS"))
@@ -435,9 +435,11 @@ public class RXTXCommDriver implements CommDriver
 			dev = new File( "/dev/term" );
 			if( dev.list().length > 0 );
 				term[l++] = new String( "term/" );
+/*
 			dev = new File( "/dev/cua0" );
 			if( dev.list().length > 0 );
 				term[l++] = new String( "cua/" );
+*/
 			String[] temp = new String[l];
 			for(l--;l >= 0;l--)
 				temp[l] = term[l];
