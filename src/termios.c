@@ -1100,7 +1100,7 @@ serial_write()
    exceptions:  
    win32api:     WriteFile(), GetLastError(), ClearError(),
                  WaitForSingleObject(),  GetOverlappedResult(),
-                 FlushFileBuffers(), Sleep()
+                 Sleep()
    comments:    
 ----------------------------------------------------------*/
 
@@ -1152,7 +1152,7 @@ int serial_write( int fd, char *Str, int length )
 	{
 		YACK();
 	}
-	if ( FlushFileBuffers( index->hComm ) )
+	if ( tcdrain( fd ) )
 	{
 		YACK();
 	}
@@ -1894,24 +1894,40 @@ int tcsendbreak( int fd, int duration )
 /*----------------------------------------------------------
 tcdrain()
 
-   accept:      
-   perform:     
-   return:      
-   exceptions:  
-   win32api:     None
+   accept:       file descriptor
+   perform:      wait for ouput to be written.
+   return:       0 on success, -1 otherwise
+   exceptions:   None
+   win32api:     FlushFileBuffers
    comments:    
 ----------------------------------------------------------*/
 
 int tcdrain ( int fd )
 {
-	/* FIXME block until all queued output has been transmitted */
-	return 1;
+	struct termios_list *index;
+	char message[80];
+
+	index = find_port( fd );
+
+	if ( !index )
+	{
+		sprintf( message, "No info known about the port. ioctl %i\n",
+			fd );
+		report_error( message );
+		return -1;
+	}
+	if ( FlushFileBuffers( index->hComm ) )
+	{
+		YACK();
+		return -1;
+	}
+	return 0;
 }
 
 /*----------------------------------------------------------
 tcflush()
 
-   accept:       file descriptor, 
+   accept:       file descriptor, queue_selector 
    perform:      discard data not transmitted or read
 		 TCIFLUSH:  flush data not read
 		 TCOFLUSH:  flush data not transmitted
