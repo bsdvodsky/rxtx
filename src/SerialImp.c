@@ -93,7 +93,6 @@ int cfmakeraw ( struct termios *term )
 	term->c_cflag |= CS8;
 	return( 0 );
 }
-
 #endif /* __sun__ */
 #if defined(__hpux__)
 #	include <sys/modem.h>
@@ -213,7 +212,7 @@ JNIEXPORT jint JNICALL RXTXPort(open)(
 			fhs_lock		Linux
 			system_does_not_lock	Win32
 	*/
-			
+
 	if ( LOCK( filename) )
 	{
 		(*env)->ReleaseStringUTFChars( env, jstr, filename );
@@ -2114,7 +2113,6 @@ int uucp_lock( const char *filename )
 	return 0;
 }
 
-
 /*----------------------------------------------------------
  check_lock_status
 
@@ -2316,9 +2314,9 @@ int is_device_locked( const char *filename )
 	const char *lockdirs[] = { "/etc/locks", "/usr/spool/kermit",
 		"/usr/spool/locks", "/usr/spool/uucp", "/usr/spool/uucp/",
 		"/usr/spool/uucp/LCK", "/var/lock", "/var/lock/modem",
-		"/var/spool/lock", "/var/spool/locks", "/var/spool/uucp",NULL
+		"/var/spool/lock", "/var/spool/locks", "/var/spool/uucp", NULL
 	};
-	const char *lockprefixes[] = { "LK..", "lk..", "LK." }; 
+	const char *lockprefixes[] = { "LK..", "lk..", "LK.", NULL }; 
 	char *p, file[80], pid_buffer[20], message[80];
 	int i = 0, j, k, fd , pid;
 	struct stat buf;
