@@ -432,8 +432,8 @@ public class RXTXCommDriver implements CommDriver
 					String[] Temp = {
 						"tty0p",// HP-UX serial ports
 						"tty1p" // HP-UX serial ports
-				};
-				AllKnownSerialPorts=Temp;
+					};
+					CandidatePortPrefixes=Temp;
 				}
 
 				else if(osName.equals("UnixWare") ||
@@ -445,7 +445,7 @@ public class RXTXCommDriver implements CommDriver
 						"tty02s",
 						"tty03s" 
 					};
-					AllKnownSerialPorts=Temp;
+					CandidatePortPrefixes=Temp;
 				}
 
 			else if	(osName.equals("OpenServer"))
