@@ -51,6 +51,13 @@ fi
 	*);;
 esac]
 TOP="`pwd`"
+AC_ARG_ENABLE(PRINTER,
+   [  --enable-PRINTER        PRINTER support (experimental) [default=no]], echo $enable_PRINTER, enable_PRINTER="no")
+   if test x$enable_PRINTER = xyes; then  
+	TARGETLIB="\$(TOP)/\$(target_alias)/libSerial.la \$(TOP)/\$(target_alias)/libParallel.la"
+   else
+	TARGETLIB="\$(TOP)/\$(target_alias)/libSerial.la"
+   fi
 AC_ARG_ENABLE(VERBOSE,
    [  --enable-VERBOSE        more verbose native io messages [default=yes]],echo $enable_VERBOSE, enable_VERBOSE="yes")
    if test x$enable_VERBOSE = xno; then 
@@ -121,7 +128,6 @@ if test "$JPATH" = ""; then
       JPATH="`echo $JDK_HOME/`"
    fi
 fi
-TARGETLIB="libSerial.la"
 JAVANATINC="\$(JPATH)`cd $JPATH; find ./include -name jni_md.h|sed s#jni_md\\\\.h##|sed s#\\\\.\\\\/##`"
 JAVAINCLUDE="\$(JPATH)include"
 JCLASSPATH="-classpath \$(TOP):\$(TOP)/src:\$(JPATH)lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar.:$CLASSPATH"
