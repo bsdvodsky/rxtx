@@ -1367,9 +1367,9 @@ init_threads (struct event_info_struct *eis)
   pthread_detach (tid);
 #endif /* TIOCSERGETLSR */
   report ("init_threads: get eis\n");
-  jeis = (*eis->env)->GetFieldID (eis->env, eis->jclazz, "eis", "I");
+  jeis = (*eis->env)->GetFieldID( eis->env, eis->jclazz, "eis", "J" );
   report ("init_threads: set eis\n");
-  (*eis->env)->SetIntField (eis->env, *eis->jobj, jeis, (jint) eis);
+  (*eis->env)->SetIntField(eis->env, *eis->jobj, jeis, ( size_t ) eis );
   report ("init_threads:  stop\n");
   report_time_end ();
   return (1);
@@ -1571,7 +1571,7 @@ JNIEXPORT jboolean JNICALL RXTXPort (nativeDrain) (JNIEnv * env,
 {
   int fd = get_java_var (env, jobj, "fd", "I");
   struct event_info_struct *eis =
-    (struct event_info_struct *) get_java_var (env, jobj, "eis", "I");
+    (struct event_info_struct *) get_java_var (env, jobj, "eis", "J");
   int result, count = 0;
 
   char message[80];
@@ -3065,7 +3065,7 @@ read_byte_array (JNIEnv * env,
   /* TRENT */
   int flag, count = 0;
   struct event_info_struct *eis = (struct event_info_struct *)
-    get_java_var (env, *jobj, "eis", "I");
+    get_java_var (env, *jobj, "eis", "J");
 
   report_time_start ();
   flag = eis->eventflags[SPE_DATA_AVAILABLE];
@@ -3537,7 +3537,7 @@ JNIEXPORT jint JNICALL RXTXPort (readArray) (JNIEnv * env,
 	ENTER( "readArray" );
 	report_time_start( );
 */
-  if (length > SSIZE_MAX || length < 0)
+  if( (size_t) length > SSIZE_MAX || (size_t) length < 0 ) {
     {
       report ("RXTXPort:readArray length > SSIZE_MAX");
       LEAVE ("RXTXPort:readArray");
@@ -3597,7 +3597,7 @@ JNIEXPORT jint JNICALL RXTXPort (readTerminatedArray) (JNIEnv * env,
 	ENTER( "readArray" );
 	report_time_start( );
 */
-  if (length > SSIZE_MAX || length < 0)
+  if( (size_t) length > SSIZE_MAX || (size_t) length < 0 ) {
     {
       report ("RXTXPort:readArray length > SSIZE_MAX");
       LEAVE ("RXTXPort:readArray");
