@@ -16,10 +16,14 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
-This is the INSTALL file for RXTX.  Thu Oct  4 19:34:31 MDT 2001
+This is the INSTALL file for RXTX.  Tue Nov 13 14:28:41 MST 2001
 
 If, while following the instructions, you find this file unclear or incorrect 
 please make a note and email the details to trentjarvi@yahoo.com.  
+
+A note on Mac OS X:
+
+	Go to the MacOSX file for install instructions. 
 
 1.  INSTALL INSTRUCTIONS IN OTHER LANGUAGES
 
@@ -91,10 +95,10 @@ A.  Japanese
 
 	The following packages are used to build rxtx:
 
-		autoconf 2.13
-		automake 1.4
-		libtool  1.3.5
-		gnu make 3.79.1
+		autoconf-2.13
+		automake-1.4
+		libtool-1.3.5
+		gnu make-3.79.1
 		jdk 1.1 or newer	Preferably the native threads version of
 		                        jdk. 
 		commapi 2.0             the x86 Solaris version
@@ -137,6 +141,10 @@ A.  Japanese
 		jdk-1.2 and newer:
 
 			/usr/local/java/jre/lib/ext/comm.jar
+
+		IBM's comm.jar remaps 'COM1' to '/dev/ttyS0.'  It is not
+		recommended to try mixing IBM's comm.jar and rxtx-1.4 at
+		this time.  If you do try it, Watch out for the above.
 
 	C.  Installing javax.comm.properties.
 
@@ -344,7 +352,7 @@ A.  Japanese
 
 			rxtx-*/build/...
 
-		If your looking at rxtx as an example of cross-compiling you 
+		If you're looking at rxtx as an example of cross-compiling you 
 		may be interested in looking at the examples provided at:
 
 			ftp.xraylith.wisc.edu
@@ -444,7 +452,7 @@ C.  No serial ports found!
  
 D.  I Can Not Open the Port.
 
-	If your not able to open the port (read the errors carefully) then you 
+	If you're not able to open the port (read the errors carefully) then you
 	may not have permission to use the device.  Redhat Linux ships with the
 	following permissions:
 
@@ -546,7 +554,7 @@ L.  AM_PROG_LIBTOOL not found in library
 	aclocal:configure.in: 23: macro 'AM_PROG_LIBTOOL' not found in library
 	make:***[aclocal.m4]Error 1
 
-	If your positive things are setup right you may try the autogen.sh 
+	If you're positive things are setup right you may try the autogen.sh 
 	script to try regenerating the scripts with your tools.
 
 M.  Problems with RMISecurityManager()
@@ -694,7 +702,7 @@ Do not change the number (14).  Whatever is in your group file is correct.
 User jarvi in this case can now use rxtx with lock files.
 
 The lock file code does not support kermit style lock files or lock files in
-/var/spool.  Its sure to fail if your using subdirectories in /dev or do not
+/var/spool.  Its sure to fail if you're using subdirectories in /dev or do not
 have /dev.
 
 	Still cant get things to run under a root account?
@@ -726,7 +734,7 @@ an example would be:
 
         "RXTX-1.5-4"
 
-A change in the MAJOR version would suggest your in trouble.
+A change in the MAJOR version would suggest you're in trouble.
 
 Odd MINOR version are reserved for development.  Even MINOR versions are
 reserved for 'stable' releases.
