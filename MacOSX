@@ -116,8 +116,18 @@ dimitry.markman@verizon.net
 Dmitry Markman, PhD
 
 --------------------- GNU Tool Builds -----------------------
+Last modified:  Thu Oct 18 23:10:04 2001 
+put information about installing libtoolize tool for MAC OS X
 
-./autogen.sh
+install libtoolize utility (glibtoolize utility that Apple provides 
+doesn't work)
+
+so MAC OS X NEED:
+autoconf 2.13
+automake 1.4
+libtool 1.4
+
+./autogen.sh (this calls libtoolize and the above utilities)
 ./configure
 sudo make install
 
@@ -125,4 +135,8 @@ works just fine
 
 Dmitry Markman, PhD
 
+Maintainer's note:
 
+	Jump for joy.  You can't imagine how many hours went into figuring out
+	how to get this to work on Mac OS X.  Joseph and Dmitry worked very
+	hard to make that happen.

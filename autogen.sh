@@ -75,9 +75,7 @@ do
     	    if test -d $k; then aclocalinclude="$aclocalinclude -I $k"; \
     	    else echo "**Warning**: No such directory \`$k'.  Ignored."; fi; \
     	done; \
-	if test `uname` != "Darwin"; then
-    		libtoolize --copy --force;
-	fi
+    	libtoolize --copy --force; \
     	aclocal $aclocalinclude; \
     	autoheader; automake --add-missing --gnu; autoheader; autoconf)
     fi
