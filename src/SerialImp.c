@@ -870,18 +870,22 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 			(*env)->CallVoidMethod( env, jobj, method, (jint)SPE_BI, JNI_TRUE );
 			osis.brk++;
 		}
+#else
+		if( ioctl( fd, FIONREAD, &change ) ) break;
+		if( change ) (*env)->CallVoidMethod( env, jobj, method,
+			(jint)SPE_DATA_AVAILABLE, JNI_TRUE );
 #endif /* FULL_EVENT */
 		change = sis.cts - osis.cts;
-		if( change ) send_modem_events( env, jobj, method, SPE_CTS, change,
+		if( change ) send_modem_events( env, jobj, method, SPE_CTS, abs(change),
 			mflags & TIOCM_CTS );
 		change = sis.dsr - osis.dsr;
-		if( change ) send_modem_events( env, jobj, method, SPE_DSR, change,
+		if( change ) send_modem_events( env, jobj, method, SPE_DSR, abs(change),
 			mflags & TIOCM_DSR );
 		change = sis.rng - osis.rng;
 		if( change ) send_modem_events( env, jobj, method, SPE_RI, change,
 			mflags & TIOCM_RNG );
 		change = sis.dcd - osis.dcd;
-		if( change ) send_modem_events( env, jobj, method, SPE_CD, change,
+		if( change ) send_modem_events( env, jobj, method, SPE_CD, abs(change),
 			mflags & TIOCM_CD );
 		osis = sis;
 		interrupted = (*env)->CallStaticBooleanMethod( env, jthread, interrupt );

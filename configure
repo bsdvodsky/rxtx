@@ -1950,7 +1950,7 @@ if test "$CC" = "egcs"; then
 fi
 case "$host_os" in
 	*-gnu)
-	CFLAGS="$CFLAGS -ansi";;
+	CFLAGS="$CFLAGS -ansi -D_POSIX_SOURCE";;
 	*);;
 esac
 TOP="`pwd`"
@@ -1985,7 +1985,7 @@ fi
 #      VERBOSE_IOEXCEPTIONS="-DNO_VERBOSE_IOEXCEPTIONS"
 #   fi
    if test "$CC" = "gcc"; then
-      CFLAGS="$CFLAGS -D_POSIX_SOURCE -D_BSD_SOURCE"
+      CFLAGS="$CFLAGS -D_BSD_SOURCE"
    else
       case "$host_os" in
          irix*)
