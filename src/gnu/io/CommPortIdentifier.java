@@ -33,7 +33,7 @@ public class CommPortIdentifier
 	public static final int PORT_I2C      = 3;  // i2c Port
 	public static final int PORT_RS485    = 4;  // rs485 Port
 	private String PortName;
-	private boolean Available;    
+	private boolean Available = true;    
 	private String Owner;    
 	private CommPort commport;
 	private CommDriver RXTXDriver;
@@ -72,11 +72,11 @@ public class CommPortIdentifier
 	}
 	CommPortIdentifier ( String pn, CommPort cp, int pt, CommDriver driver) 
 	{
-		this.PortName	= pn;
-		this.commport	= cp;
-		this.PortType	= pt;
-		this.next	= null;
-		this.RXTXDriver	= driver;
+		PortName        = pn;
+		commport        = cp;
+		PortType        = pt;
+		next            = null;
+		RXTXDriver      = driver;
 
 	}
 
@@ -165,8 +165,7 @@ public class CommPortIdentifier
 	public String getName() 
 	{ 
 		if(debug) System.out.println("CommPortIdentifier:getName()");
-		String s = new String();
-		return(s);
+		return(this.PortName);
 	}
 /*------------------------------------------------------------------------------
 	getPortIdentifier()
@@ -280,12 +279,17 @@ public class CommPortIdentifier
 
 	public synchronized CommPort open(String TheOwner, int i) throws PortInUseException 
 	{ 
-		commport = RXTXDriver.getCommPort(PortName,PortType);
 		if(debug) System.out.println("CommPortIdentifier:open("+TheOwner + ", " +i+")");
+		commport = RXTXDriver.getCommPort(PortName,PortType);
 		if(Available)
 		{
+			if (debug) System.out.println("RXTXDriver.getCommPort() Worked!");
 			Available = false;
 			Owner = TheOwner;
+			if (commport==null)
+			{
+				if (debug) System.out.println("RXTXDriver.getCommPort() failed");
+			}
 			return commport;
 		}
 		/* 
@@ -293,6 +297,7 @@ public class CommPortIdentifier
 		NativeFindOwner(PortName);
 		throw new PortInUseException(); 
 		*/
+		if (debug) System.out.println("RXTXDriver.getCommPort() Yikes!");
 		return null;
 	}
 /*------------------------------------------------------------------------------
@@ -305,6 +310,7 @@ public class CommPortIdentifier
 ------------------------------------------------------------------------------*/
 	public void removePortOwnershipListener(CommPortOwnershipListener c) 
 	{ 
+		Available=true;
 		if(debug) System.out.println("CommPortIdentifier:removePortOwnershipListener()");
 	}
 
