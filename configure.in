@@ -621,8 +621,8 @@ UnixWare|OpenUNIX)
 	JHOME=$JPATH/"jre/lib"
 	CFLAGS="$CFLAGS -D_NO_POSIX=1 -D_NO_XOPEN4=1 -D__unixware__"
 	CLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:\$(JPATH)/jre/lib/rt.jar:\$(JPATH)/jre/lib/ext/comm.jar"
-	TARGETLIB="\$(target_alias)/libSerial.o \
-		\$(target_alias)/libParallel.o"
+	TARGETLIB="\$(target_alias)/libSerial.so \
+		\$(target_alias)/libParallel.so"
 	echo "In UnixWare, CLASSPATH is $CLASSPATH"     
 ;;
 
