@@ -700,7 +700,10 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_readArray( JNIEnv *env,
 	jfield = (*env)->GetFieldID( env, jclazz, "timeout", "I" );
 	timeout = (int)( (*env)->GetIntField( env, jobj, jfield ) );
 
-	if( length < 1 || length > SSIZE_MAX ) {
+	if( length < 1 ) {
+		return 0;
+	}
+	if( length > SSIZE_MAX ) {
 		IOException( env,"readArray", "Invalid length" );
 		return -1;
 	}
