@@ -3167,8 +3167,8 @@ int is_device_locked( const char *port_filename )
 				k++;
 			}
 		}
+		i++;
 	}
-	i++;
 
 	/*
 		OK.  We think there are no unexpect lock files for this device
