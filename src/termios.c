@@ -40,7 +40,8 @@
 #define SIGIO 0
 
 int my_errno;
-struct termios_list {
+struct termios_list
+{
 	char *filename;
 	int my_errno;
 	HANDLE hComm;
@@ -49,9 +50,9 @@ struct termios_list {
 	OVERLAPPED rol;
 	OVERLAPPED wol;
 	OVERLAPPED sol;
- 	int fd;
- 	struct termios_list *next;
- 	struct termios_list *prev;
+	int fd;
+	struct termios_list *next;
+	struct termios_list *prev;
 };
 struct termios_list *first_tl = NULL;
 
@@ -111,7 +112,8 @@ void dump_termios_list( char *foo )
 #endif
 }
 
-void set_errno(int error) {
+void set_errno(int error)
+{
 	my_errno = error;
 }
 
@@ -140,14 +142,18 @@ CBR_toB()
    comments:    
 ----------------------------------------------------------*/
 
-int CBR_to_B(int Baud) {
-	switch (Baud) {
+int CBR_to_B(int Baud)
+{
+	switch (Baud)
+	{
 
 		case 0:			return(B0);
+		//hosed case 50:		return(B50);
 		case 75:		return(B75);
 		case CBR_110:		return(B110);
 		case 134:		return(B134);
 		case 150:		return(B150);
+		// hosed case 200:		return(B200);
 		case CBR_300:		return(B300);
 		case CBR_600:		return(B600);
 		case CBR_1200:		return(B1200);
@@ -156,11 +162,13 @@ int CBR_to_B(int Baud) {
 		case CBR_4800:		return(B4800);
 		case CBR_9600:		return(B9600);
 		case CBR_19200:		return(B19200);
+		//hosed case CBR_28800:		return(B28800);
 		case CBR_38400:		return(B38400);
 		case CBR_57600:		return(B57600);
 		case CBR_115200:	return(B115200);
 		/*  14400, 128000 and 256000 are windows specific but need to
 		 *  work.
+		 *  hosed on my hardware....
 		 */
 		case CBR_14400:		return(B14400);
 		case CBR_128000:	return(B128000);
@@ -199,11 +207,13 @@ B_to_CBR()
    comments:    
 ----------------------------------------------------------*/
 
-int B_to_CBR(int Baud) {
+int B_to_CBR(int Baud)
+{
 	int ret;
 	int br;
 	ENTER("B_to_CBR");
-	switch (Baud) {
+	switch (Baud)
+	{
 		case 0:		br = 0;		ret = 0;		break;
 		case B75:	br = 75;	ret = 75;		break;
 		case B110:	br = 110;	ret = CBR_110;		break;
@@ -267,8 +277,10 @@ bytesize_to_termios()
    comments:    
 ----------------------------------------------------------*/
 
-int bytesize_to_termios(int ByteSize){
-	switch (ByteSize) {
+int bytesize_to_termios(int ByteSize)
+{
+	switch (ByteSize)
+	{
 		case 5: return(CS5);
 		case 6: return(CS6);
 		case 7: return(CS7);
@@ -287,8 +299,10 @@ termios_to_bytesize()
    comments:    
 ----------------------------------------------------------*/
 
-int termios_to_bytesize(int cflag) {
-	switch (cflag) {
+int termios_to_bytesize(int cflag)
+{
+	switch (cflag)
+{
 		case CS5: return(5);
 		case CS6: return(6);
 		case CS7: return(7);
@@ -327,7 +341,8 @@ ClearError()
    comments:    
 ----------------------------------------------------------*/
 
-static BOOL ClearError(HANDLE hComPort) {
+static BOOL ClearError(HANDLE hComPort)
+{
 	COMSTAT Stat;
 	DWORD ErrCode;
 
@@ -344,11 +359,13 @@ FillDCB()
    comments:    
 ----------------------------------------------------------*/
 
-BOOL FillDCB(DCB *dcb, HANDLE hCommPort, COMMTIMEOUTS Timeout) {
+BOOL FillDCB(DCB *dcb, HANDLE hCommPort, COMMTIMEOUTS Timeout)
+{
 
 	ENTER("FillDCB");
 	dcb->DCBlength = sizeof(dcb);
-	if (!GetCommState(hCommPort, dcb)) {
+	if (!GetCommState(hCommPort, dcb))
+{
 		printf("GetCommState\n");
 		return(-1);
 	}
@@ -370,13 +387,15 @@ BOOL FillDCB(DCB *dcb, HANDLE hCommPort, COMMTIMEOUTS Timeout) {
 	dcb->XoffLim         = 0;
 	dcb->fParity = TRUE;
 	if (EV_BREAK|EV_CTS|EV_DSR|EV_ERR|EV_RING|(EV_RLSD & EV_RXFLAG))
-		dcb->EvtChar = '\n';      
+		dcb->EvtChar = '\n'; 
 	else dcb->EvtChar = '\0';
-	if (!SetCommState(hCommPort, dcb)) {
+	if (!SetCommState(hCommPort, dcb))
+	{
 		printf("SetCommState\n");
 		return(-1);
 	}
-	if (!SetCommTimeouts(hCommPort, &Timeout)) {
+	if (!SetCommTimeouts(hCommPort, &Timeout))
+	{
 		printf("SetCommTimeouts\n");
 		return(-1);
 	}
@@ -494,7 +513,8 @@ init_termios()
    comments:    
 ----------------------------------------------------------*/
 
-BOOL init_termios(struct termios *ttyset) {
+BOOL init_termios(struct termios *ttyset)
+{
 	ENTER("init_termios");
 	if (!ttyset)
 		return FALSE;
@@ -580,7 +600,8 @@ int open_port( struct termios_list *port )
 		FILE_FLAG_OVERLAPPED,
 		0
 	);
-	if (port->hComm == INVALID_HANDLE_VALUE) {
+	if (port->hComm == INVALID_HANDLE_VALUE)
+	{
 		errno = EINVAL;
 		//printf("open failed %s\n", port->filename);
 		return -1;
@@ -795,7 +816,8 @@ int check_port_capabilities( struct termios_list *index )
 		printf("%s: no RTS & CTS support\n", index->filename);
 	if (!(cp.dwProvCapabilities & PCF_TOTALTIMEOUTS))
 		printf("%s: no timeout support\n", index->filename);
-	if (!GetCommState(index->hComm, &dcb)) {
+	if (!GetCommState(index->hComm, &dcb))
+	{
 		printf("GetCommState\n");
 		return -1;
 	}
@@ -877,7 +899,8 @@ serial_write()
    comments:    
 ----------------------------------------------------------*/
 
-int serial_write(int fd, char *Str, int length) {
+int serial_write(int fd, char *Str, int length)
+{
 	DWORD nBytes, pendingResult;
 	struct termios_list *index;
 
@@ -925,7 +948,8 @@ serial_read()
    comments:    
 ----------------------------------------------------------*/
 
-int serial_read(int fd, void *vb, int size) {
+int serial_read(int fd, void *vb, int size)
+{
 	DWORD nBytes = 0, total = 0, waiting = 0;
 	char *b = (char *)vb;
 	int err, vmin;
@@ -941,10 +965,10 @@ int serial_read(int fd, void *vb, int size) {
 		return -1;
 	}
 
-	/* FIXME: CREAD: without this, data cannot be read 
-	   FIXME: PARMRK: mark framing & parity errors 
-	   FIXME: IGNCR: ignore \r 
-	   FIXME: ICRNL: convert \r to \n 
+	/* FIXME: CREAD: without this, data cannot be read
+	   FIXME: PARMRK: mark framing & parity errors
+	   FIXME: IGNCR: ignore \r
+	   FIXME: ICRNL: convert \r to \n
 	   FIXME: INLCR: convert \n to \r
 	*/
 
@@ -992,7 +1016,7 @@ int serial_read(int fd, void *vb, int size) {
 			{
 				waiting = 0;
 			}
-		} 
+		}
 		else if ( waiting == WAIT_TIMEOUT )
 		{
 			fprintf(stderr, "read timeout\n");
@@ -1009,7 +1033,7 @@ int serial_read(int fd, void *vb, int size) {
 	}
 	LEAVE("serial_read");
 	return total;
-}  
+}
 
 /*----------------------------------------------------------
 cfsetospeed()
@@ -1024,7 +1048,8 @@ cfsetospeed()
 int cfsetospeed(struct termios *s_termios, speed_t speed)
 {
 	ENTER("cfsetospeed");
-	if (speed & ~CBAUD) {
+	if (speed & ~CBAUD)
+{
 		fprintf(stderr, "cfsetospeed: not speed: %#o\n", speed);
 		return 0;
 	}
@@ -1046,7 +1071,8 @@ cfsetispeed()
    comments:    
 ----------------------------------------------------------*/
 
-int cfsetispeed(struct termios *s_termios, speed_t speed) {
+int cfsetispeed(struct termios *s_termios, speed_t speed)
+{
 	return cfsetospeed(s_termios, speed);
 }
 
@@ -1060,7 +1086,8 @@ cfsetspeed()
    comments:    
 ----------------------------------------------------------*/
 
-int cfsetspeed(struct termios *s_termios, speed_t speed) {
+int cfsetspeed(struct termios *s_termios, speed_t speed)
+{
 	return cfsetospeed(s_termios, speed);
 }
 
@@ -1074,7 +1101,8 @@ cfgetospeed()
    comments:    
 ----------------------------------------------------------*/
 
-speed_t cfgetospeed(struct termios *s_termios) {
+speed_t cfgetospeed(struct termios *s_termios)
+{
 	return s_termios->c_ospeed;
 }
 
@@ -1088,7 +1116,8 @@ cfgetispeed()
    comments:    
 ----------------------------------------------------------*/
 
-speed_t cfgetispeed(struct termios *s_termios) {
+speed_t cfgetispeed(struct termios *s_termios)
+{
 	return s_termios->c_ispeed;
 }
 
@@ -1102,7 +1131,8 @@ TermiosToDCB()
    comments:    
 ----------------------------------------------------------*/
 
-int TermiosToDCB(struct termios *s_termios, DCB *dcb) {
+int TermiosToDCB(struct termios *s_termios, DCB *dcb)
+{
 	s_termios->c_ispeed = s_termios->c_cflag & CBAUD;
 	s_termios->c_ospeed = s_termios->c_ispeed;
 	dcb->BaudRate        = B_to_CBR(s_termios->c_ispeed);
@@ -1119,10 +1149,114 @@ DCBToTermios()
    comments:    
 ----------------------------------------------------------*/
 
-void DCBToTermios(DCB *dcb, struct termios *s_termios) {
+void DCBToTermios(DCB *dcb, struct termios *s_termios)
+{
 	s_termios->c_ispeed = CBR_to_B(dcb->BaudRate);
 	s_termios->c_ospeed = s_termios->c_ispeed;
 	s_termios->c_cflag = s_termios->c_ispeed & CBAUD;
+}
+
+/*----------------------------------------------------------
+show_DCB()
+
+   accept:      
+   perform:     
+   return:      
+   exceptions:  
+   comments:    
+----------------------------------------------------------*/
+void show_DCB( myDCB )
+{
+
+#ifdef DEBUG
+	printf("DCBlength: %ld\n", myDCB.DCBlength);
+	printf("BaudRate: %ld\n", myDCB.BaudRate);
+	if (myDCB.fBinary)
+		printf("fBinary\n");
+	if (myDCB.fParity)
+	{
+		printf("fParity: ");
+		if (myDCB.fErrorChar)
+			printf("fErrorChar: %#x\n", myDCB.ErrorChar);
+		else
+			printf("fErrorChar == false\n");
+	}
+	if (myDCB.fOutxCtsFlow)
+		printf("fOutxCtsFlow\n");
+	if (myDCB.fOutxDsrFlow)
+		printf("fOutxDsrFlow\n");
+	if (myDCB.fDtrControl & DTR_CONTROL_HANDSHAKE);
+		printf("DTR_CONTROL_HANDSHAKE\n");
+	if (myDCB.fDtrControl & DTR_CONTROL_ENABLE);
+		printf("DTR_CONTROL_ENABLE\n");
+	if (myDCB.fDtrControl & DTR_CONTROL_DISABLE);
+		printf("DTR_CONTROL_DISABLE\n");
+	if (myDCB.fDsrSensitivity)
+		printf("fDsrSensitivity\n");
+	if (myDCB.fTXContinueOnXoff)
+		printf("fTXContinueOnXoff\n");
+	if (myDCB.fOutX)
+		printf("fOutX\n");
+	if (myDCB.fInX)
+		printf("fInX\n");
+	if (myDCB.fNull)
+		printf("fNull\n");
+	if (myDCB.fRtsControl & RTS_CONTROL_TOGGLE)
+		printf("RTS_CONTROL_TOGGLE\n");
+	if (myDCB.fRtsControl == 0)
+		printf("RTS_CONTROL_HANDSHAKE (fRtsControl==0)\n");
+	if (myDCB.fRtsControl & RTS_CONTROL_HANDSHAKE)
+		printf("RTS_CONTROL_HANDSHAKE\n");
+	if (myDCB.fRtsControl & RTS_CONTROL_ENABLE)
+		printf("RTS_CONTROL_ENABLE\n");
+	if (myDCB.fRtsControl & RTS_CONTROL_DISABLE)
+		printf("RTS_CONTROL_DISABLE\n");
+	if (myDCB.fAbortOnError)
+		printf("fAbortOnError\n");
+	printf("XonLim: %d\n", myDCB.XonLim);
+	printf("XoffLim: %d\n", myDCB.XoffLim);
+	printf("ByteSize: %d\n", myDCB.ByteSize);
+	switch (myDCB.Parity)
+	{
+		case EVENPARITY:
+			printf("EVENPARITY");
+			break;
+		case MARKPARITY:
+			printf("MARKPARITY");
+			break;
+		case NOPARITY:
+			printf("NOPARITY");
+			break;
+		case ODDPARITY:
+			printf("ODDPARITY");
+			break;
+		default:
+			printf("unknown Parity (%#x):", myDCB.Parity);
+			break;
+	}
+	printf("\n");
+	switch(myDCB.StopBits)
+	{
+		case ONESTOPBIT:
+			printf("ONESTOPBIT");
+			break;
+		case ONE5STOPBITS:
+			printf("ONE5STOPBITS");
+			break;
+		case TWOSTOPBITS:
+			printf("TWOSTOPBITS");
+			break;
+		default:
+			printf("unknown StopBits (%#x):", myDCB.StopBits);
+			break;
+	}
+	printf("\n");
+	printf("XonChar: %#x\n", myDCB.XonChar);
+	printf("XoffChar: %#x\n", myDCB.XoffChar);
+	printf("EofChar: %#x\n", myDCB.EofChar);
+	printf("EvtChar: %#x\n", myDCB.EvtChar);
+	printf("\n");
+#endif /* DEBUG */
 }
 
 /*----------------------------------------------------------
@@ -1135,10 +1269,12 @@ tcgetattr()
    comments:    
 ----------------------------------------------------------*/
 
-int tcgetattr(int fd, struct termios *s_termios) {
+int tcgetattr(int fd, struct termios *s_termios)
+{
 	DCB myDCB;
 	COMMTIMEOUTS timeouts;
 	struct termios_list *index;
+	int flag;
 
 	ENTER("tcgetattr");
 	if ( fd <= 0 )
@@ -1146,118 +1282,28 @@ int tcgetattr(int fd, struct termios *s_termios) {
 	index = find_port( fd );
 	if ( !index )
 	{
-		fprintf(stderr, "No info known about the port. tcgetattr %i\n", fd);
+		fprintf(stderr, "No info known about the port. tcgetattr %i\n",
+			fd);
 		return -1;
 	}
-#ifdef DEBUG
-	printf("tcgetattr:\n");
-#endif /* DEBUG */
-	if (!GetCommState(index->hComm, &myDCB)) {
+	if (!GetCommState(index->hComm, &myDCB))
+	{
 		fprintf(stderr, "GetCommState failed\n");
 		return -1;
 	}
 	memcpy(s_termios, index->ttyset, sizeof(struct termios));
-#ifdef DEBUG
-	printf("DCBlength: %ld\n", myDCB.DCBlength);
-	printf("BaudRate: %ld\n", myDCB.BaudRate);
-	if (myDCB.fBinary) printf("fBinary\n");
-	if (myDCB.fParity) {	/* parity checking */
-		printf("fParity: ");
-		if (myDCB.fErrorChar)	/* if ErrorChar is used replace */
-			printf("fErrorChar: %#x\n", myDCB.ErrorChar);
-		else
-			printf("fErrorChar == false\n");
-	}
-	/* if CTS off, then suspend transmitting */
-	if (myDCB.fOutxCtsFlow)
-		printf("fOutxCtsFlow\n");
-	/* if DSR off, then suspend transmitting */
-	if (myDCB.fOutxDsrFlow)
-		printf("fOutxDsrFlow\n");
-	/* enable DTR handshaking */
-	if (myDCB.fDtrControl & DTR_CONTROL_HANDSHAKE);
-		printf("DTR_CONTROL_HANDSHAKE\n");
-	/* turns DTR on */
-	if (myDCB.fDtrControl & DTR_CONTROL_ENABLE);
-		printf("DTR_CONTROL_ENABLE\n");
-	/* turns DTR off */
-	if (myDCB.fDtrControl & DTR_CONTROL_DISABLE);
-		printf("DTR_CONTROL_DISABLE\n");
-	/* ignore bytes when DSR is off */
-	if (myDCB.fDsrSensitivity)
-		printf("fDsrSensitivity\n");
-	/* tx stops when rx buffer full */
-	/* and driver sent XoffChar */
-	if (myDCB.fTXContinueOnXoff)
-		printf("fTXContinueOnXoff\n");
-	/* tx stops when XoffChar is received */
-	/* XonChar restarts tx */
-	if (myDCB.fOutX)
-		printf("fOutX\n");
-	/* send XoffChar when rx buffer fills to XoffLim */
-	/* and send XonChar when buffer empties to XonLim */
-	if (myDCB.fInX)
-		printf("fInX\n");
-	/* zero valued bytes on input are discarded */
-	if (myDCB.fNull) 
-		printf("fNull\n");
-	/* RTS on when three bytes in rx buffer, otherwise off */
-	if (myDCB.fRtsControl & RTS_CONTROL_TOGGLE)
-		printf("RTS_CONTROL_TOGGLE\n");
-	if (myDCB.fRtsControl == 0)
-		printf("RTS_CONTROL_HANDSHAKE (fRtsControl==0)\n");
-	/* RTS on when rx buffer less than half full */
-	/* RTS off when rx buffer more than 75% full */
-	if (myDCB.fRtsControl & RTS_CONTROL_HANDSHAKE)
-		printf("RTS_CONTROL_HANDSHAKE\n");
-	/* RTS is turned on */
-	if (myDCB.fRtsControl & RTS_CONTROL_ENABLE)
-		printf("RTS_CONTROL_ENABLE\n");
-	/* RTS is turned off */
-	if (myDCB.fRtsControl & RTS_CONTROL_DISABLE)
-		printf("RTS_CONTROL_DISABLE\n");
-	/* read & write aborts on error */
-	if (myDCB.fAbortOnError)
-		printf("fAbortOnError\n");
 
-	/* send XON when rx buffer fills to this */
-	printf("XonLim: %d\n", myDCB.XonLim);
-
-	/* send XOFF when rx buffer empties to this */
-	printf("XoffLim: %d\n", myDCB.XoffLim);
-	/* data bits */
-	printf("ByteSize: %d\n", myDCB.ByteSize);
-	switch (myDCB.Parity) {
-		case EVENPARITY: printf("EVENPARITY"); break;
-		case MARKPARITY: printf("MARKPARITY"); break;
-		case NOPARITY: printf("NOPARITY"); break;
-		case ODDPARITY: printf("ODDPARITY"); break;
-		default: printf("unknown Parity (%#x):", myDCB.Parity); break;
-	}
-	printf("\n");
-	switch(myDCB.StopBits) {
-		case ONESTOPBIT: printf("ONESTOPBIT"); break;
-		case ONE5STOPBITS: printf("ONE5STOPBITS"); break;
-		case TWOSTOPBITS: printf("TWOSTOPBITS"); break;
-		default: printf("unknown StopBits (%#x):", myDCB.StopBits);
-			break;
-	}
-	printf("\n");
-	printf("XonChar: %#x\n", myDCB.XonChar);
-	printf("XoffChar: %#x\n", myDCB.XoffChar);
-	printf("EofChar: %#x\n", myDCB.EofChar);
-	printf("EvtChar: %#x\n", myDCB.EvtChar);
-	printf("\n");
-#endif /* DEBUG */
+	show_DCB( myDCB );
 
 	/***** input mode flags (c_iflag) ****/
 	/* parity check enable */
-	if (myDCB.fParity) {
+	if (myDCB.fParity)
+	{
 		s_termios->c_iflag |= INPCK;
-		s_termios->c_iflag &= ~IGNPAR; 
+		s_termios->c_iflag &= ~IGNPAR;
 	} else {
 		s_termios->c_iflag &= ~INPCK;
-		s_termios->c_iflag |= IGNPAR; 
+		s_termios->c_iflag |= IGNPAR;
 	}
 	/* FIXME: IGNBRK: ignore break */
 	/* FIXME: BRKINT: interrupt on break */
@@ -1280,12 +1326,31 @@ int tcgetattr(int fd, struct termios *s_termios) {
 	if (myDCB.StopBits == TWOSTOPBITS) s_termios->c_cflag |= CSTOPB;	
 	if (myDCB.StopBits == ONESTOPBIT) s_termios->c_cflag &= ~CSTOPB;	
 	/* PARENB enable parity bit */
-	if (myDCB.fParity) {
+	if (myDCB.fParity)
+	{
+		printf("setting parity\n");
+		flag = 0;
 		s_termios->c_cflag |= PARENB;
-		/* PARODD use odd parity (otherwise even) */
-		if (myDCB.Parity == ODDPARITY) s_termios->c_cflag |= PARODD;
-		if (myDCB.Parity == EVENPARITY) s_termios->c_cflag &= ~PARODD;
-	} else s_termios->c_cflag &= ~PARENB;
+		flag |= PARENB;
+		if (myDCB.Parity == ODDPARITY)
+		{
+			printf("ODDPARITY\n");
+			flag |= PARODD;
+			s_termios->c_cflag |= PARODD;
+		}
+		if (myDCB.Parity == EVENPARITY)
+		{
+			printf("EVENPARITY\n");
+			flag &= ~PARODD;
+			s_termios->c_cflag &= ~PARODD;
+		}
+	} else
+	{
+		printf("~PARENB\n");
+		flag &= ~PARENB;
+		s_termios->c_cflag &= ~PARENB;
+	}
+	printf("result = %i\n", flag);
 	/* CSIZE */
 	s_termios->c_cflag |= bytesize_to_termios(myDCB.ByteSize);
 	/* CTS_OFLOW: cts output flow control */
@@ -1318,13 +1383,18 @@ int tcgetattr(int fd, struct termios *s_termios) {
 
 	/***** control characters (c_cc[NCCS]) *****/
 
-	if (!GetCommTimeouts(index->hComm, &timeouts)) {
+	if (!GetCommTimeouts(index->hComm, &timeouts))
+	{
 		printf("GetCommTimeouts\n");
 		return -1;
 	}
-/*	s_termios->c_cc[VTIME] = timeouts.ReadTotalTimeoutConstant/100;
+
+	/*
+	s_termios->c_cc[VTIME] = timeouts.ReadTotalTimeoutConstant/100;
 	s_termios->c_cc[VMIN] = (timeouts.ReadTotalTimeoutConstant == 0) ? 0 :
-		timeouts.ReadIntervalTimeout/timeouts.ReadTotalTimeoutConstant;	*/
+		timeouts.ReadIntervalTimeout/timeouts.ReadTotalTimeoutConstant;
+	*/
+
 	s_termios->c_cc[VSTART] = myDCB.XonChar;
 	s_termios->c_cc[VSTOP] = myDCB.XoffChar;
 
@@ -1356,7 +1426,7 @@ int tcgetattr(int fd, struct termios *s_termios) {
 		This is a flag bit that you can add to any of the above
 		alternatives.  Its meaning is to inhibit alteration of the
 		state of the terminal hardware.  It is a BSD extension; it is
-		only supported on BSD systems and the GNU system.           
+		only supported on BSD systems and the GNU system.
 
 		Using `TCSASOFT' is exactly the same as setting the `CIGNORE'
 		bit in the `c_cflag' member of the structure TERMIOS-P points
@@ -1372,7 +1442,8 @@ tcsetattr()
    exceptions:  
    comments:    
 ----------------------------------------------------------*/
-int tcsetattr(int fd, int when, struct termios *s_termios) {
+int tcsetattr(int fd, int when, struct termios *s_termios)
+{
 	int vtime;
 	DCB dcb;
 	COMMTIMEOUTS timeouts;
@@ -1391,16 +1462,19 @@ int tcsetattr(int fd, int when, struct termios *s_termios) {
 	printf("tcsetattr: ");
 #endif /* DEBUG */
 	fflush(stdout);
-	if (s_termios->c_lflag & ICANON) {
+	if (s_termios->c_lflag & ICANON)
+	{
 		fprintf(stderr, "tcsetattr: no canonical mode support\n");
 		/* and all other c_lflags too */
 		return -1;
 	}
-	if (!GetCommState(index->hComm, &dcb)) {
+	if (!GetCommState(index->hComm, &dcb))
+	{
 		printf("GetCommState\n");
 		return -1;
 	}
-	if (!GetCommTimeouts(index->hComm, &timeouts)) {
+	if (!GetCommTimeouts(index->hComm, &timeouts))
+	{
 		printf("GetCommTimeouts\n");
 		return -1;
 	}
@@ -1412,13 +1486,15 @@ int tcsetattr(int fd, int when, struct termios *s_termios) {
 	/* FIXME: MDMBUF: carrier based flow control of output */
 
 	/*** control flags, c_cflag **/
-	if (!(s_termios->c_cflag & CIGNORE)) {
+	if (!(s_termios->c_cflag & CIGNORE))
+	{
 		/* CIGNORE: ignore control modes and baudrate */
 		/* baudrate */
 		if (TermiosToDCB(s_termios, &dcb) < 0)
 			return -1;
 		dcb.ByteSize = termios_to_bytesize(s_termios->c_cflag);
-		if (s_termios->c_cflag & PARENB) {
+		if (s_termios->c_cflag & PARENB)
+		{
 			if (s_termios->c_cflag & PARODD)
 				dcb.Parity = ODDPARITY;
 			else
@@ -1435,7 +1511,8 @@ int tcsetattr(int fd, int when, struct termios *s_termios) {
 	}
 
 	/*** input flags, c_iflag **/
-	if ((s_termios->c_iflag & INPCK) && !(s_termios->c_iflag & IGNPAR)) {
+	if ((s_termios->c_iflag & INPCK) && !(s_termios->c_iflag & IGNPAR))
+	{
 		dcb.fParity = TRUE;
 	} else dcb.fParity = FALSE;
 	/* not in win95? */
@@ -1460,11 +1537,12 @@ int tcsetattr(int fd, int when, struct termios *s_termios) {
 	dcb.XonLim          = 0;	/* ? */
 	dcb.XoffLim         = 0;	/* ? */
 	if (EV_BREAK|EV_CTS|EV_DSR|EV_ERR|EV_RING|(EV_RLSD & EV_RXFLAG))
-		dcb.EvtChar = '\n';      
+		dcb.EvtChar = '\n';
 	else
 		dcb.EvtChar = '\0';
 
-	if (!SetCommState(index->hComm, &dcb)) {
+	if (!SetCommState(index->hComm, &dcb))
+	{
 		fprintf(stderr, "SetCommState error\n");
 		return -1;
 	}
@@ -1477,9 +1555,11 @@ int tcsetattr(int fd, int when, struct termios *s_termios) {
 	timeouts.ReadTotalTimeoutConstant = vtime;
 	/* max between bytes */
 	timeouts.ReadIntervalTimeout = vtime;
-	if (s_termios->c_cc[VMIN] > 0 && vtime > 0) {
+	if (s_termios->c_cc[VMIN] > 0 && vtime > 0)
+	{
 		/* read blocks forever on VMIN chars */
-	} else if (s_termios->c_cc[VMIN] == 0 && vtime == 0) {
+	} else if (s_termios->c_cc[VMIN] == 0 && vtime == 0)
+	{
 		/* read returns immediately */
 		timeouts.ReadIntervalTimeout = MAXDWORD;
 		timeouts.ReadTotalTimeoutConstant = 0;
@@ -1494,7 +1574,8 @@ int tcsetattr(int fd, int when, struct termios *s_termios) {
 	printf("ReadTotalTimeoutMultiplier: %ld\n",
 		timeouts.ReadTotalTimeoutMultiplier);
 #endif /* DEBUG */
-	if (!SetCommTimeouts(index->hComm, &timeouts)) {
+	if (!SetCommTimeouts(index->hComm, &timeouts))
+	{
 		printf("SetCommTimeouts\n");
 		return -1;
 	}
@@ -1513,7 +1594,8 @@ tcsendbreak()
    comments:    
 ----------------------------------------------------------*/
 
-int tcsendbreak(int fd, int duration) {
+int tcsendbreak(int fd, int duration)
+{
 	/* send a stream of zero bits for duration */
 	return 1;
 }
@@ -1528,7 +1610,8 @@ tcdrain()
    comments:    
 ----------------------------------------------------------*/
 
-int tcdrain (int fd) {
+int tcdrain (int fd)
+{
 	/* block until all queued output has been transmitted */
 	return 1;
 }
@@ -1543,7 +1626,8 @@ tcflush()
    comments:    
 ----------------------------------------------------------*/
 
-int tcflush(int fd, int queue_selector) {
+int tcflush(int fd, int queue_selector)
+{
 	/* clear input & output queues */
 	return 1;
 }
@@ -1558,8 +1642,10 @@ tcflow()
    comments:    
 ----------------------------------------------------------*/
 
-int tcflow(int fd, int action) {
-	switch (action) {
+int tcflow(int fd, int action)
+{
+	switch (action)
+	{
 		/* Suspend transmission of output */
 		case TCOOFF: break;
 		/* Restart transmission of output */
@@ -1582,7 +1668,8 @@ ioctl()
    exceptions:  
    comments:     the DCB struct is:
 
-	typedef struct _DCB {
+	typedef struct _DCB
+	{
 		DWORD DCBlength, BaudRate, fBinary:1, fParity:1;
 		DWORD fOutxCtsFlow:1, fOutxDsrFlow:1, fDtrControl:2;
 		DWORD fDsrSensitivity:1, fTXContinueOnXoff:1;
@@ -1596,8 +1683,8 @@ ioctl()
 
 ----------------------------------------------------------*/
 
-//int ioctl(int fd, int request, unsigned int *arg) {
-int ioctl(int fd, int request, ...) {
+int ioctl(int fd, int request, ...)
+{
 	DWORD dwStatus = 0;
 	va_list ap;
 	int *arg, ret;
@@ -1623,7 +1710,8 @@ int ioctl(int fd, int request, ...) {
 
 	va_start(ap, request);
 	
-	switch(request) {
+	switch(request)
+	{
 		case TCSBRK:
 			arg = va_arg( ap, int * );
 			return -ENOIOCTLCMD;;
@@ -1728,7 +1816,7 @@ int ioctl(int fd, int request, ...) {
 			fprintf(stderr, "TIOCSER[GS]WILD absolete\n");
 			return 0;
 		/*  number of bytes available for reading */
-		case FIONREAD: 
+		case FIONREAD:
 			arg = va_arg( ap, int * );
 			ret = ClearCommError( index->hComm, &ErrCode, &Stat );
 			if ( ret == 0 )
@@ -1764,7 +1852,8 @@ fcntl()
    comments:    
 ----------------------------------------------------------*/
 
-int fcntl(int fd, int command, ...) {
+int fcntl(int fd, int command, ...)
+{
 	int arg, ret = 0;
 	va_list ap;
 	struct termios_list *index;
@@ -1782,7 +1871,8 @@ int fcntl(int fd, int command, ...) {
 	va_start(ap, command);
 
 	arg = va_arg(ap, int);
-	switch (command) {
+	switch (command)
+	{
 		case F_SETOWN:	/* set ownership of fd */
 			break;
 		case F_SETFL:	/* set operating flags */
@@ -1817,7 +1907,8 @@ serial_select()
 #ifndef __LCC__
 
 int  serial_select(int  n,  fd_set  *readfds,  fd_set  *writefds,
-			fd_set *exceptfds, struct timeval *timeout) {
+			fd_set *exceptfds, struct timeval *timeout)
+{
 
 	DWORD dwCommEvent, wait = WAIT_TIMEOUT;
 	int fd = n-1;
@@ -1833,7 +1924,7 @@ int  serial_select(int  n,  fd_set  *readfds,  fd_set  *writefds,
 			fd);
 		return -1;
 	}
-	if ( !SetCommMask( index->hComm, 
+	if ( !SetCommMask( index->hComm,
 		EV_RXCHAR|EV_TXEMPTY|EV_BREAK|EV_CTS|EV_DSR|EV_ERR|EV_RING|EV_RLSD|EV_RXFLAG ) )
 		goto fail;
 	
@@ -1879,6 +1970,33 @@ void Report(char *msg)
 #ifdef asdf
 int main( int argc, char *argv[] )
 {
+	struct termios ttyset;
+	int fd = open("COM1", 1);
+	//int cspeed = translate_speed( env, speed );
+	int cspeed = B9600;
+	for(;;)
+	{
+		if( !cspeed ) return;
+		if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
+		ttyset.c_cflag &= ~CSIZE;
+		ttyset.c_cflag |= CS8;
+		ttyset.c_cflag |= PARENB;
+		ttyset.c_cflag &= ~CSTOPB;
+#ifdef __FreeBSD__
+		if( cfsetspeed( &ttyset, cspeed ) < 0 ) goto fail;
+#else
+		if( cfsetispeed( &ttyset, cspeed ) < 0 ) goto fail;
+		if( cfsetospeed( &ttyset, cspeed ) < 0 ) goto fail;
+#endif  /* __FreeBSD__ */
+		if( tcsetattr( fd, TCSANOW, &ttyset ) < 0 ) goto fail;
+		printf(".");
+	}
+fail:
+	return;
+}
+
+int main( int argc, char *argv[] )
+{
 	int fd[4] = { 0,0,0,0 };
 	int res, seed, foo;
 	char file[8], vb[80];
@@ -1912,7 +2030,8 @@ int main( int argc, char *argv[] )
 #if defined(TIOCGICOUNT)
 	/* Some multiport serial cards do not implement TIOCGICOUNT ... */
 	/* So use the 'dumb' mode to enable using them after all! JK00 */
-	if( ioctl( Fd, TIOCGICOUNT, &osis ) < 0 ) {
+	if( ioctl( Fd, TIOCGICOUNT, &osis ) < 0 )
+	{
 		Report("Port does not support TIOCGICOUNT events\n" );
 		has_tiocgicount = 0;
 	}
@@ -1921,19 +2040,22 @@ int main( int argc, char *argv[] )
 #if defined(TIOCSERGETLSR)
 	/* JK00: work around for multiport cards without TIOCSERGETLSR */
 	/* Cyclades is one of those :-(				       */
-	if( ioctl( Fd, TIOCSERGETLSR, &change ) ) {
+	if( ioctl( Fd, TIOCSERGETLSR, &change ) )
+	{
 		Report("Port does not support TIOCSERGETLSR\n" );
 			has_tiocsergetlsr = 0;
 	}
 #endif /* TIOCSERGETLSR */
 
-	if( ioctl( Fd, TIOCMGET, &omflags) <0 ) {
+	if( ioctl( Fd, TIOCMGET, &omflags) <0 )
+	{
 		Report("Port does not support events\n" );
- 		return;
+		return;
 	}
 
 	FD_ZERO( &rfds );
-	while( 1 ) {
+	while( 1 )
+	{
 		printf(".");
 		FD_SET( Fd, &rfds );
 		tv_sleep.tv_sec = 0;
@@ -1945,7 +2067,8 @@ int main( int argc, char *argv[] )
 
 #if defined TIOCSERGETLSR
 		/* JK00: work around for Multi IO cards without TIOCSERGETLSR */
-		if( has_tiocsergetlsr ) {
+		if( has_tiocsergetlsr )
+		{
 			if (fstat(Fd, &fstatbuf))  break;
 			if( ioctl( Fd, TIOCSERGETLSR, &change ) ) break;
 			else if( change )
@@ -1965,21 +2088,26 @@ int main( int argc, char *argv[] )
 	 *	ret=ioctl(Fd,TIOCMIWAIT);
 	 */
 		/* JK00: only use it if supported by this port */
-		if (has_tiocgicount) {
+		if (has_tiocgicount)
+		{
 			if( ioctl( Fd, TIOCGICOUNT, &sis ) ) break;
-			while( sis.frame != osis.frame ) {
+			while( sis.frame != osis.frame )
+			{
 				//send_event( env, jobj, SPE_FE, 1);
 				osis.frame++;
 			}
-			while( sis.overrun != osis.overrun ) {
+			while( sis.overrun != osis.overrun )
+			{
 				//send_event( env, jobj, SPE_OE, 1);
 				osis.overrun++;
 			}
-			while( sis.parity != osis.parity ) {
+			while( sis.parity != osis.parity )
+			{
 				//send_event( env, jobj, SPE_PE, 1);
 				osis.parity++;
 			}
-			while( sis.brk != osis.brk ) {
+			while( sis.brk != osis.brk )
+			{
 				//send_event( env, jobj, SPE_BI, 1);
 				osis.brk++;
 			}
@@ -2122,7 +2250,7 @@ int main( int argc, char *argv[] )
 			{
 				sprintf(file, "COM%i",
 					seed );
-				res = open( file, 1 ); 
+				res = open( file, 1 );
 				if(res > 0 )
 				{
 					fd[ seed - 1] = res;

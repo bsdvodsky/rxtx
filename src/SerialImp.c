@@ -319,6 +319,7 @@ fail:
 ----------------------------------------------------------*/
 int translate_speed( JNIEnv *env, jint speed )
 {
+	printf("speed = %i\n", (int) speed);
 	switch( speed ) {
 		case 0:		return B0;
 		case 50:		return B50;
@@ -427,26 +428,33 @@ int translate_stop_bits( JNIEnv *env, tcflag_t *cflag, jint stopBits )
 ----------------------------------------------------------*/
 int translate_parity( JNIEnv *env, tcflag_t *cflag, jint parity )
 {
+	parity = PARITY_NONE;
 	(*cflag) &= ~(PARENB | PARODD);
 	switch( parity ) {
 		case PARITY_NONE:
+			printf("PARITY_NONE\n");
 			return 1;
 		case PARITY_EVEN:
 			(*cflag) |= PARENB;
+			printf("PARITY_EVEN\n");
 			return 1;
 		case PARITY_ODD:
+			printf("PARITY_ODD\n");
 			(*cflag) |= PARENB | PARODD;
 			return 1;
 #ifdef CMSPAR
 		case PARITY_MARK:
+			printf("PARITY_MARK\n");
 			(*cflag) |= PARENB | PARODD | CMSPAR;
 			return 1;
 		case PARITY_SPACE:
+			printf("PARITY_SPACE\n");
 			(*cflag) |= PARENB | CMSPAR;
 			return 1;
 #endif /* CMSPAR */
 	}
 
+	printf("PARITY Exception\n");
 	throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,
 		"translate_parity", "parity" );
 	return 0;
