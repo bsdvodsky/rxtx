@@ -16,7 +16,7 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
-This is the INSTALL file for RXTX.  Oct 29 2000
+This is the INSTALL file for RXTX.  Tue Jan  9 00:52:36 MST 2001
 
 If, while following the instructions, you find this file unclear or incorrect 
 please make a note and email the details to trentjarvi@yahoo.com.  
@@ -354,7 +354,7 @@ C.  No serial ports found!
 
 	--
 	For some, it is not clear what was being done here.  There is a single
-	line in the file javax.comm.properties that contains 
+	line in the file javax.comm.properties that contains
 	"gnu.io.RXTXCommDriver" when properly installed.  We replaced the R with
 	r in "gnu.io.RXTXCommDriver" to force an error.  After seeing the error
 	we replaced the r with an R to fix it.
@@ -612,8 +612,6 @@ User jarvi in this case can now use rxtx with lock files.
 Be careful.  The lock file code does not support kermit style lock files or
 lock files in /var/spool.  Its sure to fail if your using subdirectories in
 /dev or do not have /dev.
-
-Lockfiles are enabled on Linux hosts.
 
 U.  How can I tell which version of rxtx is installed?
 

@@ -1358,8 +1358,8 @@ void report(char *msg)
    perform:     Create a lock file if there is not one already.
    return:      1 on failure 0 on success
    exceptions:  none
-   comments:    This is for linux only currently.  I see SVR4 does this
-                differently and there are other proposed changes to the
+   comments:    This is for linux and freebsd only currently.  I see SVR4 does
+                this differently and there are other proposed changes to the
 		Filesystem Hierachy Standard
 
 		more reading:
@@ -1402,6 +1402,8 @@ int fhs_lock(const char *filename)
 	 * Its possible to check for stale processes with most of them.
 	 * for now we will just check for the lockfile on most
 	 * Problem lockfiles will be dealt with.  Some may not even be in use.
+	 *
+	 * TODO follow symbolic links (/dev/modem...)
 	 */
 
 	j=0;

@@ -64,7 +64,7 @@
 #if defined(__FreeBSD__)
 #	define DEVICEDIR "/dev/"
 /* see SerialImp.c fhs_lock() & fhs_unlock() */
-#	define LOCKDIR ""
+#	define LOCKDIR "/var/spool/uucp/"
 #endif
 #if defined(__NetBSD__)
 #	define DEVICEDIR "/dev/"

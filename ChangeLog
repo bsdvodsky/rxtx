@@ -1,3 +1,5 @@
+This is ChangeLog Tue Jan  9 00:52:36 MST 2001
+
 rxtx-1.5 and rxtx-1.4 changes are kept in the same file.  skip to the version
 you downloaded.
 
@@ -16,12 +18,13 @@ you downloaded.
 		      Stallion Card support 
 		      Greg Luck <gluck@tempo-services.com.au>
 		      CommPort enumeration with rxtx's comm.jar
-1.4-8  Jan 18, 2001   Irix Build fixes (May need fine tuning)
+1.4-8  Jan  8, 2001   irix build fixes (fine tuning required)
 		      Tom Mander <tom@proximity.com.au>
-		      additional port locking code and enable portlocks on
-		      Linux 
+		      more lockfile code with testing from
+		      "Roberto" <rwaissma@mathworks.com> and
 		      Chris Portal <cportal@mathworks.com>
-		      "Roberto" <rwaissma@mathworks.com>
+		      bsd and linux default to lockfile support
+		      some documentaion clarifications.
 1.4-7  Nov 13, 2000   HP-UX fixes for port enumeration
 		      Cathrine Guiollot <catherine_guiollot@hp.com>
 		      CLASSPATH build fixes
