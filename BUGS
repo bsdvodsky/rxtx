@@ -1,3 +1,6 @@
+There are sure to be bugs.  The goal is to make the install as painless
+as possible.  Send back comments if something could be easier.
+
 If your not able to open the port (read the errors carefully) then you may
 not have permission to use the device.  Redhat linux ships with the following
 permissions:
@@ -9,9 +12,6 @@ Users need to be able to read and write with serial communication...
 chmod 666 /dev/ttyS? 
 
 should fix the problem.
-
-slackware users:  libc5 slackware/jdk does not compile ansi clean. (!) 
-configure --disable-ANSI_CLEAN will remove the -ansi flag.
 
 If you run into a problem building the rxtx package please report the following
 with the bug report.
@@ -25,6 +25,7 @@ with the bug report.
    which rxtx version.
    what version of libc are you using
    what cc are you using
+   which version of commapi you have.
 
 If your having problems with JCL make sure you have read through CommAPI.
 
@@ -48,25 +49,9 @@ mail any bugs to jarvi@ezlink.com.
 
 Known Bugs.
 
-1.  SIGINT (CTL-C) does not work reliably with native threads.  green_threads 
-    work as one process ID so signaling works as expected.  It is unknown at 
-    this time how to know when the application recieved SIGINT, SIGQUIT... in 
-    native threads.
 
-    Actually I'm not sure.  It only happens with test.java.  Must be something
-    wrong with the silly thing.  Take a look.  Its probably something easy.
-
-2.  output buffer empty is not implemented. (optional for commapi).  On linux
-    this would require modification of the kernel.  Not an easy problem.
-
-3.  input/output buffer sizes do nothing.  Nobody has mentioned a need.
-
-5.  Event notification is only known to work on linux (optional for commapi)
-
-6.  There is no parallel support in rxtx.  Good project for a interested 
+1.  There is no parallel support in rxtx.  Good project for a interested 
     programmer.  It should not be too hard.  Give it a try!
 
-7.  opening and closing a port ~30 times can crash blackbox.  [fixed?].
+2.  This release has only been tested on linux in a limited scope.
 
-8.  jdk-1.1.7a1 with glibc-2.1 is hosed stick with glibc-2.  linux-2.2 appears 
-    to work.

@@ -1,3 +1,6 @@
+This is a devel release.  Little or know effort has been put into porting.
+the reduce code footprint should make porting easier though.
+
 If you want to port rxtx to a new unix platform do the following.
 *IMPORTANT* you will probably need gnu make.
 
@@ -9,14 +12,10 @@ If you want to port rxtx to a new unix platform do the following.
       JAVANATINC
       CLASSPATH
 
-We will gladly help with any UNIX platform.  I suspect the package works
-on >90% at this time with little or no modification.  Send questions to
-jarvi@ezlink.com.  Actually new OS's usually require configure tweaks.
+We will gladly help with any UNIX platform.  Send questions to
+jarvi@ezlink.com.  New OS's usually require tweaks.
 
 If its not compiling try backing out functionality until it compiles.
-
-configure --enable-ASYNC=no;make
-configure --enable-ASYNC=no --enable-TIMEOUTS=no;make
 
 win32 support has been removed.  contact jarvi@ezlink.com if your interested
 in developing win32 support.  We will gladly put win32 code back in if there is

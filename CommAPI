@@ -19,40 +19,9 @@ You'll also need to have the following in .../java/lib/javax.comm.properties
 Driver=gnu.io.RXTXCommDriver
 
 --------------------------------
-David J Atkinson says:
-
-The changes I have made mainly evolve around including event notification
-and non-blocking or the ports. to do this I have consulted the source code
-of minicom. I have also implemented hardware flow control as this was necessary
-for a modem monitoring program I have developed. There are a number of things
-no implemented yet and they will be signalled when called by a line like
-notifyOnBreakInterrupt Fixme!
-
-The things I haven't implemented are those I don't know enough about.
-To install of rxtx-1.2pre4 simply untar the file in a separate directory and 
-replace the files as detailed below. After this run ./configure as Makefile.in 
-has changed. 
-
-To make successfully I needed to use JDKHOME
-therefore I configured with
-export JDK_HOME=/usr/local/jdk1.1.6
-./configure --enable-JDKHOME
-
-then run
-make
-make jcl
+David J Atkinson writes:
 
 To use this version you must use javacomm20 or higher. I used "javacomm20-x86.tar.Z" for the comm.jar files and also includes some examples. To run the examples I changed the port opening checks to look for /dev/cua0 as my linux didn't have the same devices as the samples expect. 
 
 Good Luck
 David J Atkinson
-
-Files that have been changed.
-
-rxtx-1.2pre4/Makefile.in
-rxtx-1.2pre4/src/RXMonitor.java
-rxtx-1.2pre4/src/RXTXPort.java
-rxtx-1.2pre4/src/SerialImp.c
-rxtx-1.2pre4/src/SerialInputStream.java
-rxtx-1.2pre4/src/SerialOutputStream.java
-rxtx-1.2pre4/src/Termios.java

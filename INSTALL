@@ -113,8 +113,7 @@ For the methodical:
     Try using the makefile. 
         make
 	optional: make install  (installs commapi support too)
-        make run (runs a simple (not fun at all) test.java app)
-	or run the BlackBox, SerialDemo or Simple applications that come
+	run the BlackBox, SerialDemo or Simple applications that come
         with the commapi package
     if no luck look through Makefile and send back comments please.
 
