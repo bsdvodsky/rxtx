@@ -41,7 +41,12 @@ extern "C" {
 #define gnu_io_RXTXPort_FLOWCONTROL_XONXOFF_IN 4L
 #undef gnu_io_RXTXPort_FLOWCONTROL_XONXOFF_OUT
 #define gnu_io_RXTXPort_FLOWCONTROL_XONXOFF_OUT 8L
-/* Inaccessible static: debug */
+#undef gnu_io_RXTXPort_debug
+#define gnu_io_RXTXPort_debug 0L
+#undef gnu_io_RXTXPort_debug_verbose
+#define gnu_io_RXTXPort_debug_verbose 0L
+#undef gnu_io_RXTXPort_debug_events
+#define gnu_io_RXTXPort_debug_events 0L
 /* Inaccessible static: dsrFlag */
 /*
  * Class:     gnu_io_RXTXPort
@@ -182,7 +187,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_sendBreak
 /*
  * Class:     gnu_io_RXTXPort
  * Method:    writeByte
- * Signature: (I)V
+ * Signature: (IZ)V
  */
 JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeByte
   (JNIEnv *, jobject, jint, jboolean);
@@ -190,7 +195,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeByte
 /*
  * Class:     gnu_io_RXTXPort
  * Method:    writeArray
- * Signature: ([BII)V
+ * Signature: ([BIIZ)V
  */
 JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeArray
   (JNIEnv *, jobject, jbyteArray, jint, jint, jboolean);
@@ -198,10 +203,10 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeArray
 /*
  * Class:     gnu_io_RXTXPort
  * Method:    nativeDrain
- * Signature: ()V
+ * Signature: (Z)Z
  */
 JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_nativeDrain
-  ( JNIEnv *, jobject , jboolean );
+  (JNIEnv *, jobject, jboolean);
 
 /*
  * Class:     gnu_io_RXTXPort
@@ -237,11 +242,171 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop
 
 /*
  * Class:     gnu_io_RXTXPort
+ * Method:    interruptEventLoop
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_interruptEventLoop
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     gnu_io_RXTXPort
+ * Method:    nativeSetEventFlag
+ * Signature: (IIZ)V
+ */
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_nativeSetEventFlag
+  (JNIEnv *, jobject, jint, jint, jboolean);
+
+/*
+ * Class:     gnu_io_RXTXPort
  * Method:    nativeClose
  * Signature: (Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_nativeClose
   (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     gnu_io_RXTXPort
+ * Method:    nativeStaticSetSerialPortParams
+ * Signature: (Ljava/lang/String;IIII)V
+ */
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_nativeStaticSetSerialPortParams
+  (JNIEnv *, jclass, jstring, jint, jint, jint, jint);
+
+/*
+ * Class:     gnu_io_RXTXPort
+ * Method:    nativeStaticSetDSR
+ * Signature: (Ljava/lang/String;Z)Z
+ */
+JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_nativeStaticSetDSR
+  (JNIEnv *, jclass, jstring, jboolean);
+
+/*
+ * Class:     gnu_io_RXTXPort
+ * Method:    nativeStaticSetDTR
+ * Signature: (Ljava/lang/String;Z)Z
+ */
+JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_nativeStaticSetDTR
+  (JNIEnv *, jclass, jstring, jboolean);
+
+/*
+ * Class:     gnu_io_RXTXPort
+ * Method:    nativeStaticSetRTS
+ * Signature: (Ljava/lang/String;Z)Z
+ */
+JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_nativeStaticSetRTS
+  (JNIEnv *, jclass, jstring, jboolean);
+
+/*
+ * Class:     gnu_io_RXTXPort
+ * Method:    nativeStaticIsDSR
+ * Signature: (Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_nativeStaticIsDSR
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     gnu_io_RXTXPort
+ * Method:    nativeStaticIsDTR
+ * Signature: (Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_nativeStaticIsDTR
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     gnu_io_RXTXPort
+ * Method:    nativeStaticIsRTS
+ * Signature: (Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_nativeStaticIsRTS
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     gnu_io_RXTXPort
+ * Method:    nativeStaticIsCTS
+ * Signature: (Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_nativeStaticIsCTS
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     gnu_io_RXTXPort
+ * Method:    nativeStaticIsCD
+ * Signature: (Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_nativeStaticIsCD
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     gnu_io_RXTXPort
+ * Method:    nativeStaticIsRI
+ * Signature: (Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_nativeStaticIsRI
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     gnu_io_RXTXPort
+ * Method:    nativeStaticGetBaudRate
+ * Signature: (Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_nativeStaticGetBaudRate
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     gnu_io_RXTXPort
+ * Method:    nativeStaticGetDataBits
+ * Signature: (Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_nativeStaticGetDataBits
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     gnu_io_RXTXPort
+ * Method:    nativeStaticGetParity
+ * Signature: (Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_nativeStaticGetParity
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     gnu_io_RXTXPort
+ * Method:    nativeStaticGetStopBits
+ * Signature: (Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_nativeStaticGetStopBits
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     gnu_io_RXTXPort
+ * Method:    nativeGetParityErrorChar
+ * Signature: ()B
+ */
+JNIEXPORT jbyte JNICALL Java_gnu_io_RXTXPort_nativeGetParityErrorChar
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     gnu_io_RXTXPort
+ * Method:    nativeSetParityErrorChar
+ * Signature: (B)Z
+ */
+JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_nativeSetParityErrorChar
+  (JNIEnv *, jobject, jbyte);
+
+/*
+ * Class:     gnu_io_RXTXPort
+ * Method:    nativeGetEndOfInputChar
+ * Signature: ()B
+ */
+JNIEXPORT jbyte JNICALL Java_gnu_io_RXTXPort_nativeGetEndOfInputChar
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     gnu_io_RXTXPort
+ * Method:    nativeSetEndOfInputChar
+ * Signature: (B)Z
+ */
+JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_nativeSetEndOfInputChar
+  (JNIEnv *, jobject, jbyte);
 
 /*
  * Class:     gnu_io_RXTXPort
