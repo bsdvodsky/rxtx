@@ -28,7 +28,7 @@
 		  the ports and the removal of the eventListener.
 
 */
-import gnu.io.*;
+import javax.comm.*;
 import java.util.*;
 
 
@@ -41,7 +41,6 @@ public class TestMonitorThread implements SerialPortEventListener
     		Enumeration ports;
 		SerialPort port = null;
 		Date d = new Date();
-		long result, t1 = d.getTime(), t2 = d.getTime();
 
 		ports = CommPortIdentifier.getPortIdentifiers();
 		while ( ports.hasMoreElements() )
@@ -58,25 +57,21 @@ public class TestMonitorThread implements SerialPortEventListener
 				}
 			} 
 		} 
-		for( int i=0;i<30;i++ )
+		for( int i=0;;i++ )
 		{
 			try {
 				port.addEventListener(this);
 			} catch (TooManyListenersException e ) {
 				e.printStackTrace();
 			}
-			t2 =  new Date().getTime();
+			port.notifyOnDataAvailable( true );
 			port.removeEventListener();
-			System.out.println( t2 - t1 );
-			t1 = t2;
 		}
-		port.close();
+		//port.close();
 	}
 	public static void main( String[] args )
 	{
-		System.out.println(">my TestMonitorThread");
 		TestMonitorThread thisTestMonitorThread = new TestMonitorThread();
-		System.out.println("<my TestMonitorThread");
 	}
 	public void serialEvent(SerialPortEvent event)
 	{
