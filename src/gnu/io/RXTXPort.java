@@ -19,9 +19,9 @@
 package gnu.io;
 import java.io.*;
 import java.util.*;
-import javax.comm.*;
 import java.lang.Math;
 import java.lang.Runtime;
+import javax.comm.*;
 
 
 /**
@@ -56,7 +56,7 @@ final class RXTXPort extends SerialPort
 		throws PortInUseException;
 
 	/** File descriptor */
-	private int fd;
+	private int fd = 0;
 
 	/** DSR flag **/
 	static boolean dsrFlag = false;
@@ -65,13 +65,9 @@ final class RXTXPort extends SerialPort
 	private final SerialOutputStream out = new SerialOutputStream();
 	public OutputStream getOutputStream() { return out; }
 
-
 	/** Input stream */
 	private final SerialInputStream in = new SerialInputStream();
 	public InputStream getInputStream() { return in; }
-
-
-
 
 	/** Set the SerialPort parameters
 	    1.5 stop bits requires 5 databits  */
@@ -135,7 +131,7 @@ final class RXTXPort extends SerialPort
 	{
 		throw new UnsupportedCommOperationException( "Not supported" );
 	}
-	public void disableReceiveFraming() {}
+	public void disableReceiveFraming() { }
 	public boolean isReceiveFramingEnabled() { return false; }
 	public int getReceiveFramingByte() { return 0; }
 
@@ -196,7 +192,8 @@ final class RXTXPort extends SerialPort
 			);
 		}
 	}
-	public void disableReceiveThreshold() {
+	public void disableReceiveThreshold()
+	{
 		enableReceiveThreshold(0);
 	}
 	public int getReceiveThreshold()
@@ -292,9 +289,9 @@ final class RXTXPort extends SerialPort
 
 		/* Let the native side know its time to die */
 
-		if ( fd == 0 || SPEventListener == null || monThread == null) 
+		if ( fd == 0 || SPEventListener == null || monThread == null)
 		{
-			return(true);  
+			return(true);
 		}
 
 		switch( event )
@@ -357,7 +354,7 @@ final class RXTXPort extends SerialPort
 
 		if (fd == 0 ||  SPEventListener == null || monThread == null) 
 		{
-			return(true);  
+			return(true);
 		}
 		else 
 		{
@@ -367,7 +364,7 @@ final class RXTXPort extends SerialPort
 	}
 
 	/** Add an event listener */
-	public synchronized void addEventListener( 
+	public synchronized void addEventListener(
 		SerialPortEventListener lsnr ) throws TooManyListenersException
 	{
 		if( SPEventListener != null )
@@ -442,7 +439,7 @@ final class RXTXPort extends SerialPort
 	private native void nativeClose();
 	public synchronized void close()
 	{
-		if (fd <= 0) return;
+		if ( fd <= 0 ) return;
 		setDTR(false);
 		setDSR(false);
 		nativeClose();
@@ -461,9 +458,8 @@ final class RXTXPort extends SerialPort
 		if( fd > 0 ) close();
 	}
 
-
-        /** Inner class for SerialOutputStream */
-        class SerialOutputStream extends OutputStream
+	/** Inner class for SerialOutputStream */
+	class SerialOutputStream extends OutputStream
 	{
                 public synchronized void write( int b ) throws IOException
 		{
@@ -485,8 +481,8 @@ final class RXTXPort extends SerialPort
 		{
 			if ( fd == 0 ) throw new IOException();
                         drain();
-                }
-        }
+		}
+	}
 
 	/** Inner class for SerialInputStream */
 	class SerialInputStream extends InputStream
@@ -573,6 +569,7 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 		private volatile boolean BI=false;
 		private volatile boolean Data=false;
 		private volatile boolean Output=false;
+
 		MonitorThread() { }
 		public void run()
 		{

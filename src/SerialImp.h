@@ -31,13 +31,12 @@
 #endif
 #define STOPBITS_1		1
 #define STOPBITS_2		2
-#define STOPBITS_1_5            3
+#define STOPBITS_1_5		3
 #define FLOWCONTROL_NONE	0
 #define FLOWCONTROL_RTSCTS_IN	1
 #define FLOWCONTROL_RTSCTS_OUT	2
 #define FLOWCONTROL_XONXOFF_IN	4
 #define FLOWCONTROL_XONXOFF_OUT	8
-
 
 /* javax.comm.SerialPortEvent constants */
 #define SPE_DATA_AVAILABLE       1
@@ -53,19 +52,32 @@
 
 /*  Ports known on the OS */
 #if defined(__linux__)
-#	define PORTS { "lp", "comx", "holter", "modem", "ttyircomm", "ttycosa0c", "ttycosa1c", "ttyC", "ttyCH", "ttyD", "ttuE", "ttyF", "ttyH", "ttyI", "ttyL", "ttyM", "ttyMX", "ttyP", "ttyR", "ttyS", "ttySI", "ttySR", "ttyS", "ttySI", "ttySR", "ttyT", "ttyUSB", "ttyV", "ttyW", "ttyX", NULL }
+#	define PORTS { "lp", "comx", "holter", "modem", "ttyircomm", "ttycosa0c", "ttycosa1c", "ttyC", "ttyCH", "ttyD", "ttyE", "ttyF", "ttyH", "ttyI", "ttyL", "ttyM", "ttyMX", "ttyP", "ttyR", "ttyS", "ttySI", "ttySR", "ttyS", "ttySI", "ttySR", "ttyT", "ttyUSB", "ttyV", "ttyW", "ttyX", NULL }
+#	define DEVICEDIR "/dev/"
 #endif
 #if defined(__sgi__)
 #	define PORTS { "lp", "ttyd", "ttym", "ttyf", "ttyc", "ttyq", "tty4d", "tty4f", "ttymidi", "ttyus", NULL }
+#	define DEVICEDIR "/dev/"
 #endif
 #if defined(__FreeBSD__)
 #	define PORTS { "lp", "cuaa", NULL }
+#	define DEVICEDIR "/dev/"
 #endif
 #if defined(__NetBSD__)
 #	define PORTS { "lp", "tty0", NULL }
+#	define DEVICEDIR "/dev/"
 #endif
 #if defined(__hpux__)
 #	define PORTS { "lp", "tty0p", "tty1p", NULL }
+#	define DEVICEDIR "/dev/"
+#endif
+#if defined(__BEOS__)
+#	define PORTS { "serial" };
+#	define DEVICEDIR "/dev/ports"
+#endif
+#if defined(WIN32)
+#	define PORTS { "COM", NULL }
+#	define DEVICEDIR ""
 #endif
 
 /* java exception class names */
@@ -78,13 +90,13 @@
 /* some popular releases of Slackware do not have SSIZE_MAX */
 
 #ifndef SSIZE_MAX
-#       if defined(INT_MAX)
-#               define SSIZE_MAX  INT_MAX
-#       elif defined(MAXINT)
-#               define SSIZE_MAX MAXINT
-#       else
-#               define SSIZE_MAX 2147483647 /* ugh */
-#       endif
+#	if defined(INT_MAX)
+#		define SSIZE_MAX  INT_MAX
+#	elif defined(MAXINT)
+#		define SSIZE_MAX MAXINT
+#	else
+#		define SSIZE_MAX 2147483647 /* ugh */
+#	endif
 #endif
 
 /*
@@ -115,10 +127,17 @@ Flow Control defines inspired by reading how mgetty by Gert Doering does it
 
 
 /* PROTOTYPES */
+#ifdef __BEOS__
+data_rate translate_speed( JNIEnv*, jint  );
+int translate_data_bits( JNIEnv *, data_bits *, jint );
+int translate_stop_bits( JNIEnv *, stop_bits *, jint );
+int translate_parity( JNIEnv *, parity_mode *, jint );
+#else
 int translate_speed( JNIEnv*, jint  );
 int translate_data_bits( JNIEnv *, tcflag_t *, jint );
 int translate_stop_bits( JNIEnv *, tcflag_t *, jint );
 int translate_parity( JNIEnv *, tcflag_t *, jint );
+#endif
 int read_byte_array( int, unsigned char *, int, int );
 int get_java_var( JNIEnv *, jobject, char *, char * );
 jboolean is_interrupted(JNIEnv *, jobject );

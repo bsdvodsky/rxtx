@@ -29,13 +29,13 @@
 /* some popular releases of Slackware do not have SSIZE_MAX */
 
 #ifndef SSIZE_MAX
-#       if defined(INT_MAX)
-#               define SSIZE_MAX  INT_MAX
-#       elif defined(MAXINT)
-#               define SSIZE_MAX MAXINT
-#       else
-#               define SSIZE_MAX 2147483647 /* ugh */
-#       endif
+#	if defined(INT_MAX)
+#		define SSIZE_MAX  INT_MAX
+#	elif defined(MAXINT)
+#		define SSIZE_MAX MAXINT
+#	else
+#		define SSIZE_MAX 2147483647 /* ugh */
+#	endif
 #endif
 
 
@@ -55,6 +55,8 @@ Flow Control defines inspired by reading how mgetty by Gert Doering does it
 */
 
 /* PROTOTYPES */
+jboolean is_interrupted(JNIEnv *, jobject );
+int send_event(JNIEnv *, jobject, jint, int );
 int read_byte_array( int fd, unsigned char *buffer, int length, int threshold,
    int timeout );
 int get_java_var( JNIEnv *, jobject, char *, char * );

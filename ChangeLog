@@ -1,7 +1,26 @@
+1.5-3  Oct  4, 2000   Initial BeOS Support Brian D. Hindman <bjhindman@yahoo.com>
+		      Win32 cross build fixes <jcbernard@free.fr>
+		      Documentation changes D. Bahi <dbahi@tenornetworks.com>
+		      Kaffe Support
+		      freebsd build fixes
+		      Makefile fixes
+		      Merged changes from 1.4-5
+1.5-2  Jul 16, 2000   Merged changes from 1.4-4
+		      Added RawIO classes and read/write/open/close functions.
+		      Jim Garvin <jgarvin@gardelsoftware.com>
+1.5-1  Mar  7, 2000   RS485 write support.  comm.jar implemented.
+		      Stallion Card support 
+		      Greg Luck <gluck@tempo-services.com.au>
+		      CommPort enumeration with rxtx's comm.jar
 1.4-6  Oct 11, 2000   support for explicitly-specified lists of ports
-                      Martin Pool <mbp@linuxcare.com>
-                      Documentation for explicitly-specified lists of ports
 		      Martin Pool <mbp@linuxcare.com>
+		      Documentation for explicitly-specified lists of ports
+		      Martin Pool <mbp@linuxcare.com>
+		      removed extra files not used in 1.4
+		      merged config/Makefile fixes from 1.5
+		      merged win32 fixes from 1.5
+		      cleanup of ParallelImp.c eventLoop (more needed)
+		      merged documentation changes from 1.5 that are related.
 1.4-5  Aug 18, 2000   RXTXPort constructor to set the name to the port being 
 		      opened.  RXTXPort.removeEventListener() fixes/work arounds
 		      all by Chris Hamlett <chris.hamlett@securelogix.com>
@@ -19,6 +38,7 @@
 		      data accessed by multiple threads declared volatile.
 1.4-3  Jun 14, 2000   synchronization fixes(?) 
 		      Chris Portal <cportal@mathworks.com>
+		      get rid of annoying kenrel version messages
 		      Joey Armstrong <joeya@mathworks.com>
 		      Allow Event loop to die silently after closing the fd.
 		      LPRPort open() throws PortInUseException not IOException
@@ -26,7 +46,7 @@
 1.4-2  Jun 13, 2000   Documentation changes Bryce Nesbitt <bryce@nextbus.com>
 1.4-1  Jun  6, 2000   HP-UX build fixes (still a messed up compile flag I think)
 		      "Peter Pastrnak" <praktfp1@hpbbm.bbn.hp.com>
-		      if you get hp-ux working please let peter know.
+		      if you get HP-UX working please let peter know.
 		      redo of RXTXPort's read()
 		      "Bertrand Renuart" <bertrand.renuart@itma.lu>
 		      Many println's replaced with appropriate exceptions
@@ -174,7 +194,8 @@
 		      sheldon_young@yahoo.com)
 		      Commented SerialImp.c (trentjarvi@yahoo.com)
 1.2pre4 Aug 12, 1998  The CommAPI has changed in the newest beta from Sun,
-		      now named "javacomm20-ea".  I have attached RXTXPort.java,		      which I have modified so it now compiles.
+		      now named "javacomm20-ea".  I have attached RXTXPort.java,
+		      which I have modified so it now compiles.
 		      Sheldon Young sheldon@intergate.bc.ca
 1.2pre3 July 5, 1998  libtool 1.0h, automake 1.3, (redhat-5.1 defaults)
 		      added JDK_HOME as and option to configure.

@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <limits.h>
-#include <termios.h>
 #ifndef WIN32
 #include <sys/ioctl.h>
 #include <sys/param.h>
@@ -105,7 +104,7 @@ JNIEXPORT void JNICALL RXTXPort(Initialize)(
 	}
 	if(!strcmp(name.release,UTS_RELEASE))
 	{
-		fprintf(stderr, LINUX_KERNEL_VERSION_ERROR, UTS_RELEASE, 
+		fprintf(stderr, LINUX_KERNEL_VERSION_ERROR, UTS_RELEASE,
 			name.release);
 		getchar();
 	}
@@ -210,8 +209,7 @@ JNIEXPORT void JNICALL RXTXPort(nativeSetSerialPortParams)(
 	if( !cspeed ) return;
 	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
 	if( !translate_data_bits( env, &(ttyset.c_cflag), dataBits ) ) return;
-	if( !translate_stop_bits( env, &(ttyset.c_cflag), stopBits ) ) 
-		return;
+	if( !translate_stop_bits( env, &(ttyset.c_cflag), stopBits ) ) return;
 	if( !translate_parity( env, &(ttyset.c_cflag), parity ) ) return;
 #ifdef __FreeBSD__
 	if( cfsetspeed( &ttyset, cspeed ) < 0 ) goto fail;
@@ -315,8 +313,7 @@ int translate_data_bits( JNIEnv *env, tcflag_t *cflag, jint dataBits )
    comments:   If you specify 5 data bits and 2 stop bits, the port will
                allegedly use 1.5 stop bits.  Does anyone care?
 ----------------------------------------------------------*/
-int translate_stop_bits( JNIEnv *env, tcflag_t *cflag, 
-	jint stopBits )
+int translate_stop_bits( JNIEnv *env, tcflag_t *cflag, jint stopBits )
 {
 	switch( stopBits ) {
 		case STOPBITS_1:
@@ -901,7 +898,6 @@ JNIEXPORT jint JNICALL RXTXPort(nativeavailable)( JNIEnv *env,
 		return -1;
 	}
 	else return (jint)result;
-
 }
 
 /*----------------------------------------------------------
@@ -956,16 +952,18 @@ RXTXPort.eventLoop
    perform:     periodically check for SerialPortEvents
    return:      none
    exceptions:  none
-   comments:    
+   comments:
 ----------------------------------------------------------*/
 JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 {
 	int fd, ret, change;
 	fd_set rfds;
 	struct timeval tv_sleep;
-	struct stat fstatbuf;
 	unsigned int mflags, omflags;
 	jboolean interrupted = 0;
+#if defined TIOCSERGETLSR
+	struct stat fstatbuf;
+#endif /* TIOCSERGETLSR */
 
 #if defined(TIOCGICOUNT)
 	struct serial_icounter_struct sis, osis;
@@ -995,7 +993,7 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 		report("Port does not support TIOCSERGETLSR\n" );
 			has_tiocsergetlsr = 0;
 	}
-#endif /*TIOCSERGETLSR */
+#endif /* TIOCSERGETLSR */
 
 	if( ioctl( fd, TIOCMGET, &omflags) <0 ) {
 		report("Port does not support events\n" );
@@ -1111,9 +1109,9 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(isDeviceGood)(JNIEnv *env,
 
 	for(i=0;i<64;i++){
 #if defined(_GNU_SOURCE)
-		snprintf(teststring, 256, "/dev/%s%i",name, i);
+		snprintf(teststring, 256, "%s%s%i",DEVICEDIR,name, i);
 #else
-		sprintf(teststring,"/dev/%s%i",name, i);
+		sprintf(teststring,"%s%s%i",DEVICEDIR,name, i);
 #endif /* _GNU_SOURCE */
 		stat(teststring,&mystat);
 		if(S_ISCHR(mystat.st_mode)){
@@ -1127,9 +1125,9 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(isDeviceGood)(JNIEnv *env,
 		result=JNI_FALSE;
 	}
 #if defined(_GNU_SOURCE)
-	snprintf(teststring, 256, "/dev/%s",name);
+	snprintf(teststring, 256, "%s%s",DEVICEDIR,name);
 #else
-	sprintf(teststring,"/dev/%s",name);
+	sprintf(teststring,"%s%s",DEVICEDIR,name);
 #endif /* _GNU_SOURCE */
 	stat(teststring,&mystat);
 	if(S_ISCHR(mystat.st_mode)){

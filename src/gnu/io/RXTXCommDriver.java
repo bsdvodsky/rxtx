@@ -1,6 +1,7 @@
 /*-------------------------------------------------------------------------
 |   A wrapper to convert RXTX into Linux Java Comm
 |   Copyright 1998 Kevin Hester, kevinh@acm.org
+|   Copyright 2000 Trent Jarvi, trentjarvi@yahoo.com
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Library General Public
@@ -22,29 +23,19 @@
 
 package gnu.io;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.util.*;
 import javax.comm.*;
 import java.util.StringTokenizer;
 
 /**
    This is the JavaComm for Linux driver.
 */
-public class RXTXCommDriver implements CommDriver {
-
-
-	static String OS;
+public class RXTXCommDriver implements CommDriver
+{
 	static
 	{
-		OS = System.getProperty("os.name");
-		if(OS.equals("Win95"))
-		{
-			System.loadLibrary("SerialW95");
-		}
-		else
-		{
-			System.loadLibrary( "Serial" );
-		}
+		System.loadLibrary( "Serial" );
 	}
 
 	/** Get the Serial port prefixes for the running OS */
@@ -103,24 +94,30 @@ public class RXTXCommDriver implements CommDriver {
     * 1) Ensure that that the hardware is present.
     * 2) Load any required native libraries.
     * 3) Register the port names with the CommPortIdentifier.
-	 *
-	 * <p>From the NullDriver.java CommAPI sample.
-	 *
-	 * added printerport stuff
-	 * Holger Lehmann
-	 * July 12, 1999
-	 * IBM
+	*
+	* <p>From the NullDriver.java CommAPI sample.
+	*
+	* added printerport stuff
+	* Holger Lehmann
+	* July 12, 1999
+	* IBM
 
-	 * Added ttyM for Moxa boards
-	 * Removed obsolete device cuaa
-	 * Peter Bennett
-	 * January 02, 2000
-	 * Bencom
+	* Added ttyM for Moxa boards
+	* Removed obsolete device cuaa
+	* Peter Bennett
+	* January 02, 2000
+	* Bencom
+
+    */
+    /*
+	See SerialImp.c's *KnownPorts[] when adding ports
     */
 	public void initialize()
 	{
-	// First try to register ports specified in the properties
-	// file.  If that doesn't exist, then scan for ports.
+	/*
+	 First try to register ports specified in the properties
+	 file.  If that doesn't exist, then scan for ports.
+	*/
 		if (!registerSpecifiedPorts())
 			registerScannedPorts();
    	}
@@ -190,7 +187,7 @@ public class RXTXCommDriver implements CommDriver {
 			"ttyC", // linux cyclades cards
 			"ttyCH",// linux Chase Research AT/PCI-Fast serial card
 			"ttyD", // linux Digiboard serial card
-			"ttuE", // linux Stallion serial card
+			"ttyE", // linux Stallion serial card
 			"ttyF", // linux Computone IntelliPort serial card
 			"ttyH", // linux Chase serial card
 			"ttyI", // linux virtual modems
@@ -210,11 +207,11 @@ public class RXTXCommDriver implements CommDriver {
 			"ttyW", // linux specialix cards
 			"ttyX", // linux SpecialX serial card
 
-			"ttyd", // irix basic serial ports
-			"ttym", // irix modems
-			"ttyf", // irix serial ports with hardware flow
-			"ttyq", // irix pseudo ttys
 			"ttyc", // irix raw character devices
+			"ttyd", // irix basic serial ports
+			"ttyf", // irix serial ports with hardware flow
+			"ttym", // irix modems
+			"ttyq", // irix pseudo ttys
 			"tty4d",// irix RS422
 			"tty4f",// irix RS422 with HSKo/HSki
 			"midi", // irix serial midi
@@ -225,7 +222,11 @@ public class RXTXCommDriver implements CommDriver {
 			"tty0", // netbsd serial ports
 
 			"tty0p",// HP-UX serial ports
-			"tty1p" // HP-UX serial ports
+			"tty1p",// HP-UX serial ports
+
+			"serial",// BeOS serial ports
+
+			"COM"    // win32 serial ports
 		};
 	/** Get the Parallel port prefixes for the running os
 	* Holger Lehmann

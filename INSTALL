@@ -16,7 +16,7 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
-This is the INSTALL file for RXTX.  Jun 13 2000
+This is the INSTALL file for RXTX.  Oct 11 2000
 
 If, while following the instructions, you find this file unclear or incorrect 
 please make a note and email the details to trentjarvi@yahoo.com.  
@@ -28,7 +28,7 @@ please make a note and email the details to trentjarvi@yahoo.com.
 2.  BUILDING COMMAPI SUPPORT
 
 	A.  Quick Install
-	B.  Installing sun's comm.jar
+	B.  Installing Sun's comm.jar
 	C.  installing javax.comm.properties.
 	D.  Add comm.jar to your CLASSPATH.
 	E.  Build and Install the jar.
@@ -103,7 +103,7 @@ A.  Japanese
 	If that does not work or you do not want a script messing with the 
 	system, read on..
 
-	B.  Installing sun's comm.jar
+	B.  Installing Sun's comm.jar
 
 		http://java.sun.com/products/javacomm/index.html
 		
@@ -167,7 +167,7 @@ A.  Japanese
 
 	E.  Build and Install the jar.
 
-		make jcl 	to build jcl.jar
+		make 	 	to build jcl.jar and the libraries
 		make install 	to place the jar and libraries in the correct 
 		                location
 
@@ -229,7 +229,7 @@ A.  Japanese
 		ftp://24.1.180.14/pub
 
 		I built the dll with jdk-1.2.2 for linux using jdk-1.2.2 
-		include files from win32.
+		include files from the win32 JDK.
 
 		Make sure that ming32 bin dir is the first in your path (at 
 		least before /usr/bin/gcc)
@@ -244,6 +244,12 @@ A.  Japanese
 			$ mkdir /home/jarvi/win32java
 			$ cp -r /mnt/win98//java/include /home/jarvi/win32java
 
+			If you are developing win32 support you may want to
+			export the location to make the config script
+			non interactive
+
+			$ export WIN32INCLUDE=/home/jarvi/tools/win32-include
+
 		run configure to generate a Makefile
 
 			$ cd /home/jarvi/rxtx-*
@@ -254,8 +260,7 @@ A.  Japanese
 
 		build the class files and dll.
 
-			$ make jcl
-			$ make borg
+			$ make
 
 		the files will be located in
 
@@ -273,10 +278,10 @@ A.  I get java.lang.UnsatisfiedLinkError: nSetOwner while loading driver
     gnu.io.RXTXCommDriver when using rxtx.
 
 	SetOwner appears to be some win32 call.
-	Do not use the win32 CommAPI files.  Get the Solaris version.
+	Do not use Sun's win32 CommAPI files.  Get Sun's Solaris version.
 	"javacomm20-x86.tar.Z" 
 
-	See Also: 2-B.  Installing sun's comm.jar
+	See Also: 2-B.  Installing Sun's comm.jar
 
 B.  Exception in thread "main" java.lang.UnsatisfiedLinkError: no Serial in 
     java.library.path
@@ -479,6 +484,8 @@ P.  Which Device Should be Used?
 	netbsd uses tty0?
 	Irix  uses ttyd? ttym? ttyf?
 	HP-UX uses tty0p? tty1p?
+	BeOS uses /dev/ports/serial?
+	Win32 uses COM?
   
 Q.  It Did Not Work! 
 
@@ -510,10 +517,6 @@ make --version
 
 
 	mail any bugs to trentjarvi@yahoo.com.  
-
-You made it this far.. what is one more line.
-
-Sun, Solaris and Java are registered trademarks of Sun Microsystems, Inc.
 
 R.  Which jdk should be used? 
 
@@ -567,3 +570,7 @@ example
 
 will look kind of like Solaris, if you have created the appropriate
 device nodes.
+
+You made it this far.. what is one more line.
+
+Sun, Solaris and Java are registered trademarks of Sun Microsystems, Inc.

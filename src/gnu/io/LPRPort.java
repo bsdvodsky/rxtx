@@ -20,6 +20,7 @@ package gnu.io;
 
 import java.io.*;
 import java.util.*;
+
 import javax.comm.*;
 /**
   * LPRPort
@@ -210,8 +211,8 @@ final class LPRPort extends ParallelPort
 	}
 
 	/** Add an event listener */
-	public synchronized void addEventListener( 
-		ParallelPortEventListener lsnr ) 
+	public synchronized void addEventListener(
+		ParallelPortEventListener lsnr )
 		throws TooManyListenersException
 	{
 		if( PPEventListener != null )
