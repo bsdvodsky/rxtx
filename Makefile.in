@@ -328,7 +328,7 @@ install: all jcl install-lib
 
 install-lib:
 	( cd $(TOP)/$(target_alias) ; \
-	if [ [ -f libSerial.la ];then \
+	if [ -f libSerial.la ];then \
 	$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) libSerial.la $(libdir);\
 	fi; \
 	if [ -f libParallel.la ];then \

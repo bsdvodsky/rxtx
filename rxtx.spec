@@ -4,42 +4,38 @@
 # Trent Jarvi jarvi@ezlink.com
 Summary: RXTX -- W/Escient Mods
 Name: rxtx
-%define version 1.2-beta
+%define version 1.3
 %define release 1
 Version: %{version}
 Release: %{release}
 Copyright: GPL (programs), relaxed LGPL (libraries), and public domain (docs)
 Group: Applications/compiler
-Source: rxtx-1.2-beta-1.tar.gz
-Provides: libserial.so libserial.la libserial.so.0 libserial.so.0.1.0 jcl.jar
-BuildRoot: $HOME/redhat/root
+Source: lpr-%{PACKAGE_VERSION}.tar.gz
+Provides: libserial.so libserial.so.0 libserial.so.0.1.0 jcl.jar
+BuildRoot: /var/tmp/rxtx-root
 
 %description
 rxtx is a native interface to serial ports in java.
 
 %prep
-echo "In Prep."
+%setup -q
 
 %build
 cd rxtx
-./configure --prefix=$HOME/redhat/INSTALLROOT/usr/local
+./configure --prefix=$BuildRoot/usr
 make clean
 make
 
 %install
 cd rxtx
-rm -rf $RPM_BUILD_ROOT/usr/local/lib/libtya.so
-mkdir -p $RPM_BUILD_ROOT/usr/local/lib
-mkdir -p $RPM_BUILD_ROOT/usr/share/jre/bin
-make ROOT="$RPM_BUILD_ROOT" install
+mkdir -p $BuildRoot/usr/{lib,local}
+make ROOT="$BuildRoot" install
 
 %post
 /sbin/ldconfig
 
 %files
-%attr(755, root, root) /usr/local/lib/libSerial.so.0.1.0
-%attr(777, root, root) /usr/local/lib/libSerial.so.0
-%attr(777, root, root) /usr/local/lib/libSerial.so
-%attr(755, root, root) /usr/local/lib/libSerial.la
-%attr(644, root, root) /usr/local/lib/libSerial.a
-%attr(644, root, root) /usr/share/jre/bin/jcl.jar
+%attr(755, root, root) /usr/lib/libSerial.so.0.1.0
+%attr(777, root, root) /usr/lib/libSerial.so.0
+%attr(777, root, root) /usr/lib/libSerial.so
+%attr(644, root, root) /usr/local/java/lib/jcl.jar
