@@ -16,7 +16,7 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
-This is the INSTALL file for RXTX.  Thu Jun 14 12:48:33 MDT 2001
+This is the INSTALL file for RXTX.  Thu Jun 21 13:42:32 MDT 2001
 
 If, while following the instructions, you find this file unclear or incorrect 
 please make a note and email the details to trentjarvi@yahoo.com.  
@@ -597,10 +597,15 @@ device nodes.
 
 T.  How can I use Lock Files with rxtx?
 
+RXTX uses lock files by default.  configure --disable-lockfiles to generate
+rxtx libraries without lock files.  Its strongly recommended that you do
+use lock files to prevent rxtx from stomping on other programs using serial
+ports.
+
 Lock files are used to prevent more than one program accessing a port at a
 time.  Lock files require a bit of sysadmin to work properly..
 
-Rxtx has preliminary support for lock files on Linux.  It may work on other
+Rxtx has support for lock files on Linux only.  It may work on other
 platforms but read the source before blindly trying it. 
 
 Before you use lock files you need to do one of two things:

@@ -18,7 +18,7 @@
 --------------------------------------------------------------------------*/
 #include "config.h"
 #include "gnu_io_RXTXPort.h"
-#ifndef __LCC__ 
+#ifndef __LCC__
 #   include <unistd.h>
 #else /* windows lcc compiler for fd_set. probably wrong */
 #   include<winsock.h>
@@ -1151,10 +1151,16 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(JNIEnv *env,
 			goto END;
 		}
 		if (read(fd, &c, 1) < 0)
+		{
+#ifdef EWOULDBLOCK
 			if ( errno != EWOULDBLOCK )
-			{ 
-				ret = JNI_FALSE; 
+			{
+				ret = JNI_FALSE;
 			}
+#else
+			ret = JNI_FALSE;
+#endif /* EWOULDBLOCK */
+		}
 	}
 END:
 	fhs_unlock(name);
@@ -1196,7 +1202,7 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(isDeviceGood)(JNIEnv *env,
 				result=JNI_TRUE;
 				break;
 			}
-			else 
+			else
 				result=JNI_FALSE;
 		}
 		else
@@ -1302,7 +1308,7 @@ JNIEXPORT jint JNICALL RXTXPort(getOutputBufferSize)(JNIEnv *env,
  is_interrupted
 
    accept:      
-   perform:     see if the port is being closed. 
+   perform:     see if the port is being closed.
    return:      a positive value if the port is being closed.
    exceptions:  none
    comments:
@@ -1338,7 +1344,7 @@ jboolean is_interrupted(JNIEnv *env, jobject jobj)
 /*----------------------------------------------------------
  send_event
 
-   accept:      The event type and the event state     
+   accept:      The event type and the event state
    perform:     if state is > 0 send a JNI_TRUE event otherwise send JNI_FALSE
    return:      a positive value if the port is being closed.
    exceptions:  none
@@ -1432,7 +1438,7 @@ void throw_java_exception( JNIEnv *env, char *exc, char *foo, char *msg )
 /*----------------------------------------------------------
  report
 
-   accept:      string to send to stderr     
+   accept:      string to send to stderr
    perform:     if DEBUG is defined send the string to stderr.
    return:      none
    exceptions:  none
@@ -1478,9 +1484,9 @@ int fhs_lock(const char *filename)
 	int i,j,fd, pid;
 	char lockinfo[12], file[80], pid_buffer[20], message[80],*p;
 	struct stat buf;
-	const char *lockdirs[]={ "/etc/locks", "/usr/spool/kermit", 
+	const char *lockdirs[]={ "/etc/locks", "/usr/spool/kermit",
 		"/usr/spool/locks", "/usr/spool/uucp", "/usr/spool/uucp/",
-		"/usr/spool/uucp/LCK", "/var/lock", "/var/lock/modem", 
+		"/usr/spool/uucp/LCK", "/var/lock", "/var/lock/modem",
 		"/var/spool/lock", "/var/spool/locks", "/var/spool/uucp",NULL
 	};
 	struct group *g=getgrnam("uucp");
@@ -1513,7 +1519,7 @@ int fhs_lock(const char *filename)
 		return 1;
 	}
 
-	/* 
+	/*
 	 * There is a zoo of lockdir possibilities
 	 * Its possible to check for stale processes with most of them.
 	 * for now we will just check for the lockfile on most
@@ -1544,7 +1550,7 @@ int fhs_lock(const char *filename)
 		j++;
 	}
 	
-	/* 
+	/*
 	check if the device is already locked
 
 	There is much to do here.
@@ -1580,7 +1586,7 @@ int fhs_lock(const char *filename)
 
 		if( kill((pid_t) pid, 0) && errno==ESRCH )
 		{
-			fprintf(stderr, 
+			fprintf(stderr,
 				"RXTX Warning:  Removing stale lock file.\n");
 			if(unlink(file) != 0)
 			{

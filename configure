@@ -5581,7 +5581,7 @@ fi
 # Check whether --enable-lockfiles or --disable-lockfiles was given.
 if test "${enable_lockfiles+set}" = set; then
   enableval="$enable_lockfiles"
-  if test x$enable_lockfiles = xyes; then 
+  if test x$enable_lockfiles = xno; then 
 		CFLAGS="$CFLAGS -DLOCKFILES"
 	fi
 

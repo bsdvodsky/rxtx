@@ -1,4 +1,4 @@
-This is TODO  Wed Jun 20 10:47:05 MDT 2001
+This is TODO  Thu Jun 21 13:42:32 MDT 2001
 
 The system crashes with a NullPointException if you enable notifications
 before your register a listener.
@@ -104,8 +104,9 @@ ParallelPort support.  Needs some code.
                       A  large fraction of the stubs are filled in now.
 		ParallelImp.h
 		LPRPort.java simular to RXTXPort.java + stubs.
-	Printer support was working earlier.  Recent kernel changes have 
-	probably broken the printer support.  More comments in ParallelImp.c
+	Printer support is working with simiple print tests.
+	Full support for printing will be put in when 2.4 linux kernels
+	are mainstream.
 	
 ----------------------------------------------------------------------------
 From This point on, You need to use rxtx 1.5.  All of this work is 
