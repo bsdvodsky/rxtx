@@ -48,6 +48,20 @@ Unterminated sed command errors usually result from `find` producing unexpected
 results.   If you are unsure remove all comm.jar and javax.comm.properties files
 and use configure to place them in the correct place. 
 
+For those installing these tools from tarballs:
+
+Take notice of --prefix when running the auto*/libtool configuration.  The
+packages default to /usr/local.  Many distros have a copy in /usr.
+
+The common error that results is:
+
+cd. && aclocal
+aclocal:configure.in: 23: macro 'AM_PROG_LIBTOOL' not found in library
+make:***[aclocal.m4]Error 1
+
+If your positive things are setup right you may try the autogen.sh script
+to try regenerating the scripts with your tools.
+
 
 mail any bugs to trentjarvi@yahoo.com.  
 
