@@ -1,3 +1,11 @@
+#ifndef __linux__
+JNIEXPORT jstring JNICALL Java_gnu_io_CommPortIdentifier_native_1psmisc_1report_1owner (JNIEnv *env, jobject obj, jstring arg)
+{
+	return (*env)->NewStringUTF(env, "Unknown Application");
+}
+#else
+
+/* loosly based on fuser.c by Werner Almesberger. */
 /* fuser.c - identify processes using files */
 
 /* Copyright 1993-1998 Werner Almesberger. See file COPYING for details. 
