@@ -38,7 +38,7 @@ AC_SUBST(TARGETLIB)
 AC_SUBST(LDFLAG)
 AC_SUBST(CFLAGS)
 AC_SUBST(VERBOSE_IOEXCEPTIONS)
-AC_SUBST(THREADS_FLAG)
+AC_SUBST(THREAD_FLAG)
 AC_SUBST(IDENTIFIERS)
 if test "$CC" = "gcc"; then
         CFLAGS="$CFLAGS"
@@ -70,46 +70,29 @@ AC_ARG_ENABLE(PRINTER,
 #   if test x$enable_VERBOSE = xno; then 
 #      VERBOSE_IOEXCEPTIONS="-DNO_VERBOSE_IOEXCEPTIONS"
 #   fi
-#AC_ARG_ENABLE(TIMEOUTS,
-#   [  --enable-TIMEOUTS       IO TIMEOUT support [default=yes]], echo $enable_TIMEOUTS, enable_TIMEOUTS="yes")
-#   if test x$enable_TIMEOUTS = xyes; then  
-#      CFLAGS="$CFLAGS -DTIMEOUT"
-#   fi
-AC_ARG_ENABLE(ASYNC,
-   [  --enable-ASYNC          ASYNC io support [default=yes]], echo $enable_ASYNC, enable_ASYNC="yes"
-   if test x$enable_ASYNC = xyes; then 
-         if test "$CC" = "gcc"; then
-            CFLAGS="$CFLAGS -DASYNC -D_POSIX_SOURCE -D_BSD_SOURCE"
-         else
-            [case "$host_os" in
-               irix*)
-                  CFLAGS="$CFLAGS -DASYNC -D_NO_POSIX=1 -D_NO_XOPEN4=1";;
-               *);;
-            esac]
-         fi
-         THREADS_FLAG="native"
+   if test "$CC" = "gcc"; then
+      CFLAGS="$CFLAGS -D_POSIX_SOURCE -D_BSD_SOURCE"
+   else
+      [case "$host_os" in
+         irix*)
+            CFLAGS="$CFLAGS -D_NO_POSIX=1 -D_NO_XOPEN4=1";;
+         *);;
+      esac]
    fi
-   )
-#AC_ARG_ENABLE(EVENT,
-#   [  --enable-EVENT          Event notification [default=yes]], echo $enable_EVENT, enable_EVENT="yes"
-#   if test x$enable_EVENT = xyes; then 
-#      CFLAGS="$CFLAGS -DEVENTNOTIFICATION"
-#      THREADS_FLAG="native"
-#   fi
-#   )
+AC_ARG_ENABLE(NATIVETHREADS,
+   [  --enable-NATIVETHREADS  Use jdk native-threads [default=no]], echo $enable_NATIVETHREADS, enable_NATIVETHREADS="no")
+   if test x$enable_NATIVETHREADS = xyes; then 
+      THREAD_FLAG="native"
+   else
+      THREAD_FLAG=""
+   fi
 AC_ARG_ENABLE(FULL_EVENT,
    [  --enable-FULL_EVENT     Experimental event notification (linux 2.2)],
    if test x$enable_FULL_EVENT = xyes; then 
-	CFLAGS="$CFLAGS -DEVENTNOTIFICATION -DFULL_EVENT"
+	CFLAGS="$CFLAGS -DFULL_EVENT"
 	THREADS_FLAG="native"
    fi
    )
-#AC_ARG_ENABLE(GREENTHREAD,
-#   [  --enable-GREENTHREAD    Experimental Greenthread Workaround],
-#   if test x$enable_GREENTHREAD = xyes; then 
-#      CFLAGS="$CFLAGS -DGREENTHREAD_WORKAROUND"
-#   fi
-#   )
 AC_ARG_ENABLE(JDK_HOME,
    [  --enable-JDK_HOME       get JDK location from \$JDK_HOME],
    if test x$enable_JDK_HOME = xyes; then 

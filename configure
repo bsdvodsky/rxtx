@@ -22,7 +22,7 @@ ac_help="$ac_help
 ac_help="$ac_help
   --enable-PRINTER        PRINTER support (experimental) [default=no]"
 ac_help="$ac_help
-  --enable-ASYNC          ASYNC io support [default=yes]"
+  --enable-NATIVETHREADS  Use jdk native-threads [default=no]"
 ac_help="$ac_help
   --enable-FULL_EVENT     Experimental event notification (linux 2.2)"
 ac_help="$ac_help
@@ -1973,55 +1973,38 @@ fi
 #   if test x$enable_VERBOSE = xno; then 
 #      VERBOSE_IOEXCEPTIONS="-DNO_VERBOSE_IOEXCEPTIONS"
 #   fi
-#AC_ARG_ENABLE(TIMEOUTS,
-#   [  --enable-TIMEOUTS       IO TIMEOUT support [default=yes]], echo $enable_TIMEOUTS, enable_TIMEOUTS="yes")
-#   if test x$enable_TIMEOUTS = xyes; then  
-#      CFLAGS="$CFLAGS -DTIMEOUT"
-#   fi
-# Check whether --enable-ASYNC or --disable-ASYNC was given.
-if test "${enable_ASYNC+set}" = set; then
-  enableval="$enable_ASYNC"
-  echo $enable_ASYNC
-else
-  enable_ASYNC="yes"
-   if test x$enable_ASYNC = xyes; then 
-         if test "$CC" = "gcc"; then
-            CFLAGS="$CFLAGS -DASYNC -D_POSIX_SOURCE -D_BSD_SOURCE"
-         else
-            case "$host_os" in
-               irix*)
-                  CFLAGS="$CFLAGS -DASYNC -D_NO_POSIX=1 -D_NO_XOPEN4=1";;
-               *);;
-            esac
-         fi
-         THREADS_FLAG="native"
+   if test "$CC" = "gcc"; then
+      CFLAGS="$CFLAGS -D_POSIX_SOURCE -D_BSD_SOURCE"
+   else
+      case "$host_os" in
+         irix*)
+            CFLAGS="$CFLAGS -D_NO_POSIX=1 -D_NO_XOPEN4=1";;
+         *);;
+      esac
    fi
-   
+# Check whether --enable-NATIVETHREADS or --disable-NATIVETHREADS was given.
+if test "${enable_NATIVETHREADS+set}" = set; then
+  enableval="$enable_NATIVETHREADS"
+  echo $enable_NATIVETHREADS
+else
+  enable_NATIVETHREADS="no"
 fi
 
-#AC_ARG_ENABLE(EVENT,
-#   [  --enable-EVENT          Event notification [default=yes]], echo $enable_EVENT, enable_EVENT="yes"
-#   if test x$enable_EVENT = xyes; then 
-#      CFLAGS="$CFLAGS -DEVENTNOTIFICATION"
-#      THREADS_FLAG="native"
-#   fi
-#   )
+   if test x$enable_NATIVETHREADS = xyes; then 
+      THREAD_FLAG="native"
+   else
+      THREAD_FLAG=""
+   fi
 # Check whether --enable-FULL_EVENT or --disable-FULL_EVENT was given.
 if test "${enable_FULL_EVENT+set}" = set; then
   enableval="$enable_FULL_EVENT"
   if test x$enable_FULL_EVENT = xyes; then 
-	CFLAGS="$CFLAGS -DEVENTNOTIFICATION -DFULL_EVENT"
+	CFLAGS="$CFLAGS -DFULL_EVENT"
 	THREADS_FLAG="native"
    fi
    
 fi
 
-#AC_ARG_ENABLE(GREENTHREAD,
-#   [  --enable-GREENTHREAD    Experimental Greenthread Workaround],
-#   if test x$enable_GREENTHREAD = xyes; then 
-#      CFLAGS="$CFLAGS -DGREENTHREAD_WORKAROUND"
-#   fi
-#   )
 # Check whether --enable-JDK_HOME or --disable-JDK_HOME was given.
 if test "${enable_JDK_HOME+set}" = set; then
   enableval="$enable_JDK_HOME"
@@ -2227,7 +2210,7 @@ s%@JPATH@%$JPATH%g
 s%@TARGETLIB@%$TARGETLIB%g
 s%@LDFLAG@%$LDFLAG%g
 s%@VERBOSE_IOEXCEPTIONS@%$VERBOSE_IOEXCEPTIONS%g
-s%@THREADS_FLAG@%$THREADS_FLAG%g
+s%@THREAD_FLAG@%$THREAD_FLAG%g
 s%@IDENTIFIERS@%$IDENTIFIERS%g
 
 CEOF

@@ -22,7 +22,7 @@ TOP=@TOP@
 JPATH=@JPATH@
 INCLUDES= -I $(TOP) -I $(TOP)/$(target_alias) -I . -I $(JAVAINCLUDE) -I $(JAVANATINC)
 export NSJAVA=1
-export THREADS_FLAG=native
+export THREADS_FLAG=@THREAD_FLAG@
 JAVAC=$(JPATH)/bin/javac $(JCLASSPATH):$(COMM_JAR_PATH):$(JCL_JAR_PATH) -d $(TOP)/ -O 
 JAVAH=$(JPATH)/bin/javah $(JCLASSPATH) -d $(TOP)/$(target_alias) -jni
 JAVA=$(JPATH)/bin/java $(JCLASSPATH)
@@ -43,7 +43,7 @@ install: all jcl install-lib
 
 install-lib:
 	( cd $(TOP)/$(target_alias) ; \
-	if [ -f libSerial.la ];then \
+	if [ [ -f libSerial.la ];then \
 	$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) libSerial.la $(libdir);\
 	fi; \
 	if [ -f libParallel.la ];then \
@@ -75,6 +75,13 @@ $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class \
 		: $(srcdir)/src/RXTXCommDriver.java \
 		$(srcdir)/src/LPRPort.java \
 		$(srcdir)/src/RXTXPort.java 
+	if [ ! $(THREADS_FLAG) ] && [ ! -d com ]; then \
+		if [ ! -f $(JPATH)/lib/comm.jar ]; then \
+			echo "Please install comm.jar from CommAPI in $(JPATH)/java/lib/"; \
+		else \
+			jar -xf $(JPATH)/lib/comm.jar; \
+		fi; \
+	fi;
 	$(JAVAC) $(srcdir)/src/RXTXPort.java $(srcdir)/src/LPRPort.java $(srcdir)/src/RXTXCommDriver.java
 
 $(TOP)/$(target_alias)/libParallel.la: $(TOP)/$(target_alias)/ParallelImp.lo

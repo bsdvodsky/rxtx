@@ -27,8 +27,6 @@ import javax.comm.*;
 public class RXTXCommDriver implements CommDriver {
 
 
-	//public static final int PORT_SERIAL=1;
-	//public static final int PORT_PARALLEL=2;
 	/** Serial port prefixes to check for */
 	private static final String[] portPrefix = {
 		"modem",	// modem ports
