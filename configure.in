@@ -1,6 +1,6 @@
 #-------------------------------------------------------------------------
 #   rxtx is a native interface to serial ports in java.
-#   Copyright 1997, 1998, 1999 by Trent Jarvi jarvi@ezlink.com.
+#   Copyright 1997, 1998, 1999 by Trent Jarvi trentjarvi@yahoo.com.
 #
 #   This library is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU Library General Public
@@ -156,13 +156,71 @@ rm -f conftest.class
 #/usr/local/jdk/jre/lib/i386, which is searched automatically for native libs.
 #This seems to be the 'standard' way of doing things in 1.2.  Do you think it's
 #a good idea?
+function fix_parameters()
+{
+	if [ ! grep  "Driver=gnu.io.RXTXCommDriver" $1 &> /dev/null ]; then 
+		echo "------------------------------------------------------"
+		echo "RxTx requires the following information in"
+		echo " $1:"
+		echo
+		echo "Driver=gnu.io.RXTXCommDriver"
+		echo
+		echo "The command configure will use to fix this is:"
+		echo
+		echo "echo \"Driver=gnu.io.RXTXCommDriver\" > $1"
+		echo
+		echo "------------------------------------------------------"
+		echo -n "Is it ok to place it there now? [[y/n]] "
+		read REPLY
+		if [ test "$REPLY" = "y" || test "$REPLY" = "Y" ];then
+			echo "Driver=gnu.io.RXTXCommDriver" > $1;
+		fi;
 
+	fi;
+}
+function fix_comm_jar()
+{
+	if ! test -f $1;then
+		echo "------------------------------------------------------"
+		echo "The JCL extension to RxTx requires comm.jar"
+		echo "If you intend to use RxTx for commapi support comm.jar"
+		echo "needs to be located in $1"
+		echo
+		echo "You can either quit configure and place the jar in the"
+		echo "correct location or let this script do it."
+		echo 
+		echo "------------------------------------------------------"
+		echo -n "Do you wish to [[Q]]uit or use the [[S]]cript? [[Q/S]] "
+		read REPLY
+		if [ test "$REPLY" = "q" || test "$REPLY" = "Q" ];then
+			echo "When you are done rerun configure"
+			exit
+		else if [ test "$REPLY" = "s" || test "$REPLY" = "S" ];then
+			FILE="null"
+			until test -f $FILE;do
+				echo "Please enter the full path to comm.jar (example /home/fred/commapi/comm.jar):"
+				read FILE
+			done;
+			echo -n "Is it ok to copy $FILE to $1?[[y/n]] "
+			read REPLY
+			if [ test "$REPLY" = "y" || test "$REPLY" = "Y" ];then
+				cp $FILE $1
+				return
+			fi;
+		fi;fi;
+		echo "configure is unable to continue.  Please try again or manual fix the problem."
+		exit
+	
+	fi;
+}
 
 JAVAINCLUDE="\$(JPATH)/include"
 [ case $OS_NAME in 
 Linux)
 	case $JAVA_VERSION in
 	1.2*) 
+		fix_parameters $JPATH/jre/lib/javax.comm.properties
+		fix_comm_jar $JPATH/jre/lib/comm.jar
 		JCLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:$CLASSPATH"
 		JAVA_H_CLASSPATH="-classpath .:`find $JPATH/ -name comm.jar |head -n1`"
 		RXTX_PATH="\$(prefix)/lib"
@@ -172,7 +230,7 @@ Linux)
 			JCL_PATH="jre/lib/ext"
 			JAVANATINC="\$(JPATH)/include/linux"
 			case $OS_VERSION in
-			2.2.*)
+			2.2.*|2.3.*)
 				CFLAGS="$CFLAGS -DFULL_EVENT"
 				case $OS_ARCH in
 				i386)
@@ -205,8 +263,10 @@ Linux)
 		esac
 	;;
 	1.*) 
-	JCLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:$CLASSPATH"
-	JAVA_H_CLASSPATH="\$(JCLASSPATH)"
+		fix_parameters $JPATH/lib/javax.comm.properties
+		fix_comm_jar $JPATH/lib/comm.jar
+		JCLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:$CLASSPATH"
+		JAVA_H_CLASSPATH="\$(JCLASSPATH)"
 		case $OS_NAME in
 		Linux)
 			RXTX_PATH="\$(prefix)/lib/"
@@ -214,7 +274,7 @@ Linux)
 			JAVANATINC="\$(JPATH)/include/genunix"
 			JCL_PATH="lib"
 			case $OS_VERSION in
-			2.2.*)
+			2.2.*|2.3.*)
 				CFLAGS="$CFLAGS -DFULL_EVENT"
 			;;
 			1.*|2.0.*|2.1.*)

@@ -367,6 +367,7 @@ all: @IDENTIFIERS@ @TARGETLIB@
 
 jcl:  $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class $(TOP)/gnu/io/RXTXPort.class @IDENTIFIERS@
 	$(JAR) cf jcl.jar gnu/io/*
+	@echo "make install will install RxTx"
 
 $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class \
 		$(TOP)/gnu/io/LPRPort.class \

@@ -1,3 +1,6 @@
+1.3-8   Sep 19, 1999  Introduced Wayne Roberts Win32 code. 
+                      CLOCAL added to c_cflags.  (How did it get out?)
+                      Several configure fixes for common problems.
 1.3-7   Aug 15, 1999  More Threshold and Timeout fixes.  Tried to get Printer
                       support working with linux-2.2.11.   More work needed 
                       there.  Comtrol card support by Ken Thompson 

@@ -44,8 +44,12 @@ Here's whats on my system for comparison.  Correct versions are important.
    libtool 1.2b
    make 3.76.1
 
+Unterminated sed command errors usually result from `find` producing unexpected 
+results.   If you are unsure remove all comm.jar and javax.comm.properties files
+and use configure to place them in the correct place. 
 
-mail any bugs to jarvi@ezlink.com.  
+
+mail any bugs to trentjarvi@yahoo.com.  
 
 jdk-1.2 users may not on redhat systems that java complains about not being
 able to find libstdc++-libc6.0-1.so.2.  A symbolic link can be used to get
