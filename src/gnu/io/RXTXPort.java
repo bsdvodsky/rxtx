@@ -250,6 +250,7 @@ final class RXTXPort extends SerialPort {
 				if( monThread.BI ) break;
 				return;
 			default:
+				System.err.println("unknown event:"+event);
 				return;
 		}
 		SerialPortEvent e = new SerialPortEvent(this, event, !state, state );
@@ -274,7 +275,11 @@ final class RXTXPort extends SerialPort {
 		}
 	}
 
-	public void notifyOnDataAvailable( boolean enable ) { monThread.Data = enable; }
+	private native void initAsyncInput(boolean enable);
+	public void notifyOnDataAvailable( boolean enable ) {
+		monThread.Data = enable;
+		initAsyncInput(enable);
+	}
 
 	public void notifyOnOutputEmpty( boolean enable ) { monThread.Output = enable; }
 
