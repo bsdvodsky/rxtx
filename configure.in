@@ -20,9 +20,11 @@ AC_INIT(src/SerialImp.c)
 AM_CONFIG_HEADER(config.h)
 AC_CANONICAL_SYSTEM
 AC_MSG_WARN(Trying libtool.  If the following fails install libtool)
-AC_DISABLE_STATIC
 AC_PROG_CC
+# Comment these two lines out when compiling on SCO
+AC_DISABLE_STATIC
 AM_PROG_LIBTOOL
+# end of SCO fixes
 AM_INIT_AUTOMAKE(Serial,1.4.13)
 AC_CHECK_HEADERS(fcntl.h)
 AC_CHECK_HEADERS(sys/fcntl.h)
@@ -385,6 +387,7 @@ EOF
 }
 fix_comm_jar()
 {
+	# if ! test -f $1;then works on SCO I think I fixed this for Solaris
 	if [ test -f $1 ];then
 		echo "comm.jar appears to be installed already."
 	else
@@ -607,6 +610,20 @@ Irix*)
 	CLASSPATH=".:\$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:$CLASSPATH"
 	RXTX_PATH="\$(JPATH)/lib/\$(OS_ARCH)"
 	TARGETLIB="\$(target_alias)/libSerial.la"
+;;
+
+#  since the os.name is different for UnixWare and OpenUNIX we could use it to
+#  differentiate the lock files  See SerialImp.h for comments on the lock files
+#  in SCO.  Currently that would be a build time fix though.
+#  FIXME
+
+UnixWare|OpenUNIX)
+	JHOME=$JPATH/"jre/lib"
+	CFLAGS="$CFLAGS -D_NO_POSIX=1 -D_NO_XOPEN4=1 -D__unixware__"
+	CLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:\$(JPATH)/jre/lib/rt.jar:\$(JPATH)/jre/lib/ext/comm.jar"
+	TARGETLIB="\$(target_alias)/libSerial.la \
+		\$(target_alias)/libParallel.la"
+	echo "In UnixWare, CLASSPATH is $CLASSPATH"     
 ;;
 
 HP-UX)
