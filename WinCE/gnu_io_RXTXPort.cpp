@@ -827,6 +827,10 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeArray(JNIEnv *env, jobject jobj
   jbyte *body = env->GetByteArrayElements(b, NULL);
 
 	do {
+    IF_DEBUG
+    (
+      printj(env, L"--- writeArray - %d bytes to write\n", len-total);
+    )
     if (!WriteFile(hPort,              // Port handle
                    body+total+off,     // Pointer to the data to write 
                    len-total,          // Number of bytes to write
