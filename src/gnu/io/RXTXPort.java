@@ -173,21 +173,13 @@ final class RXTXPort extends SerialPort {
 	/** FIXME I think this refers to 
 		FOPEN(3)/SETBUF(3)/FREAD(3)/FCLOSE(3) 
 		trentjarvi@yahoo.com
+
+		These are native stubs...
 	*/
-	public void setInputBufferSize( int size ) {
-		System.out.println("setInputBufferSize is not implemented");
-	}
-	public int getInputBufferSize() {
-		System.out.println("getInputBufferSize is not implemented");
-		return 1;
-	}
-	public void setOutputBufferSize( int size ) {
-		System.out.println("setOutputBufferSize is not implemented");
-	}
-	public int getOutputBufferSize() {
-		System.out.println("getOutputBufferSize is not implemented");
-		return 1;
-	}
+	public native void setInputBufferSize( int size );
+	public native int getInputBufferSize(); 
+	public native void setOutputBufferSize( int size );
+	public native int getOutputBufferSize();
 
 
 	/** Line status methods */

@@ -1166,3 +1166,30 @@ JNIEXPORT jboolean  JNICALL Java_gnu_io_RXTXCommDriver_IsDeviceGood(JNIEnv *env,
 	return(result);
 	
 }
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setInputBufferSize(JNIEnv *env, jobject jobj,  jint size )
+{
+#ifdef DEBUG
+	printf("setInputBufferSize is not implemented\n");
+#endif
+}
+JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_getInputBufferSize(JNIEnv *env, jobject jobj)
+{
+#ifdef DEBUG
+	printf("getInputBufferSize is not implemented\n");
+#endif
+	return(1);
+}
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setOutputBufferSize(JNIEnv *env, jobject jobj, jint size )
+{
+#ifdef DEBUG
+	printf("setOutputBufferSize is not implemented\n");
+#endif
+}
+JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_getOutputBufferSize(JNIEnv *env, jobject jobj)
+{
+#ifdef DEBUG
+	printf("getOutputBufferSize is not implemented\n");
+#endif
+	return(1);
+}
+
