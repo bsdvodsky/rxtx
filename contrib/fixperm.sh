@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# A script to fix permissions for lock files
+# A script to fix permissions for lock files on Mac OS X
 # Contributed by Dmitry Markman <dimitry.markman@verizon.net>
 # Fri Aug 23 15:46:46 MDT 2002
 
