@@ -50,7 +50,7 @@
 #include "config.h"
 #include "gnu_io_RXTXPort.h"
 #endif /* dima */
-#ifdef __LCC__ /* windows lcc compiler for fd_set. probably wrong */
+#ifdef __LCC__			/* windows lcc compiler for fd_set. probably wrong */
 #   include<winsock.h>
 #endif /* __LCC__ */
 #include <time.h>
@@ -224,25 +224,19 @@ build_threadsafe_eis
 
 		See also JNI_OnLoad() if the thread does not have the values
 ----------------------------------------------------------*/
-struct event_info_struct build_threadsafe_eis(
-	JNIEnv *env,
-	jobject *jobj,
-	struct event_info_struct *eis
-)
+struct event_info_struct
+build_threadsafe_eis (JNIEnv * env,
+		      jobject * jobj, struct event_info_struct *eis)
 {
-	struct event_info_struct myeis = *eis;
+  struct event_info_struct myeis = *eis;
 
-	myeis.env = env;
-	myeis.jclazz = (*env)->GetObjectClass( env, *jobj );
-	myeis.jobj = jobj;
-	myeis.fd = get_java_var( env, *jobj, "fd", "I" );
-	myeis.send_event = (*env)->GetMethodID(
-		env,
-		myeis.jclazz,
-		"sendEvent",
-		"(IZ)Z"
-	);
-	return( myeis );
+  myeis.env = env;
+  myeis.jclazz = (*env)->GetObjectClass (env, *jobj);
+  myeis.jobj = jobj;
+  myeis.fd = get_java_var (env, *jobj, "fd", "I");
+  myeis.send_event = (*env)->GetMethodID (env,
+					  myeis.jclazz, "sendEvent", "(IZ)Z");
+  return (myeis);
 }
 
 /*----------------------------------------------------------
@@ -1366,9 +1360,9 @@ init_threads (struct event_info_struct *eis)
   pthread_detach (tid);
 #endif /* TIOCSERGETLSR */
   report ("init_threads: get eis\n");
-  jeis = (*eis->env)->GetFieldID( eis->env, eis->jclazz, "eis", "J" );
+  jeis = (*eis->env)->GetFieldID (eis->env, eis->jclazz, "eis", "J");
   report ("init_threads: set eis\n");
-  (*eis->env)->SetIntField(eis->env, *eis->jobj, jeis, ( size_t ) eis );
+  (*eis->env)->SetIntField (eis->env, *eis->jobj, jeis, (size_t) eis);
   report ("init_threads:  stop\n");
   report_time_end ();
   return (1);
@@ -1420,7 +1414,7 @@ JNIEXPORT void JNICALL RXTXPort (writeByte) (JNIEnv * env,
 		result=tcdrain(fd);
 		count++;
 	}  while (result && errno==EINTR && count <3);
-    #endif *//* __sun __ */
+                    #endif *//* __sun __ */
 #ifndef TIOCSERGETLSR
   if (!interrupted)
     {
@@ -1518,7 +1512,7 @@ JNIEXPORT void JNICALL RXTXPort (writeArray) (JNIEnv * env,
 		result=tcdrain(fd);
 		icount++;
 	}  while (result && errno==EINTR && icount <3);
-    #endif *//* __sun__ */
+                    #endif *//* __sun__ */
   (*env)->ReleaseByteArrayElements (env, jbarray, body, 0);
 #ifndef TIOCSERGETLSR
   if (!interrupted)
@@ -1605,8 +1599,8 @@ JNIEXPORT jboolean JNICALL RXTXPort (nativeDrain) (JNIEnv * env,
 #endif /* !TIOCSERGETLSR !WIN32 */
   if (eis && eis->eventflags[SPE_OUTPUT_BUFFER_EMPTY])
     {
-      struct event_info_struct myeis = build_threadsafe_eis( env, &jobj, eis );
-      send_event( &myeis, SPE_OUTPUT_BUFFER_EMPTY, 1 );
+      struct event_info_struct myeis = build_threadsafe_eis (env, &jobj, eis);
+      send_event (&myeis, SPE_OUTPUT_BUFFER_EMPTY, 1);
     }
   report_time_end ();
   return (JNI_FALSE);
@@ -3536,7 +3530,7 @@ JNIEXPORT jint JNICALL RXTXPort (readArray) (JNIEnv * env,
 	ENTER( "readArray" );
 	report_time_start( );
 */
-  if( (size_t) length > SSIZE_MAX || (size_t) length < 0 ) {
+  if ((size_t) length > SSIZE_MAX || (size_t) length < 0)
     {
       report ("RXTXPort:readArray length > SSIZE_MAX");
       LEAVE ("RXTXPort:readArray");
@@ -3596,7 +3590,7 @@ JNIEXPORT jint JNICALL RXTXPort (readTerminatedArray) (JNIEnv * env,
 	ENTER( "readArray" );
 	report_time_start( );
 */
-  if( (size_t) length > SSIZE_MAX || (size_t) length < 0 ) {
+  if ((size_t) length > SSIZE_MAX || (size_t) length < 0)
     {
       report ("RXTXPort:readArray length > SSIZE_MAX");
       LEAVE ("RXTXPort:readArray");
@@ -3771,10 +3765,11 @@ void
 unlock_monitor_thread (struct event_info_struct *eis)
 {
   JNIEnv *env = eis->env;
-  object jobj = *(eis->jobj);
+  jobject jobj = *(eis->jobj);
 
-  jfieldID jfid = (*env)->GetFieldID( env, (*env)->GetObjectClass( env, jobj ), "MonitorThreadLock", "Z" );
-  (*env)->SetBooleanField( env, jobj, jfid, (jboolean) 0 );
+  jfieldID jfid = (*env)->GetFieldID (env, (*env)->GetObjectClass (env, jobj),
+				      "MonitorThreadLock", "Z");
+  (*env)->SetBooleanField (env, jobj, jfid, (jboolean) 0);
 }
 
 /*----------------------------------------------------------
@@ -4705,8 +4700,10 @@ registerKnownSerialPorts (JNIEnv * env, jobject jobj, jint portType)	/* dima */
    exceptions:  none
    comments:
 ----------------------------------------------------------*/
-JNIEXPORT jboolean JNICALL RXTXCommDriver (registerKnownPorts) (JNIEnv * env,
-								jobject jobj,
+JNIEXPORT jboolean JNICALL RXTXCommDriver (registerKnownPorts) (JNIEnv *
+								env,
+								jobject
+								jobj,
 								jint portType)
 {
   enum
@@ -4755,8 +4752,10 @@ JNIEXPORT jboolean JNICALL RXTXCommDriver (registerKnownPorts) (JNIEnv * env,
    exceptions:  none
    comments:
 ----------------------------------------------------------*/
-JNIEXPORT jboolean JNICALL RXTXCommDriver (isPortPrefixValid) (JNIEnv * env,
-							       jobject jobj,
+JNIEXPORT jboolean JNICALL RXTXCommDriver (isPortPrefixValid) (JNIEnv *
+							       env,
+							       jobject
+							       jobj,
 							       jstring
 							       tty_name)
 {
@@ -4834,7 +4833,8 @@ JNIEXPORT jboolean JNICALL RXTXCommDriver (isPortPrefixValid) (JNIEnv * env,
    		values are in SerialImp.h
 ----------------------------------------------------------*/
 
-JNIEXPORT jstring JNICALL RXTXCommDriver (getDeviceDirectory) (JNIEnv * env,
+JNIEXPORT jstring JNICALL RXTXCommDriver (getDeviceDirectory) (JNIEnv *
+							       env,
 							       jobject jobj)
 {
   ENTER ("RXTXCommDriver:getDeviceDirectory");
@@ -5705,16 +5705,16 @@ check_group_uucp ()
   if (NULL == mktemp (testLockAbsFileName))
     {
       free (testLockAbsFileName);
-      report_error ("check_group_uucp(): mktemp malformed string - \
-			should not happen");
+      report_error ("check_group_uucp(): mktemp malformed string - "
+		    "should not happen");
 
       return 1;
     }
   testLockFile = fopen (testLockAbsFileName, "w+");
   if (NULL == testLockFile)
     {
-      report_error("check_group_uucp(): error testing lock file "
-        "creation Error details:");
+      report_error ("check_group_uucp(): error testing lock file "
+		    "creation Error details:");
       report_error (strerror (errno));
       free (testLockAbsFileName);
       return 1;
@@ -5726,73 +5726,7 @@ check_group_uucp ()
 
 #endif /* USER_LOCK_DIRECTORY */
   return 0;
-
-#ifdef USE_OLD_CHECK_GROUP_UUCP
-  int check_group_uucp ()
-  {
-#ifndef USER_LOCK_DIRECTORY
-    int group_count;
-    struct passwd *user = getpwuid (geteuid ());
-    struct stat buf;
-    char msg[80];
-    gid_t list[NGROUPS_MAX];
-
-    if (stat (LOCKDIR, &buf))
-      {
-	sprintf (msg, "check_group_uucp:  Can not find Lock Directory: %s\n",
-		 LOCKDIR);
-	report_error (msg);
-	return (1);
-      }
-    group_count = getgroups (NGROUPS_MAX, list);
-    list[group_count] = geteuid ();
-
-    /* JJO changes start */
-    if (user == NULL)
-      {
-	report_error ("Not able to get user groups.\n");
-	return 1;
-      }
-    else
-      /* JJO changes stop */
-
-
-    if (user->pw_gid)
-      {
-	while (group_count >= 0 && buf.st_gid != list[group_count])
-	  {
-	    group_count--;
-	  }
-	if (buf.st_gid == list[group_count])
-	  return 0;
-	sprintf (msg, "%i %i\n", buf.st_gid, list[group_count]);
-	report_error (msg);
-	report_error (UUCP_ERROR);
-	return 1;
-      }
-    return 0;
-/*
-	if( strcmp( user->pw_name, "root" ) )
-	{
-		while( *g->gr_mem )
-		{
-			if( !strcmp( *g->gr_mem, user->pw_name ) )
-			{
-				break;
-			}
-			(void) *g->gr_mem++;
-		}
-		if( !*g->gr_mem )
-		{
-			report( UUCP_ERROR );
-			return 1;
-		}
-	}
-*/
-#endif /* USER_LOCK_DIRECTORY */
-    return 0;
-#endif /* USE_OLD_CHECK_GROUP_UUCP */
-  }
+}
 
 /*----------------------------------------------------------
  The following should be able to follow symbolic links.  I think the stat
@@ -5830,142 +5764,143 @@ int different_from_LOCKDIR(const char* ld)
    exceptions:  none
    comments:    check if the device is already locked
 ----------------------------------------------------------*/
-  int is_device_locked (const char *port_filename)
-  {
-    const char *lockdirs[] = { "/etc/locks", "/usr/spool/kermit",
-      "/usr/spool/locks", "/usr/spool/uucp", "/usr/spool/uucp/",
-      "/usr/spool/uucp/LCK", "/var/lock", "/var/lock/modem",
-      "/var/spool/lock", "/var/spool/locks", "/var/spool/uucp",
-      LOCKDIR, NULL
-    };
-    const char *lockprefixes[] = { "LCK..", "lk..", "LK.", NULL };
-    char *p, file[80], pid_buffer[20], message[80];
-    int i = 0, j, k, fd, pid;
-    struct stat buf, buf2, lockbuf;
+int
+is_device_locked (const char *port_filename)
+{
+  const char *lockdirs[] = { "/etc/locks", "/usr/spool/kermit",
+    "/usr/spool/locks", "/usr/spool/uucp", "/usr/spool/uucp/",
+    "/usr/spool/uucp/LCK", "/var/lock", "/var/lock/modem",
+    "/var/spool/lock", "/var/spool/locks", "/var/spool/uucp",
+    LOCKDIR, NULL
+  };
+  const char *lockprefixes[] = { "LCK..", "lk..", "LK.", NULL };
+  char *p, file[80], pid_buffer[20], message[80];
+  int i = 0, j, k, fd, pid;
+  struct stat buf, buf2, lockbuf;
 
-    j = strlen (port_filename);
-    p = (char *) port_filename + j;
-    while (*(p - 1) != '/' && j-- != 1)
-      p--;
+  j = strlen (port_filename);
+  p = (char *) port_filename + j;
+  while (*(p - 1) != '/' && j-- != 1)
+    p--;
 
-    stat(LOCKDIR, &lockbuf);
-    while (lockdirs[i])
-      {
-	/*
-	   Look for lockfiles in all known places other than the
-	   defined lock directory for this system
-	   report any unexpected lockfiles.
+  stat (LOCKDIR, &lockbuf);
 
-	   Is the suspect lockdir there?
-	   if it is there is it not the expected lock dir?
-	 */
-	if (!stat (lockdirs[i], &buf2) &&
-            buf2.st_ino != lockbuf.st_ino &&
-	    strncmp (lockdirs[i], LOCKDIR, strlen (lockdirs[i])))
-	  {
-	    j = strlen (port_filename);
-	    p = (char *) port_filename + j;
-	    /*
-	       SCO Unix use lowercase all the time
-	       taj
-	     */
-	    while (*(p - 1) != '/' && j-- != 1)
-	      {
+  while (lockdirs[i])
+    {
+      /*
+         Look for lockfiles in all known places other than the
+         defined lock directory for this system
+         report any unexpected lockfiles.
+
+         Is the suspect lockdir there?
+         if it is there is it not the expected lock dir?
+       */
+      if (!stat (lockdirs[i], &buf2) &&
+	  buf2.st_ino != lockbuf.st_ino &&
+	  strncmp (lockdirs[i], LOCKDIR, strlen (lockdirs[i])))
+	{
+	  j = strlen (port_filename);
+	  p = (char *) port_filename + j;
+	  /*
+	     SCO Unix use lowercase all the time
+	     taj
+	   */
+	  while (*(p - 1) != '/' && j-- != 1)
+	    {
 #if defined ( __unixware__ )
-		*p = tolower (*p);
+	      *p = tolower (*p);
 #endif /* __unixware__ */
-		p--;
-	      }
-	    k = 0;
-	    while (lockprefixes[k])
-	      {
-		/* FHS style */
-		sprintf (file, "%s/%s%s", lockdirs[i], lockprefixes[k], p);
-		if (stat (file, &buf) == 0)
-		  {
-		    sprintf (message, UNEXPECTED_LOCK_FILE, file);
-		    report_warning (message);
-		    return 1;
-		  }
+	      p--;
+	    }
+	  k = 0;
+	  while (lockprefixes[k])
+	    {
+	      /* FHS style */
+	      sprintf (file, "%s/%s%s", lockdirs[i], lockprefixes[k], p);
+	      if (stat (file, &buf) == 0)
+		{
+		  sprintf (message, UNEXPECTED_LOCK_FILE, file);
+		  report_warning (message);
+		  return 1;
+		}
 
-		/* UUCP style */
-		stat (port_filename, &buf);
-		sprintf (file, "%s/%s%03d.%03d.%03d",
-			 lockdirs[i],
-			 lockprefixes[k],
-			 (int) major (buf.st_dev),
-			 (int) major (buf.st_rdev),
-			 (int) minor (buf.st_rdev));
-		if (stat (file, &buf) == 0)
-		  {
-		    sprintf (message, UNEXPECTED_LOCK_FILE, file);
-		    report_warning (message);
-		    return 1;
-		  }
-		k++;
-	      }
-	  }
-	i++;
-      }
+	      /* UUCP style */
+	      stat (port_filename, &buf);
+	      sprintf (file, "%s/%s%03d.%03d.%03d",
+		       lockdirs[i],
+		       lockprefixes[k],
+		       (int) major (buf.st_dev),
+		       (int) major (buf.st_rdev), (int) minor (buf.st_rdev));
+	      if (stat (file, &buf) == 0)
+		{
+		  sprintf (message, UNEXPECTED_LOCK_FILE, file);
+		  report_warning (message);
+		  return 1;
+		}
+	      k++;
+	    }
+	}
+      i++;
+    }
 
-    /*
-       OK.  We think there are no unexpect lock files for this device
-       Lets see if there any stale lock files that need to be
-       removed.
-     */
+  /*
+     OK.  We think there are no unexpect lock files for this device
+     Lets see if there any stale lock files that need to be
+     removed.
+   */
 
 #ifdef FHS
-    /*  FHS standard locks */
-    i = strlen (port_filename);
-    p = (char *) port_filename + i;
-    while (*(p - 1) != '/' && i-- != 1)
-      {
+  /*  FHS standard locks */
+  i = strlen (port_filename);
+  p = (char *) port_filename + i;
+  while (*(p - 1) != '/' && i-- != 1)
+    {
 #if defined ( __unixware__ )
-	*p = tolower (*p);
+      *p = tolower (*p);
 #endif /* __unixware__ */
-	p--;
-      }
-    sprintf (file, "%s/%s%s", LOCKDIR, LOCKFILEPREFIX, p);
+      p--;
+    }
+  sprintf (file, "%s/%s%s", LOCKDIR, LOCKFILEPREFIX, p);
 #else
-    /*  UUCP standard locks */
-    if (stat (port_filename, &buf) != 0)
-      {
-	report ("RXTX is_device_locked() could not find device.\n");
-	return 1;
-      }
-    sprintf (file, "%s/LK.%03d.%03d.%03d",
-	     LOCKDIR,
-	     (int) major (buf.st_dev),
-	     (int) major (buf.st_rdev), (int) minor (buf.st_rdev));
+  /*  UUCP standard locks */
+  if (stat (port_filename, &buf) != 0)
+    {
+      report ("RXTX is_device_locked() could not find device.\n");
+      return 1;
+    }
+  sprintf (file, "%s/LK.%03d.%03d.%03d",
+	   LOCKDIR,
+	   (int) major (buf.st_dev),
+	   (int) major (buf.st_rdev), (int) minor (buf.st_rdev));
 
 #endif /* FHS */
 
-    if (stat (file, &buf) == 0)
-      {
+  if (stat (file, &buf) == 0)
+    {
 
-	/* check if its a stale lock */
-	fd = open (file, O_RDONLY);
-	read (fd, pid_buffer, 11);
-	/* FIXME null terminiate pid_buffer? need to check in Solaris */
-	close (fd);
-	sscanf (pid_buffer, "%d", &pid);
+      /* check if its a stale lock */
+      fd = open (file, O_RDONLY);
+      read (fd, pid_buffer, 11);
+      /* FIXME null terminiate pid_buffer? need to check in Solaris */
+      close (fd);
+      sscanf (pid_buffer, "%d", &pid);
 
-	if (kill ((pid_t) pid, 0) && errno == ESRCH)
-	  {
-	    sprintf (message,
-		     "RXTX Warning:  Removing stale lock file. %s\n", file);
-	    report_warning (message);
-	    if (unlink (file) != 0)
-	      {
-		snprintf (message, 80, "RXTX Error:  Unable to \
+      if (kill ((pid_t) pid, 0) && errno == ESRCH)
+	{
+	  sprintf (message,
+		   "RXTX Warning:  Removing stale lock file. %s\n", file);
+	  report_warning (message);
+	  if (unlink (file) != 0)
+	    {
+	      snprintf (message, 80, "RXTX Error:  Unable to \
 					remove stale lock file: %s\n", file);
-		report_warning (message);
-		return 1;
-	      }
-	  }
-      }
-    return 0;
-  }
+	      report_warning (message);
+	      return 1;
+	    }
+	}
+    }
+  return 0;
+}
 #endif /* WIN32 */
 
 /*----------------------------------------------------------
@@ -5977,10 +5912,11 @@ int different_from_LOCKDIR(const char* ld)
    exceptions:  none
    comments:    OS's like Win32 may not have lock files.
 ----------------------------------------------------------*/
-  int system_does_not_lock (const char *filename, int pid)
-  {
-    return 0;
-  }
+int
+system_does_not_lock (const char *filename, int pid)
+{
+  return 0;
+}
 
 /*----------------------------------------------------------
  system_does_not_unlock
@@ -5991,10 +5927,11 @@ int different_from_LOCKDIR(const char* ld)
    exceptions:  none
    comments:    OS's like Win32 may not have lock files.
 ----------------------------------------------------------*/
-  void system_does_not_unlock (const char *filename, int openpid)
-  {
-    return;
-  }
+void
+system_does_not_unlock (const char *filename, int openpid)
+{
+  return;
+}
 
 /*----------------------------------------------------------
  dump_termios
@@ -6006,23 +5943,24 @@ int different_from_LOCKDIR(const char* ld)
    exceptions:  none
    comments:    used to debug the termios struct.
 ----------------------------------------------------------*/
-  void dump_termios (char *foo, struct termios *ttyset)
-  {
+void
+dump_termios (char *foo, struct termios *ttyset)
+{
 #ifdef DEBUG
-    int i;
+  int i;
 
-    fprintf (stderr, "%s c_iflag=%#x\n", foo, ttyset->c_iflag);
-    fprintf (stderr, "%s c_lflag=%#x\n", foo, ttyset->c_lflag);
-    fprintf (stderr, "%s c_oflag=%#x\n", foo, ttyset->c_oflag);
-    fprintf (stderr, "%s c_cflag=%#x\n", foo, ttyset->c_cflag);
-    fprintf (stderr, "%s c_cc[]: ", foo);
-    for (i = 0; i < NCCS; i++)
-      {
-	fprintf (stderr, "%d=%x ", i, ttyset->c_cc[i]);
-      }
-    fprintf (stderr, "\n");
+  fprintf (stderr, "%s c_iflag=%#x\n", foo, ttyset->c_iflag);
+  fprintf (stderr, "%s c_lflag=%#x\n", foo, ttyset->c_lflag);
+  fprintf (stderr, "%s c_oflag=%#x\n", foo, ttyset->c_oflag);
+  fprintf (stderr, "%s c_cflag=%#x\n", foo, ttyset->c_cflag);
+  fprintf (stderr, "%s c_cc[]: ", foo);
+  for (i = 0; i < NCCS; i++)
+    {
+      fprintf (stderr, "%d=%x ", i, ttyset->c_cc[i]);
+    }
+  fprintf (stderr, "\n");
 #endif /* DEBUG */
-  }
+}
 
 /*----------------------------------------------------------
 get_java_environment
@@ -6034,27 +5972,27 @@ get_java_environment
    comments:    see JNI_OnLoad.  For getting the JNIEnv in the thread
 		used to monitor for output buffer empty.
 ----------------------------------------------------------*/
-JNIEnv *get_java_environment(JavaVM *java_vm,  jboolean *was_attached){
-	void **env = NULL;
-	jint err_get_env;
-	if(java_vm == NULL) return (JNIEnv *) *env;
-	*was_attached = JNI_FALSE;
+JNIEnv *
+get_java_environment (JavaVM * java_vm, jboolean * was_attached)
+{
+  void **env = NULL;
+  jint err_get_env;
+  if (java_vm == NULL)
+    return (JNIEnv *) * env;
+  *was_attached = JNI_FALSE;
 
-	err_get_env = (*java_vm)->GetEnv(
-		java_vm,
-		env,
-		JNI_VERSION_1_2
-	);
-	if(err_get_env == JNI_ERR) return NULL;
-	if(err_get_env == JNI_EDETACHED){
-		(*java_vm)->AttachCurrentThread(
-			java_vm,
-			env,
-			(void **) NULL
-		);
-		if(*env != NULL) *was_attached = JNI_TRUE;
-	}else if(err_get_env != JNI_OK) return (JNIEnv *) NULL;
-	return (JNIEnv *) *env;
+  err_get_env = (*java_vm)->GetEnv (java_vm, env, JNI_VERSION_1_2);
+  if (err_get_env == JNI_ERR)
+    return NULL;
+  if (err_get_env == JNI_EDETACHED)
+    {
+      (*java_vm)->AttachCurrentThread (java_vm, env, (void **) NULL);
+      if (*env != NULL)
+	*was_attached = JNI_TRUE;
+    }
+  else if (err_get_env != JNI_OK)
+    return (JNIEnv *) NULL;
+  return (JNIEnv *) * env;
 }
 
 /*----------------------------------------------------------
@@ -6070,11 +6008,12 @@ JNI_OnLoad
 		in the drain thread.  Also lets Java know we are using the
 		1.4 API so we can get pointers later.
 ----------------------------------------------------------*/
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *java_vm, void *reserved)
+JNIEXPORT jint JNICALL
+JNI_OnLoad (JavaVM * java_vm, void *reserved)
 {
-	javaVM = java_vm;
-	printf("Experimental:  JNI_OnLoad called.\n");
-	return JNI_VERSION_1_2;  /* JNI API used */
+  javaVM = java_vm;
+  printf ("Experimental:  JNI_OnLoad called.\n");
+  return JNI_VERSION_1_2;	/* JNI API used */
 }
 
 /*----------------------------------------------------------
@@ -6088,10 +6027,11 @@ JNI_OnUnload
 		http://java.sun.com/j2se/1.4.2/docs/guide/jni/jni-12.html
 		final library cleanup here.  
 ----------------------------------------------------------*/
-JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved)
+JNIEXPORT void JNICALL
+JNI_OnUnload (JavaVM * vm, void *reserved)
 {
-	/* never called it appears */
-	printf("Experimental:  JNI_OnUnload called.\n");
+  /* never called it appears */
+  printf ("Experimental:  JNI_OnUnload called.\n");
 }
 
 #ifdef asdf
@@ -6103,62 +6043,63 @@ printj
    exceptions:  none
    comments:    prints data using System.out.print()
 ----------------------------------------------------------*/
-  int printj (JNIEnv * env, wchar_t * fmt, ...)
-  {
-    wchar_t buf[1024];
-    int retval;
-    jstring jsBuf;
-    jclass clsSystem, clsOut;
-    jfieldID jfid;
-    jobject objOut;
-    jmethodID midPrint;
+int
+printj (JNIEnv * env, wchar_t * fmt, ...)
+{
+  wchar_t buf[1024];
+  int retval;
+  jstring jsBuf;
+  jclass clsSystem, clsOut;
+  jfieldID jfid;
+  jobject objOut;
+  jmethodID midPrint;
 
-    va_list ap;
-    va_start (ap, fmt);
-    retval = _vsnwprintf (buf, 1024, fmt, ap);
-    va_end (ap);
-    buf[1023] = '\0';
+  va_list ap;
+  va_start (ap, fmt);
+  retval = _vsnwprintf (buf, 1024, fmt, ap);
+  va_end (ap);
+  buf[1023] = '\0';
 
-    if ((clsSystem = env->FindClass ("java/lang/System")) == NULL)
-      {
-	IF_DEBUG (env->ExceptionDescribe ();
-	  )env->ExceptionClear ();
-	return -1;
-      }
+  if ((clsSystem = env->FindClass ("java/lang/System")) == NULL)
+    {
+      IF_DEBUG (env->ExceptionDescribe ();
+	)env->ExceptionClear ();
+      return -1;
+    }
 
-    if ((jfid = env->GetStaticFieldID (clsSystem,
-				       "out",
-				       "Ljava/io/PrintStream;")) == NULL)
-      {
-	IF_DEBUG (env->ExceptionDescribe ();
-	  )env->ExceptionClear ();
-	env->DeleteLocalRef (clsSystem);
-	return -1;
-      }
+  if ((jfid = env->GetStaticFieldID (clsSystem,
+				     "out", "Ljava/io/PrintStream;")) == NULL)
+    {
+      IF_DEBUG (env->ExceptionDescribe ();
+	)env->ExceptionClear ();
+      env->DeleteLocalRef (clsSystem);
+      return -1;
+    }
 
-    objOut = env->GetStaticObjectField (clsSystem, jfid);
-    clsOut = env->GetObjectClass (objOut);
+  objOut = env->GetStaticObjectField (clsSystem, jfid);
+  clsOut = env->GetObjectClass (objOut);
 
-    if ((midPrint = env->GetMethodID (clsOut, "print",
-				      "(Ljava/lang/String;)V")) == NULL)
-      {
-	IF_DEBUG (env->ExceptionDescribe ();
-	  )env->ExceptionClear ();
-	env->DeleteLocalRef (clsOut);
-	env->DeleteLocalRef (clsSystem);
-	return -1;
-      }
+  if ((midPrint = env->GetMethodID (clsOut, "print",
+				    "(Ljava/lang/String;)V")) == NULL)
+    {
+      IF_DEBUG (env->ExceptionDescribe ();
+	)env->ExceptionClear ();
+      env->DeleteLocalRef (clsOut);
+      env->DeleteLocalRef (clsSystem);
+      return -1;
+    }
 
-    jsBuf = env->NewString (buf, wcslen (buf));
+  jsBuf = env->NewString (buf, wcslen (buf));
 
-    env->CallVoidMethod (objOut, midPrint, jsBuf);
+  env->CallVoidMethod (objOut, midPrint, jsBuf);
 
-    env->DeleteLocalRef (jsBuf);
-    env->DeleteLocalRef (clsOut);
-    env->DeleteLocalRef (clsSystem);
+  env->DeleteLocalRef (jsBuf);
+  env->DeleteLocalRef (clsOut);
+  env->DeleteLocalRef (clsSystem);
 
-    return retval;
-  }
+  return retval;
+}
+
 /*
 	jclass cls = ( *env )->FindClass( env, "System.Thread" );
 	jmethodID mid = ( *env )->GetStaticMethodID( env, cls, "Sleep", "(I)V" );
