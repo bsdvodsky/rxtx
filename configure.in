@@ -485,7 +485,7 @@ fix_comm_jar()
 
 [ case $OS_NAME in
 	Mac\ OS\ X)
-        JAVAINCLUDEDIR=$JPATH/../../../Headers
+        JAVAINCLUDEDIR=/System/Library/Frameworks/JavaVM.framework/Headers/
         ;;
 	*)
         JAVAINCLUDEDIR=$JPATH/include
@@ -770,17 +770,13 @@ WIN32)
 
 Mac\ OS\ X)
 	fix_parameters $JPATH/lib/javax.comm.properties
-	LINK="cc -bundle -framework CoreFoundation -framework IOKit -o lib\$*.jnilib "
-	OBJECT_EXTENSION="o"
+	LINK="\$(TOP)/libtool --mode=link \$(CC) -bundle -framework CoreFoundation -framework IOKit -o librxtx\$*.jnilib "
+	OBJECT_EXTENSION="lo"
 	LIB_EXTENSION="jnilib"
 	TARGETLIB="\$(target_triplet)/librxtxSerial.jnilib"
-	RXTX_PATH="/usr/lib/java"
-	JHOME=$JPATH"/lib/ext"
-	CFLAGS=$CFLAGS" -bundle"
-	LDFLAGS="$LDFLAGS -module -framework JavaVM -framework IOKit -framework CoreFoundation"
+	RXTX_PATH="/Library/Java/Extensions"
+	JHOME="/Library/Java/Extensions"
 	CLASSPATH=".:\$(TOP):\$(TOP)/src:\$(JPATH)/lib/ext/comm.jar:$CLASSPATH"
-	#  email taj@www.linux.org.uk if you know a nicer fix.  Needed anymore?
-	LIBTOOL_FIX="sed s/echo\ so/echo\ jnilib/g libtool > tmp; mv tmp libtool; chmod +x libtool;"
 ;;
 
 Solaris*)
