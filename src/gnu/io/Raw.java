@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to Raw ports in java.
-|   Copyright 1997-2000 by Trent Jarvi trentjarvi@yahoo.com.
+|   Copyright 1997-2001 by Trent Jarvi trentjarvi@yahoo.com.
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Library General Public
@@ -24,7 +24,7 @@ import java.lang.Math;
 
 /**
 * @author Trent Jarvi
-* @version $Id: Raw.java,v 1.1.2.7 2001-01-22 22:31:43 jarvi Exp $
+* @version $Id: Raw.java,v 1.1.2.8 2001-06-28 19:02:07 jarvi Exp $
 * @since JDK1.0
 */
 
@@ -434,7 +434,7 @@ final class Raw  extends  RawPort {
 	}
 	public String getVersion()
 	{
-		String Version="$Id: Raw.java,v 1.1.2.7 2001-01-22 22:31:43 jarvi Exp $";
+		String Version="$Id: Raw.java,v 1.1.2.8 2001-06-28 19:02:07 jarvi Exp $";
 		return(Version);
 	}
 }
