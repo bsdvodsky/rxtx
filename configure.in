@@ -169,10 +169,10 @@ Linux)
 		JCL_PATH="\$(JPATH)/lib"
 		case $OS_NAME in
 		Linux)
+			JCL_PATH="jre/lib/ext"
+			JAVANATINC="\$(JPATH)/include/linux"
 			case $OS_VERSION in
 			2.2.*)
-				JCL_PATH="jre/lib/ext"
-				JAVANATINC="\$(JPATH)/include/linux"
 				CFLAGS="$CFLAGS -DFULL_EVENT"
 				case $OS_ARCH in
 				i386)
@@ -181,7 +181,19 @@ Linux)
 				*)
 					# best we can do without knowing what
 					# java returns
-					RXTX_PATH="\$(JPATH)/jre/lib"
+					RXTX_PATH="\$(JPATH)/jre/lib/"
+				;;
+				esac
+			;;
+			1.*|2.0.*|2.1.*)
+				case $OS_ARCH in
+				i386)
+					RXTX_PATH="\$(JPATH)/jre/lib/i386"
+				;;
+				*)
+					# best we can do without knowing what
+					# java returns
+					RXTX_PATH="\$(JPATH)/jre/lib/"
 				;;
 				esac
 			;;
@@ -204,9 +216,8 @@ Linux)
 			case $OS_VERSION in
 			2.2.*)
 				CFLAGS="$CFLAGS -DFULL_EVENT"
-				JCL_PATH="lib"
 			;;
-			1.*)
+			1.*|2.0.*|2.1.*)
 			;;
 			esac
 		;;

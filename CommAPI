@@ -1,7 +1,8 @@
 For now I've added a make rule for jcl (java comm for linux).  
 
-Make sure the files (javax.comm.* and java.comm.*)  from sun are in the 
-CLASSPATH your environment had when you typed configure.
+Make sure the files javax.comm.* and java.comm.*  from sun are in the 
+CLASSPATH your environment on jdk-1.1.7.   With jdk-1.2 place them in 
+the jre library tree.
 
 make jcl to produce the required jar. 
 
@@ -15,6 +16,7 @@ CommAPI or You'll get up with
 SetOwner appears to be some nt/win32 call.
 --------------------------------
 You'll also need to have the following in .../java/lib/javax.comm.properties
+or /java/jre/lib/javax.comm.properties in the case of jdk-1.2.
 #SEE: commapi/PlatformSpecific.html from Sun's commapi package for details.
 I've heard some people require a blank line after the line.
 Driver=gnu.io.RXTXCommDriver
@@ -28,6 +30,10 @@ Good Luck
 David J Atkinson
 
 -------------------------------
+
+The following was submitted before figuring out that jcl.jar comm.jar and
+javax.comm.properties can all be placed in the jre/lib tree for easier use.
+It is still usefull in pointing out problems that can arise.
 
 Here are some examples of breaking RXTX.  Perhaps they will help
 people.
@@ -80,6 +86,18 @@ Caught java.lang.ClassNotFoundException: gnu.io.RXTXCommDriver while
 loading driver gnu.io.RXTXCommDriver
 No serial ports found!
 
+as a final example assume the following
+
+/usr/local/java/jre/lib/ext/comm.jar
+/usr/local/java/jre/lib/ext/jcl.jar
+/usr/local/java/jre/lib/ext/BlackBox.jar
+/usr/local/java/jre/lib/javax.comm.properties
+
+is working.  Deleting javax.comm.properties or placing it in 
+/usr/local/java/lib/javax.comm.properties
+results in
+java BlackBox
+No serial ports found!
 
 Hope that helps.
 
