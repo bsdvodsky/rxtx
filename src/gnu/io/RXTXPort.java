@@ -343,7 +343,6 @@ final class RXTXPort extends SerialPort {
 			return readByte();
 		}
 		public int read( byte b[] ) throws IOException {
-			System.out.println("threshold "+threshold+" InputBuffer " + InputBuffer);
 			if(InputBuffer>0 && threshold > 0)
 			{
 				return readArray( b, 0, (Math.min(threshold,InputBuffer)));
