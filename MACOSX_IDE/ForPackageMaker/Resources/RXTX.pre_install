@@ -1,7 +1,17 @@
 #!/bin/sh
+curruser=`sudo id -p | grep 'login' | sed 's/login.//'`
+
+if [ ! -d /var/spool/uucp ]
+then
 sudo mkdir /var/spool/uucp
+fi
+
+sudo chgrp uucp /var/spool/uucp
 sudo chmod 775 /var/spool/uucp
-sudo niutil -destroyval / /groups/uucp users `sudo id -p | grep 'login' | sed 's/login.//'`
-sudo niutil -appendprop / /groups/uucp users `sudo id -p | grep 'login' | sed 's/login.//'`
+if [ ! `sudo niutil -readprop / /groups/uucp users | grep $curruser > /dev/null` ]
+then
+ sudo niutil -mergeprop / /groups/uucp users $curruser
+fi
+
 
 
