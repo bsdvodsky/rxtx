@@ -16,7 +16,7 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
-This is the INSTALL file for RXTX.  Tue Dec  4 17:16:47 MST 2001
+This is the INSTALL file for RXTX.  Mon Mar 11 09:47:34 MST 2002
 
 If, while following the instructions, you find this file unclear or incorrect 
 please make a note and email the details to trentjarvi@yahoo.com.  
@@ -66,6 +66,7 @@ A note on Mac OS X:
 	U.  How can I tell which version of rxtx is installed?
 	V.  What Type of Latency can I expect with RXTX
 	W.  I got rxtx working on a new OS but I can't read from the port
+	X.  My ThinkPad is Not Working!
 
 -------------------------------------------------------------------------------
 1.  INSTALL INSTRUCTIONS IN OTHER LANGUAGES
@@ -678,6 +679,10 @@ T.  How can I use Lock Files with rxtx?
 Redhat users.  Note that Redhat changed group uucp to group lock with Redhat
 7.2.
 
+Mandrake users.  Note that /var/lock needs to be group uucp for this to work.
+ 
+Mac OS X users.  Note that you may need to create the lock directory with group uucp ownership.
+
 RXTX uses lock files by default.  configure --disable-lockfiles to generate
 rxtx libraries without lock files.  Its strongly recommended that you do
 use lock files to prevent rxtx from stomping on other programs using serial
@@ -761,7 +766,7 @@ V.  What Type of Latency can I expect with RXTX
 
 	He is going to look at this further.  He needs 20 ms or less latency.
 	
-U.  I got rxtx working on a new OS but I can't read from the port
+W.  I got rxtx working on a new OS but I can't read from the port
 
 > Now my java program starts up nicely without complaining. However, it does
 > never read any data from the serial port. It looks like it can write data,
@@ -835,6 +840,25 @@ on linux.  I'm not positive what is normal on other OS's.
                 "UNIX Network Programming", W. Richard Stevens,
                 Prentice-Hall, 1990, pages 96-101.
                 more reading:
+
+X.  My ThinkPad is Not Working!
+
+	Scott Burleigh <Scott.Burleigh@jpl.nasa.gov> writes:
+
+		For your files, and in case anybody asks in the 
+		future, IBM Thinkpads ship with the external serial port
+		*disabled* by default.  The Thinkpad configuration utility
+		supplied with the machine (under Windows) says it's enabled,
+		and the device manager in the System dialog of the Control
+		panel says it's enabled, but they lie.  In order to enable the
+		port you have to use the old DOS ps2.exe bios configuration 
+		utility which, under Windows 2000, is in
+		c:\Program Files\Thinkpad\utilities:
+
+			ps2 sera enable
+
+		Until you do, "setserial -ga /dev/ttyS0" will always tell you
+		the UART is unknown.  
 
 -- 
 Trent Jarvi
