@@ -1,6 +1,11 @@
 1.3-8   Sep 19, 1999  Introduced Wayne Roberts Win32 code. 
                       CLOCAL added to c_cflags.  (How did it get out?)
+                      -thanks to Bertrand Renuart <bertrand.renuart@itma.lu>
                       Several configure fixes for common problems.
+                      -thanks to  Andrew Baerst <abaerst@yahoo.com> for comments
+                      fixes for larger writes.  Mark Lindsey <mlindsey@att.net>
+                      netbsd port Stuart Anderson <anderson@metrolink.com>
+                      linux port enumeration fixes.
 1.3-7   Aug 15, 1999  More Threshold and Timeout fixes.  Tried to get Printer
                       support working with linux-2.2.11.   More work needed 
                       there.  Comtrol card support by Ken Thompson 

@@ -48,7 +48,7 @@
 extern int errno;
 
 #include "SerialImp.h"
-#define DEBUG_TIMEOUT 
+/* #define DEBUG_TIMEOUT  */
 
 /*----------------------------------------------------------
 RXTXPort.Initialize
@@ -377,15 +377,12 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeArray( JNIEnv *env,
 	jbyte *body = (*env)->GetByteArrayElements( env, jbarray, 0 );
 	for( i = 0; i < count; i++ ) bytes[ i ] = body[ i + offset ];
 	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
-	for( i = 0; i < count; i++ ) bytes[ i ] = '1';
 	do {
 		result=write (fd, bytes + total, count - total);
 		if(result >0){
 			total += result;
 		}
-		printf(".");
 	}  while ((total<count)||(result < 0 && errno==EINTR));
-	printf("out=%i\n",total);
 	free( bytes );
 	if( result < 0 ) throw_java_exception( env, IO_EXCEPTION,
 		"writeArray", strerror( errno ) );
@@ -1131,6 +1128,17 @@ JNIEXPORT jboolean  JNICALL Java_gnu_io_RXTXCommDriver_IsDeviceGood(JNIEnv *env,
 	int fd,i;
     	const char *name = (*env)->GetStringUTFChars(env, tty_name, 0);
 
+#if defined(__linux__)
+	if(!strcmp(name,"tty0")|| !strcmp(name,"ttyd")||
+		!strcmp(name,"ttyq")|| !strcmp(name,"ttym")||
+		!strcmp(name,"ttyf")|| !strcmp(name,"cuaa"))
+	{
+#ifdef DEBUG
+		printf("DEBUG: Ignoring Port %s\*\n",name);
+#endif
+		return(JNI_FALSE);
+	}
+#endif
 	for(i=0;i<64;i++){
 		sprintf(teststring,"/dev/%s%i",name, i);
 		stat(teststring,&mystat);
