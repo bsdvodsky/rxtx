@@ -32,8 +32,10 @@ commapi porting file.  Not used yet.
 
 public class CommPortIdentifier 
 {
-	public static final int PORT_SERIAL = 1;  // Serial Port
-	public static final int PORT_PARALLEL = 2; // Parallel Port
+	public static final int PORT_SERIAL   = 1;  // rs232 Port
+	public static final int PORT_PARALLEL = 2;  // Parallel Port
+	public static final int I2C_PORT      = 3;  // i2c Port
+	public static final int RS485_PORT    = 4;  // rs485 Port
 	private String PortName;
 	private boolean Available;    
 	private String Owner;    
