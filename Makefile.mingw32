@@ -31,8 +31,8 @@
 #
 #  m.bat
 #
-rm -rf gnu include jcl.jar Serial.* *.o gnutimestamp  
-make install
+# rm -rf gnu include jcl.jar Serial.* *.o gnutimestamp  
+# make install
 
 ######################
 #  user defined variables
