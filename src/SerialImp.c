@@ -3565,13 +3565,33 @@ int check_lock_pid( const char *file, int openpid )
 		If its root we just skip the test.
 
 		if someone really wants to override this they can use the			USER_LOCK_DIRECTORY --not recommended.
+
+		In a recent change RedHat 7.2 decided to use group lock.
+		In order to get around this we just check the group id
+		of the lock directory.
 ----------------------------------------------------------*/
 int check_group_uucp()
 {
+#ifndef USER_LOCK_DIRECTORY
 	struct group *g = getgrnam( "uucp" );
 	struct passwd *user = getpwuid( geteuid() );
+	struct stat buf;
+	gid_t res = getegid();
+	char msg[80];
 
-#ifndef USER_LOCK_DIRECTORY
+	if( stat( LOCKDIR, &buf) )
+	{
+		sprintf( msg, "check_group_uucp:  Can not find Lock Directory: %s\n", LOCKDIR );
+		report_error( msg );
+		return( 1 );
+	}
+	if( res && buf.st_gid != res )
+	{
+		report_error( UUCP_ERROR );
+		return 1;
+	}
+	return 0;
+/*
 	if( strcmp( user->pw_name, "root" ) )
 	{
 		while( *g->gr_mem )
@@ -3588,6 +3608,7 @@ int check_group_uucp()
 			return 1;
 		}
 	}
+*/
 #endif /* USER_LOCK_DIRECTORY */
 	return 0;
 }
