@@ -69,11 +69,13 @@ AC_SUBST(LDFLAGS)
 AC_SUBST(LINK)
 AC_SUBST(COMPILE)
 AC_SUBST(OBJECT_EXTENSION)
+AC_SUBST(LIB_EXTENSION)
 
 JHOME=
 RXTX_PATH=
 EXTENSION="c"
 OBJECT_EXTENSION="lo"
+LIB_EXTENSION="la"
 COMPILE="cc "
 TOP="`pwd`"
 LINK="\$(TOP)/libtool --mode=link \$(CC) \$(CFLAGS) \$(LDFLAGS) -release \$(VERSION) -o lib\$*.la -rpath \$(RXTX_PATH)"
@@ -726,15 +728,16 @@ WIN32)
 
 Mac\ OS\ X)
 	fix_parameters $JPATH/lib/javax.comm.properties
-	LINK="cc -bundle -framework CoreFoundation -framework IOKit -o lib\$*.jnilib"
+	LINK="cc -bundle -framework CoreFoundation -framework IOKit -o lib\$*.jnilib "
 	OBJECT_EXTENSION="o"
-	TARGETLIB="\$(target_alias)/libSerial.la"
+	LIB_EXTENSION="jnilib"
+	TARGETLIB="\$(target_alias)/libSerial.jnilib"
 	RXTX_PATH="/usr/lib/java"
 	JHOME=$JPATH"/lib/ext"
 	CFLAGS="$CFLAGS -bundle"
 	LDFLAGS="$LDFLAGS -module -framework JavaVM -framework IOKit -framework CoreFoundation"
 	CLASSPATH=".:\$(TOP):\$(TOP)/src:\$(JPATH)/lib/ext/comm.jar:$CLASSPATH"
-	#  email trentjarvi@yahoo.com if you know a nicer fix.
+	#  email trentjarvi@yahoo.com if you know a nicer fix.  Needed anymore?
 	LIBTOOL_FIX="sed s/echo\ so/echo\ jnilib/g libtool > tmp; mv tmp libtool; chmod +x libtool;"
 ;;
 
