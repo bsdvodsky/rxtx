@@ -41,7 +41,9 @@
 #   include <sys/signal.h>
 #endif
 
-#include <linux/serial.h>
+#if defined(__linux__)
+#	include <linux/serial.h>
+#endif
 
 extern int errno;
 
@@ -822,7 +824,9 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 	unsigned int mflags;
 	fd_set rfds;
 	struct timeval sleep;
+#if defined(__linux__)
 	struct serial_icounter_struct sis, osis;
+#endif
 	jfieldID jfield;
 	jmethodID method, interrupt;
 	jboolean interrupted = 0;
@@ -835,10 +839,15 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 	interrupt = (*env)->GetStaticMethodID( env, jthread, "interrupted", "()Z" );
 
 	/* Some multiport serial cards do not implement TIOCGICOUNT ... */
+#if defined(__linux__)
 	if( ioctl( fd, TIOCGICOUNT, &osis ) < 0 ) {
 		fprintf( stderr, "Port does not support events\n" );
 		return;
 	}
+#else
+	fprintf( stderr, "Port does not support events\n" );
+	return;
+#endif
 
 	FD_ZERO( &rfds );
 	while( !interrupted ) {
@@ -849,9 +858,11 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 			ret=select( fd + 1, &rfds, NULL, NULL, &sleep );
 		}  while (ret < 0 && errno==EINTR);
 		if( ret < 0 ) break;
+#if defined(__linux__)
 		if( ioctl( fd, TIOCGICOUNT, &sis ) ) break;
+#endif
 		if( ioctl( fd, TIOCMGET, &mflags ) ) break;
-#ifdef FULL_EVENT
+#if defined(FULL_EVENT) && defined(__linux__)
 		if( sis.rx != osis.rx ) (*env)->CallVoidMethod( env, jobj, method,
 			(jint)SPE_DATA_AVAILABLE, JNI_TRUE );
 		while( sis.frame > osis.frame ) {
@@ -874,7 +885,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 		if( ioctl( fd, FIONREAD, &change ) ) break;
 		if( change ) (*env)->CallVoidMethod( env, jobj, method,
 			(jint)SPE_DATA_AVAILABLE, JNI_TRUE );
-#endif /* FULL_EVENT */
+#endif /* FULL_EVENT __linux__ */
 		change = sis.cts - osis.cts;
 		if( change ) send_modem_events( env, jobj, method, SPE_CTS, abs(change),
 			mflags & TIOCM_CTS );
