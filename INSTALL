@@ -352,6 +352,13 @@ C.  No serial ports found!
 	$ vi /usr/local/java/lib/javax.comm.properties
 	>fix typo<
 
+	--
+	For some, it is not clear what was being done here.  There is a single
+	line in the file javax.comm.properties that contains 
+	"gnu.io.RXTXCommDriver" when properly installed.  We replaced the R with
+	r in "gnu.io.RXTXCommDriver" to force an error.  After seeing the error
+	we replaced the r with an R to fix it.
+
 	3.  forgetting to put jcl.jar in CLASSPATH
 
 	export CLASSPATH=./java/lib/comm.jar:.:./java/lib/classes.zip
