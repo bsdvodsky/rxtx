@@ -1013,20 +1013,11 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 		}  while (ret < 0 && errno==EINTR);
 		if( ret < 0 ) break; 
 
-#ifdef NOTIFY_BUFFER_EMPTY
-/* 
-This has not been tested. It may be better in writeByte/array/drain. 
-Its left for those interested in experimenting with it.
-
-Trent
-*/
 		if( ioctl( fd, TIOCSERGETLSR, &change ) ) break;
 		if( change ) {
 			(*env)->CallVoidMethod( env, jobj, method,
 				(jint)SPE_OUTPUT_BUFFER_EMPTY, JNI_TRUE );
 		}
-#endif /* NOTIFY_BUFFER_EMPTY */
-
 #if defined(__linux__)
 	/*	wait for RNG, DSR, CD or CTS  but not DataAvailable*/
 	/*      The drawback here is it never times out so if someone
