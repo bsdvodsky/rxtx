@@ -93,6 +93,12 @@ public class RXTXCommDriver implements CommDriver {
          * July 12, 1999
          * IBM
 
+         * Added ttyM for Moxa boards
+         * Removed obsolete device cuaa
+         * Peter Bennett
+         * January 02, 2000
+         * Bencom
+
     */
 	public void initialize() {
 		File dev = new File( "/dev" );
@@ -108,8 +114,9 @@ public class RXTXCommDriver implements CommDriver {
 			"ttyf", // irix serial ports with hardware flow
 			"ttym", // irix modems
 			"ttyq", // irix pseudo ttys
-			"ttyd",  // irix serial ports
-			"tty0"   // netbsd serial ports 
+			"ttyd", // irix serial ports
+			"tty0", // netbsd serial ports 
+			"ttyM"  // Moxa Smart IO cards
 		};
 	/** Get the Parallel port prefixes for the running os
 	* Holger Lehmann

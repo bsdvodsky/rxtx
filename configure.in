@@ -115,14 +115,6 @@ AC_ARG_ENABLE(FULL_EVENT,
 	fi
 )
 
-AC_ARG_ENABLE(ASYNC_INPUT, 
-	[  --enable-ASYNC_INPUT    Asynchronous input [devel]],
-	echo $enable_ASYNC_INPUT,
-	enable_ASYNC_INPUT="no"
-)
-if test x$enable_ASYNC_INPUT = xyes; then 
-	CFLAGS="$CFLAGS -DASYNC_INPUT"
-fi
 AC_ARG_ENABLE(JDK_HOME,
 	[  --enable-JDK_HOME       get JDK location from \$JDK_HOME],
 	if test x$enable_JDK_HOME = xyes; then 

@@ -275,11 +275,7 @@ final class RXTXPort extends SerialPort {
 		}
 	}
 
-	private native void initAsyncInput(boolean enable);
-	public void notifyOnDataAvailable( boolean enable ) {
-		monThread.Data = enable;
-		initAsyncInput(enable);
-	}
+	public void notifyOnDataAvailable( boolean enable ) { monThread.Data = enable; }
 
 	public void notifyOnOutputEmpty( boolean enable ) { monThread.Output = enable; }
 

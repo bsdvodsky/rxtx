@@ -56,52 +56,6 @@ extern int errno;
 #include "SerialImp.h"
 /* #define DEBUG_TIMEOUT  */
 
-
-JNIEnv *g_env;
-
-void signal_handler_IO(int status) {
-#ifdef ASYNC_INPUT
-	jclass jclazz;
-	jobject g_jobj;
-	jmethodID method;
-
-	jclazz = (*g_env)->GetObjectClass( g_env, g_jobj );
-	method = (*g_env)->GetMethodID( g_env, jclazz, "sendEvent", "(IZ)V" );
-	if (!method) {
-		fprintf(stderr, "sendEvent not found\n");
-		return;
-	}
-	(*g_env)->ExceptionClear(g_env);
-	(*g_env)->CallVoidMethod( g_env, g_jobj,
-		method, (jint)SPE_DATA_AVAILABLE, JNI_TRUE );
-	if((*g_env)->ExceptionOccurred(g_env)) {
-		fprintf(stderr, "error sending event\n");
-		(*g_env)->ExceptionDescribe(g_env);
-		(*g_env)->ExceptionClear(g_env);
-	}
-#endif /* ASYNC_INPUT */
-}
-
-JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_initAsyncInput
-  (JNIEnv *env, jobject jobj, jboolean enable)
-{
-	struct sigaction saio;
-	jclass jclazz;
-	jmethodID method;
-	int fd = get_java_fd(env, jobj);
-	g_env = env;
-
-	saio.sa_handler = signal_handler_IO;
-	sigemptyset(&saio.sa_mask);
-	saio.sa_flags = 0;
-#if defined(__linux__)
-	saio.sa_restorer = NULL;
-#endif /* __linux__ */
-	sigaction(SIGIO, &saio, NULL);
-	fcntl(fd, F_SETOWN, getpid());
-	fcntl(fd, F_SETFL, FASYNC);
-}
-
 /*----------------------------------------------------------
 RXTXPort.Initialize
 
@@ -122,11 +76,11 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_Initialize(
 	   threads, because it slows things down.  Go figure. */
 
 	/* POSIX signal handling functions */
-#if !defined(__FreeBSD___) && !defined(ASYNC_INPUT) 
+#if !defined(__FreeBSD___)
 	struct sigaction handler;
 	sigaction( SIGIO, NULL, &handler );
 	if( !handler.sa_handler ) signal( SIGIO, SIG_IGN );
-#endif /* !__FreeBSD__ && !ASYNC_INPUT */
+#endif /* !__FreeBSD__ */
 #if defined(__linux__) 
 	/* Lets let people who upgraded kernels know they may have problems */
 	if (uname (&name) == -1)
@@ -1065,19 +1019,17 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 		do {
 			ret=select( fd + 1, &rfds, NULL, NULL, &sleep );
 		}  while (ret < 0 && errno==EINTR);
-		if( ret < 0 ) break; /*?*/
+		if( ret < 0 ) break; 
 #if defined(__linux__)
 		if( ioctl( fd, TIOCGICOUNT, &sis ) ) break;
 #endif
 		if( ioctl( fd, TIOCMGET, &mflags ) ) break;
 #if defined(__linux__)
 #if defined(FULL_EVENT)
-#if !defined ASYNC_INPUT
 		if( sis.rx != osis.rx ) 
 		{
 			(*env)->CallVoidMethod( env, jobj, method, (jint)SPE_DATA_AVAILABLE, JNI_TRUE );
 		}
-#endif /* ! ASYNC_INPUT */
 		while( sis.frame != osis.frame ) {
 			(*env)->CallVoidMethod( env, jobj, method, (jint)SPE_FE, JNI_TRUE );
 			osis.frame++;
@@ -1095,11 +1047,9 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 			osis.brk++;
 		}
 #else
-#if !defined ASYNC_INPUT 
 		if( ioctl( fd, FIONREAD, &change ) ) break;
 		if( change ) (*env)->CallVoidMethod( env, jobj, method,
 			(jint)SPE_DATA_AVAILABLE, JNI_TRUE );
-#endif  /* ! ASYNC_INPUT */
 #endif /* FULL_EVENT */
 		change = sis.cts - osis.cts;
 		if( change ) send_modem_events( env, jobj, method, SPE_CTS, abs(change),
@@ -1247,7 +1197,7 @@ JNIEXPORT jboolean  JNICALL Java_gnu_io_RXTXCommDriver_IsDeviceGood(JNIEnv *env,
 		)
 	{
 #ifdef DEBUG
-		printf("DEBUG: Ignoring Port %s*\n",name);
+		printf("DEBUG: Ignoring Port %s\*\n",name);
 #endif
 		return(JNI_FALSE);
 	}
@@ -1273,11 +1223,12 @@ JNIEXPORT jboolean  JNICALL Java_gnu_io_RXTXCommDriver_IsDeviceGood(JNIEnv *env,
 		!strcmp(name,"ttyI")|| !strcmp(name,"ttyW")||
 		!strcmp(name,"ttyq")|| !strcmp(name,"ttym")||
 		!strcmp(name,"ttyf")|| !strcmp(name,"cuaa")||
-		!strcmp(name,"ttyC")|| !strcmp(name,"ttyR")
+		!strcmp(name,"ttyC")|| !strcmp(name,"ttyR")||
+		!strcmp(name,"ttyM")
 		)
 	{
 #ifdef DEBUG
-		printf("DEBUG: Ignoring Port %s*\n",name);
+		printf("DEBUG: Ignoring Port %s\*\n",name);
 #endif
 		return(JNI_FALSE);
 	}
