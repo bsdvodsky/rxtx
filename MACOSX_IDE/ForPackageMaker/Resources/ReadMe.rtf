@@ -4,7 +4,22 @@
 \margl1440\margr1440\vieww9000\viewh9000\viewkind0
 \pard\tx1440\tx2880\tx4320\tx5760\tx7200\ql\qnatural
 
-\f0\fs24 \cf0 /*-------------------------------------------------------------------------\
+\f0\fs24 \cf0 IMPORTANT!!! BEFORE YOU START\
+You should have folder uucp in directory /var/spool\
+if you don't have it,  create it with the command\
+	sudo mkdir /var/spool/uucp\
+setup permission:\
+	sudo chmod 775 /var/spool/uucp\
+You should be a member of the uucp group\
+you can use the NetInfo utility or use the following\
+commands\
+sudo niutil -destroyval         /      /groups/uucp users `whoami`\
+sudo niutil -appendprop      /     /groups/uucp users `whoami`\
+\
+you can found the script uucp.sh in RXTX source-tree:\
+rxtx-devel/MACOSX_IDE/uucp.sh\
+\
+/*-------------------------------------------------------------------------\
 |   rxtx is a native interface to serial ports in java.\
 |   Copyright 1997-2001 by Trent Jarvi trentjarvi@yahoo.com.\
 |\
