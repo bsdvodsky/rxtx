@@ -1398,7 +1398,7 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 	/* CLOCAL eliminates open blocking on modem status lines */
 	if ((fd = OPEN(name, O_RDONLY | CLOCAL)) <= 0)
 	{
-		report_error( "testRead() open failed\n" );
+		report( "testRead() open failed\n" );
 		ret = JNI_FALSE;
 		goto END;
 	}
@@ -1426,7 +1426,7 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 		/* save, restore later */
 		if ( ( saved_flags = fcntl(fd, F_GETFL ) ) < 0)
 		{
-			report_error( "testRead() fcntl(F_GETFL) failed\n" );
+			report( "testRead() fcntl(F_GETFL) failed\n" );
 			ret = JNI_FALSE;
 			goto END;
 		}
@@ -1435,7 +1435,7 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 
 		if ( fcntl( fd, F_SETFL, O_NONBLOCK ) < 0 )
 		{
-			report_error( "testRead() fcntl(F_SETFL) failed\n" );
+			report( "testRead() fcntl(F_SETFL) failed\n" );
 			ret = JNI_FALSE;
 			goto END;
 		}
@@ -1445,7 +1445,7 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 
 		if ( tcsetattr( fd, TCSANOW, &ttyset) < 0 )
 		{
-			report_error( "testRead() tcsetattr failed\n" );
+			report( "testRead() tcsetattr failed\n" );
 			ret = JNI_FALSE;
 			tcsetattr( fd, TCSANOW, &saved_termios );
 			goto END;
@@ -1455,7 +1455,7 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 #ifdef EWOULDBLOCK
 			if ( errno != EWOULDBLOCK )
 			{
-				report_error( "testRead() read failed\n" );
+				report( "testRead() read failed\n" );
 				ret = JNI_FALSE;
 			}
 #else
