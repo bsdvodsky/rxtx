@@ -1,0 +1,19 @@
+#!/bin/sh
+
+for i in \
+	/mnt/local/jdk117_v2 \
+	/mnt/local/jdk118 \
+	/mnt/local/jdk118_v1 \
+	/mnt/local/jdk118_v3 \
+	/mnt/local/jdk1.2 \
+	/mnt/local/jdk1.2.2-006-sun \
+	/mnt/local/jdk1.3
+do 
+	JAVA_HOME=$i
+	echo -n building $i ... 
+	../configure --prefix=/usr > output 2>&1
+	make > output 2>&1
+	echo build returned $?;
+	rm -rf ../build/*
+done
+

@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.io.IOException;
 import java.util.TooManyListenersException;
 import java.lang.Math;
+import javax.comm.*;
 
 /**
   * RXTXPort

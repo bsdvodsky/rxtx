@@ -20,6 +20,10 @@ you downloaded.
 		      CommPort enumeration with rxtx's comm.jar
 1.4-9                 Steve Drach <drach@eng.sun.com>
                       Minor fix of error reporting in lockfiles
+		      Mac OS X port Joseph Goldstone <joseph@lp.com>
+		      Documentation changes for lockfiles
+		      build fixes for jdk 1.1.8
+		      automation of build tests with support for $JAVA_HOME
 1.4-8  Jan  8, 2001   irix build fixes (fine tuning required)
 		      Tom Mander <tom@proximity.com.au>
 		      more lockfile code with testing from

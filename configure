@@ -24,7 +24,7 @@ ac_help="$ac_help
 ac_help="$ac_help
   --enable-PRINTER        PRINTER support (experimental) [default=yes]"
 ac_help="$ac_help
-  --enable-lockfiles      enable lock files (experimental) [default=no]"
+  --enable-lockfiles      enable lock files (experimental) [default=yes]"
 ac_help="$ac_help
   --enable-DEBUG          Print debugging info from SerialImp.c [default=no]"
 
@@ -1940,7 +1940,7 @@ else
 fi
 done
 
-for ac_hdr in sys/signal.h
+for ac_hdr in sys/time.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
@@ -1980,7 +1980,7 @@ else
 fi
 done
 
-for ac_hdr in signal.h
+for ac_hdr in sys/signal.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
@@ -2020,7 +2020,7 @@ else
 fi
 done
 
-for ac_hdr in termios.h
+for ac_hdr in signal.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
@@ -2060,15 +2060,55 @@ else
 fi
 done
 
+for ac_hdr in termios.h
+do
+ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
+echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
+echo "configure:2068: checking for $ac_hdr" >&5
+if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 2073 "configure"
+#include "confdefs.h"
+#include <$ac_hdr>
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:2078: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  rm -rf conftest*
+  eval "ac_cv_header_$ac_safe=yes"
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_header_$ac_safe=no"
+fi
+rm -f conftest*
+fi
+if eval "test \"`echo '$ac_cv_header_'$ac_safe`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+    ac_tr_hdr=HAVE_`echo $ac_hdr | sed 'y%abcdefghijklmnopqrstuvwxyz./-%ABCDEFGHIJKLMNOPQRSTUVWXYZ___%'`
+  cat >> confdefs.h <<EOF
+#define $ac_tr_hdr 1
+EOF
+ 
+else
+  echo "$ac_t""no" 1>&6
+fi
+done
+
 if test $ac_cv_prog_gcc = yes; then
     echo $ac_n "checking whether ${CC-cc} needs -traditional""... $ac_c" 1>&6
-echo "configure:2066: checking whether ${CC-cc} needs -traditional" >&5
+echo "configure:2106: checking whether ${CC-cc} needs -traditional" >&5
 if eval "test \"`echo '$''{'ac_cv_prog_gcc_traditional'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
     ac_pattern="Autoconf.*'x'"
   cat > conftest.$ac_ext <<EOF
-#line 2072 "configure"
+#line 2112 "configure"
 #include "confdefs.h"
 #include <sgtty.h>
 Autoconf TIOCGETP
@@ -2086,7 +2126,7 @@ rm -f conftest*
 
   if test $ac_cv_prog_gcc_traditional = no; then
     cat > conftest.$ac_ext <<EOF
-#line 2090 "configure"
+#line 2130 "configure"
 #include "confdefs.h"
 #include <termio.h>
 Autoconf TCGETA
@@ -2185,8 +2225,8 @@ fi
 
 find_java_native_include()
 {
-JAVANATINC="-I \$(JPATH)/`cd $JPATH; find ./include -name $1|sed s#$1##|head -n1`"
-if  test `find $JPATH/include -name $1|wc -l` != "1" ; then
+JAVANATINC="-I \$(JPATH)/include/`cd $JPATH/include; find . -name $1|sed s#$1##|head -n1`"
+if  test `cd $JPATH/include; find . -name $1|wc -l` != "1" ; then
 	echo 1>&2
 	echo WARNING:  configure is having a hard time determining which  1>&2
 	echo directory contains the file $1.  Edit Makefile and fix the  1>&2
@@ -2212,20 +2252,35 @@ public class conftest
 }
 EOF
 CLASSPATH=.:$CLASSPATH
-javac conftest.java
+if test x$JAVA_HOME = x; then
+	javac conftest.java
+else
+	$JAVA_HOME/bin/javac conftest.java
+fi
 }
 
 run_conftest()
 {
 	echo $ac_n checking $1   " " 1>&6
-	VAR=`java conftest $1`
+	if test x$JPATH = x; then
+		VAR=`java conftest $1`
+	else
+		VAR=`$JPATH/bin/java conftest $1`
+	fi
 	echo $VAR  1>&6
 	echo $VAR
 	return
 }
 
-build_conftest
-JPATH=`run_conftest java.home| sed s#\/jre\\$##g`
+if test x$JAVA_HOME = x; then
+	build_conftest
+	JPATH=`run_conftest java.home| sed s#\/jre\\$##g`
+else	
+	build_conftest
+	JPATH=$JAVA_HOME
+	echo $JAVA_HOME
+	echo "configure: warning: using JAVA_HOME environmental variable" 1>&2
+fi
 if test x$JPATH = x; then
 	{ echo "configure: error: Make sure java is in your path before running configure" 1>&2; exit 1; }
 fi
@@ -2490,30 +2545,22 @@ if test "$CC" = "gcc" || test "$CC"="egcs"; then
 	case $JAVA_VENDOR in
 	Tran*)
 		find_java_native_include jni.h
-		JAVAH="kaffeh \$(CLASSPATH) -d \$(DEST) -jni"
-		JAVAC="javac \$(CLASSPATH) -d \$(TOP)/ -O"
-		JAR="jar"
-		JAVADOC="javadoc \$(CLASSPATH)"
+		JAVAH="\$(JPATH)/bin/kaffeh \$(CLASSPATH) -d \$(DEST) -jni"
+		JAVAC="\$(JPATH)/bin/javac \$(CLASSPATH) -d \$(TOP)/ -O"
+		JAR="\$(JPATH)/bin/jar"
+		JAVADOC="\$(JPATH)/bin/javadoc \$(CLASSPATH)"
 		CFLAGS="$CFLAGS -D_BSD_SOURCE"
 		JAVAINCLUDE=""
 		JAVAH_FIX="if test ! -d \$(target_alias);then  mkdir \$(target_alias);fi;"
 		JHOME=$JPATH"/share/kaffe/"
 		RXTX_PATH=$JPATH"/lib/kaffe/"
 		;;
-	IBM*)
-		find_java_native_include jni_md.h
-		JAVAH="javah \$(CLASSPATH) -d \$(DEST) -jni"
-		JAVAC="javac \$(CLASSPATH) -d \$(TOP)/ -O"
-		JAR="jar"
-		JAVADOC="javadoc"
-		CFLAGS="$CFLAGS -D_BSD_SOURCE"
-		;;
 	*)
 		find_java_native_include jni_md.h
-		JAVAH="javah \$(CLASSPATH) -d \$(DEST) -jni"
-		JAVAC="javac \$(CLASSPATH) -d \$(TOP)/ -O"
-		JAR="jar"
-		JAVADOC="javadoc"
+		JAVAH="\$(JPATH)/bin/javah \$(CLASSPATH) -d \$(DEST) -jni"
+		JAVAC="\$(JPATH)/bin/javac \$(CLASSPATH) -d \$(TOP)/ -O"
+		JAR="\$(JPATH)/bin/jar"
+		JAVADOC="\$(JPATH)/bin/javadoc"
 		CFLAGS="$CFLAGS -D_BSD_SOURCE"
 		;;
 	esac
@@ -2524,6 +2571,8 @@ elif  test -d $JPATH/jre/lib/ext
 	then fix_comm_jar $JPATH/jre/lib/ext/comm.jar
 elif  test -d $JPATH/lib  
 	then fix_comm_jar $JPATH/lib/comm.jar
+elif  test -d $JPATH/lib/ext 
+	then fix_comm_jar $JPATH/lib/ext/comm.jar
 fi
  case $OS_NAME in 
 Linux)
@@ -2540,7 +2589,7 @@ Linux)
 		JHOME=$JPATH"/jre/lib/ext"
 		RXTX_PATH="\$(JPATH)/jre/lib/\$(OS_ARCH)"
 	;;
-	1.*) 
+	1.1*) 
 		fix_parameters $JPATH/lib/javax.comm.properties
 		fix_comm_jar $JPATH/lib/comm.jar
 		CLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:"` \
@@ -2553,7 +2602,7 @@ Linux)
 			#  We are not using kaffe
 			check_prefix
 			RXTX_PATH="\$(prefix)/lib/"
-			#JAVAH_FIX="if [ ! -d com ]; then if [ ! -f \$(JPATH)/lib/comm.jar ]; then echo \"Please install comm.jar from CommAPI in \$(JPATH)/java/lib/ 1>&2\"; else mkdir -p com/sun/comm;\$(JAR) -xf \$(JPATH)/lib/comm.jar;  fi; fi;";
+			JAVAH_FIX="if [ ! -d com ]; then if [ ! -f \$(JPATH)/lib/comm.jar ]; then echo \"Please install comm.jar from CommAPI in \$(JPATH)/java/lib/ 1>&2\"; else mkdir -p com/sun/comm;\$(JAR) -xf \$(JPATH)/lib/comm.jar;  fi; fi;";
 		fi;
 		if test x"$JHOME" = x;then
 			JHOME=$JPATH/"lib"
@@ -2698,6 +2747,15 @@ WIN32)
 	WINDOWS_JAVA_INCLUDE="-I $WIN32INCLUDE -I $WIN32INCLUDE/win32"
 	fi
 	TARGETLIB="\$(target_alias)/Serial.dll"
+;;
+Mac\ OS\ X)
+      fix_parameters $JPATH/lib/javax.comm.properties
+      fix_comm_jar $JPATH/lib/ext/comm.jar
+      TARGETLIB="\$(target_alias)/libSerial.la"
+      RXTX_PATH="/usr/lib/java"
+      JHOME=$JPATH"/lib/ext"
+      LDFLAGS="$LDFLAGS -framework JavaVM -install_name libSerial.jnilib"
+      CLASSPATH="-classpath .:\$(TOP):\$(TOP)/src:\$(JPATH)/lib/ext/comm.jar:$CLASSPATH"
 ;;
 *)
 	TARGETLIB="\$(target_alias)/libSerial.la"
