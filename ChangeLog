@@ -62,6 +62,7 @@ you downloaded.
 		      Stallion Card support
 		      Greg Luck <gluck@tempo-services.com.au>
 		      CommPort enumeration with rxtx's comm.jar
+1.4-12 Oct 10, 2001   Mac OS X port.  Dmitry's work.  Test Release.
 1.4-11 Oct  4, 2001   see rxtx-1.5-6
 1.4-10 Aug 31, 2001   see rxtx-1.5-5
 1.4-9  Jun 21, 2001   Steve Drach <drach@eng.sun.com>
