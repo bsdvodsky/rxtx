@@ -1159,7 +1159,7 @@ JNIEXPORT jint JNICALL RXTXPort(nativeGetParityErrorChar)( JNIEnv *env,
 
 	ENTER( "nativeGetParityErrorChar" );
 #ifdef WIN32
-	result = termiosGetParityErrorChar( fd );
+	result = ( jint ) termiosGetParityErrorChar( fd );
 #else
 	/*
 	   arg!  I cant find a way to change it from \0 in Linux.  I think
@@ -1169,7 +1169,7 @@ JNIEXPORT jint JNICALL RXTXPort(nativeGetParityErrorChar)( JNIEnv *env,
 
 #endif /* WIN32 */
 	LEAVE( "nativeGetParityErrorChar" );
-	return( result );
+	return( ( jint ) result );
 }
 
 /*----------------------------------------------------------
@@ -1177,7 +1177,7 @@ RXTXPort.nativeGetEndOfInputChar
 
    accept:      -
    perform:     check the EndOf InputChar
-   return:      the EndOfInputChar as an int.
+   return:      the EndOfInputChar as an int.  -1 on error
    exceptions:  UnsupportedCommOperationException if not implemented
    comments:    
 ----------------------------------------------------------*/
@@ -1194,7 +1194,7 @@ JNIEXPORT jint JNICALL RXTXPort(nativeGetEndOfInputChar)( JNIEnv *env,
 fail:
 	LEAVE( "nativeGetEndOfInputChar" );
 	report( "nativeGetEndOfInputChar failed\n" );
-	return( -1 );
+	return( ( jint ) -1 );
 }
 
 /*----------------------------------------------------------
