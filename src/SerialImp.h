@@ -56,10 +56,12 @@
 
 /* glue for unsupported linux speeds see also win32termios.h */
 
+#if !defined(__APPLE__) //dima
 #define B14400		1010001
 #define B28800		1010002
 #define B128000		1010003
 #define B256000		1010004
+#endif //dima
 
 
 /*  Ports known on the OS */
