@@ -34,6 +34,8 @@ you downloaded.
 		      Stallion Card support 
 		      Greg Luck <gluck@tempo-services.com.au>
 		      CommPort enumeration with rxtx's comm.jar
+1.4-10 Aug 31, 2001   Follow symbolic links with lock files 
+		      peter.beelen@philips.com
 1.4-9  Jun 21, 2001   Steve Drach <drach@eng.sun.com>
                       Minor fix of error reporting in lockfiles
 		      Mac OS X port Joseph Goldstone <joseph@lp.com>
