@@ -801,9 +801,9 @@ writeByte
    exceptions:  IOException
  * Class:     gnu_io_RXTXPort
  * Method:    writeByte
- * Signature: (I)V
+ * Signature: (IZ)V
  */
-JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeByte(JNIEnv *env, jobject jobj, jint b)
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeByte(JNIEnv *env, jobject jobj, jint b, jboolean i)
 { 
   DWORD dwNumBytesWritten;
   LPCWSTR lpMsgBuf;
