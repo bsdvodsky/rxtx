@@ -47,7 +47,6 @@ extern int errno;
 
 #include "SerialImp.h"
 
-
 /*----------------------------------------------------------
 NativePort.Initialize
 
@@ -84,8 +83,12 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_open( JNIEnv *env, jobject jobj,
 	jstring jstr )
 {
 	struct termios ttyset;
+	int fd;
 	const char *filename = (*env)->GetStringUTFChars( env, jstr, 0 );
-	int fd = TEMP_FAILURE_RETRY (open (filename, O_RDWR | O_NOCTTY | O_NONBLOCK ));
+
+	do {
+		fd=open (filename, O_RDWR | O_NOCTTY | O_NONBLOCK );
+	}  while (fd < 0 && errno==EINTR);
 	(*env)->ReleaseStringUTFChars( env, jstr, NULL );
 	if( fd < 0 ) goto fail;
 
@@ -110,7 +113,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_open( JNIEnv *env, jobject jobj,
 	return (jint)fd;
 
 fail:
-	IOException( env, strerror( errno ) );
+	IOException( env, "open", strerror( errno ) );
 	return -1;
 }
 
@@ -126,9 +129,12 @@ NativePort.close
 JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_close( JNIEnv *env,
 	jobject jobj )
 {
+	int result;
 	int fd = get_java_fd( env, jobj );
 
-	TEMP_FAILURE_RETRY (close (fd));
+	do {
+		result=close (fd);
+	}  while (result < 0 && errno==EINTR);
 	return;
 }
 
@@ -163,7 +169,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_nativeSetSerialPortParams(
 	return;
 
 fail:
-	UnsupportedCommOperationException( env, strerror( errno ) );
+	UnsupportedCommOperationException( env, "nativeSetSerialPortParams", strerror( errno ) );
 }
 
 
@@ -202,7 +208,7 @@ int translate_speed( JNIEnv *env, jint speed )
 		case 460800:	return B460800;
 	}
 
-	UnsupportedCommOperationException( env, "speed" );
+	UnsupportedCommOperationException( env, "translate_speed", "speed" );
 	return 0;
 }
 
@@ -235,7 +241,7 @@ int translate_data_bits( JNIEnv *env, int *cflag, jint dataBits )
 			return 1;
 	}
 
-	UnsupportedCommOperationException( env, "data bits" );
+	UnsupportedCommOperationException( env, "translate_data_bits", "data bits" );
 	return 0;
 }
 
@@ -262,7 +268,7 @@ int translate_stop_bits( JNIEnv *env, int *cflag, jint stopBits )
 			return 1;
 	}
 
-	UnsupportedCommOperationException( env, "stop bits" );
+	UnsupportedCommOperationException( env, "translate_stop_bits", "stop bits" );
 	return 0;
 }
 
@@ -307,7 +313,7 @@ int translate_parity( JNIEnv *env, int *cflag, jint parity )
 #endif
 	}
 
-	UnsupportedCommOperationException( env, "parity" );
+	UnsupportedCommOperationException( env, "translate_parity", "parity" );
 	return 0;
 }
 
@@ -325,10 +331,14 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeByte( JNIEnv *env,
 {
 	unsigned char byte = (unsigned char)ji;
 	int fd = get_java_fd( env, jobj );
+	int result;
 
-	if (TEMP_FAILURE_RETRY (write (fd, &byte, sizeof( unsigned char))) >= 0)
+	do {
+		result=write (fd, &byte, sizeof(unsigned char));
+	}  while (result < 0 && errno==EINTR);
+	if(result >= 0)
 		return;
-	IOException( env, strerror( errno ) );
+	IOException( env,"writeByte", strerror( errno ) );
 }
 
 
@@ -346,13 +356,18 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeArray( JNIEnv *env,
 	jobject jobj, jbyteArray jbarray, jint offset, jint count )
 {
 	int fd = get_java_fd( env, jobj );
+	int result;
 	jbyte *body = (*env)->GetByteArrayElements( env, jbarray, 0 );
 	unsigned char *bytes = (unsigned char *)malloc( count );
 	int i;
+
 	for( i = 0; i < count; i++ ) bytes[ i ] = body[ i + offset ];
 	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
-	if (TEMP_FAILURE_RETRY (write (fd, bytes, count)) < 0 )
-		IOException( env, strerror( errno ) );
+	do {
+		result=write (fd, bytes, count);
+	}  while (result < 0 && errno==EINTR);
+	if (result<0)
+		IOException( env, "writeArray", strerror( errno ) );
 	free( bytes );
 }
 
@@ -371,8 +386,14 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_drain( JNIEnv *env,
 	jobject jobj )
 {
 	int fd = get_java_fd( env, jobj );
-	if( tcdrain( fd ) )
-		IOException( env, strerror( errno ) );
+	int result;
+
+	do {
+		result=tcdrain (fd);
+	}  while (result && errno==EINTR);
+
+	if( result )
+		IOException( env, "drain", strerror( errno ) );
 }
 
 
@@ -608,7 +629,10 @@ int read_byte_array( int fd, unsigned char *buffer, int length, int threshold,
             other OSes will need to update it manually if they want to have
             the same behavior.  For those OSes, timeouts will occur after no
             data AT ALL is received for the timeout duration.  No big deal. */
-			ret = TEMP_FAILURE_RETRY (select( fd + 1, &rfds, NULL, NULL, &sleep ));
+
+			do {
+				ret=select( fd + 1, &rfds, NULL, NULL, &sleep );
+			}  while (ret < 0 && errno==EINTR);
 			if( ret == 0 ) break;
 			if( ret < 0 ) return -1;
 		}
@@ -644,7 +668,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_readByte( JNIEnv *env,
 
 	bytes = read_byte_array( fd, buffer, 1, 1, timeout );
 	if( bytes < 0 ) {
-		IOException( env, strerror( errno ) );
+		IOException( env, "readByte", strerror( errno ) );
 		return -1;
 	}
 	return (bytes ? (jint)buffer[ 0 ] : -1);
@@ -677,20 +701,20 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_readArray( JNIEnv *env,
 	timeout = (int)( (*env)->GetIntField( env, jobj, jfield ) );
 
 	if( length < 1 || length > SSIZE_MAX ) {
-		IOException( env, "Invalid length" );
+		IOException( env,"readArray", "Invalid length" );
 		return -1;
 	}
 
 	buffer = (unsigned char *)malloc( sizeof( unsigned char ) * length );
 	if( buffer == 0 ) {
-		IOException( env, "Unable to allocate buffer" );
+		IOException( env,"readArray", "Unable to allocate buffer" );
 		return -1;
 	}
 
 	bytes = read_byte_array( fd, buffer, length, threshold, timeout );
 	if( bytes < 0 ) {
 		free( buffer );
-		IOException( env, strerror( errno ) );
+		IOException( env, "readArray", strerror( errno ) );
 		return -1;
 	}
 
@@ -743,7 +767,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setHWFC( JNIEnv *env,
 	if( tcsetattr( fd, TCSAFLUSH, &ttyset ) ) goto fail;
 	return;
 fail:
-	IOException( env, strerror( errno ) );
+	IOException( env, "setHWFC", strerror( errno ) );
 }
 
 
@@ -785,7 +809,9 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 		FD_SET( fd, &rfds );
 		sleep.tv_sec = 1;	/* Check every 1 second, or on receive data */
 		sleep.tv_usec = 0;
-		ret = TEMP_FAILURE_RETRY (select( fd + 1, &rfds, NULL, NULL, &sleep ));
+		do {
+			ret=select( fd + 1, &rfds, NULL, NULL, &sleep );
+		}  while (ret < 0 && errno==EINTR);
 		if( ret < 0 ) break;
 		if( ioctl( fd, TIOCGICOUNT, &sis ) ) break;
 		if( ioctl( fd, TIOCMGET, &mflags ) ) break;
@@ -890,10 +916,13 @@ IOException
    exceptions:  haha!
    comments:
 ----------------------------------------------------------*/ 
-void IOException( JNIEnv *env, char *msg )
+void IOException( JNIEnv *env, char *foo, char *msg )
 {
 	jclass clazz = (*env)->FindClass( env, "java/io/IOException" );
 	if( clazz == 0 ) return;
+#ifdef DEBUG
+	printf("rxtx is throwing an IOExecption from Java_gnu_io_RXTXPort_%s\n",foo);
+#endif
 	(*env)->ThrowNew( env, clazz, msg );
 }
 
@@ -908,10 +937,13 @@ UnsupportedCommOperationException
    exceptions:  haha!
    comments:
 ----------------------------------------------------------*/ 
-void UnsupportedCommOperationException( JNIEnv *env, char *msg )
+void UnsupportedCommOperationException( JNIEnv *env, char *foo, char *msg )
 {
 	jclass clazz = (*env)->FindClass( env,
 		"javax/comm/UnsupportedCommOperationException" );
 	if( clazz == 0 ) return;
+#ifdef DEBUG
+	printf("rxtx is throwing an UnsupportedCommOperationException from %s\n",foo);
+#endif
 	(*env)->ThrowNew( env, clazz, msg );
 }

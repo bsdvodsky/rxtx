@@ -80,5 +80,5 @@ int read_byte_array( int fd, unsigned char *buffer, int length, int threshold,
 int get_java_fd( JNIEnv *env, jobject jobj );
 void send_modem_events( JNIEnv *env, jobject jobj, jmethodID method,
    int event, int change, int state );
-void IOException( JNIEnv *Env, char *msg );
-void UnsupportedCommOperationException( JNIEnv *env, char *msg );
+void IOException( JNIEnv *Env, char *foo, char *msg );
+void UnsupportedCommOperationException( JNIEnv *env, char *foo, char *msg );
