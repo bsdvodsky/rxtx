@@ -91,6 +91,7 @@ public class RXTXCommDriver implements CommDriver {
 			"ttyI", // linux virtual modems
 			"ttyW", // linux specialix cards
 			"ttyC", // linux cyclades cards
+			"ttyR", // linux comtrol cards
 			"ttyf", // irix serial ports with hardware flow
 			"ttym", // irix modems
 			"ttyq", // irix pseudo ttys

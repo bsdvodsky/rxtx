@@ -23,6 +23,8 @@ ParallelPort support.  Needs some code.
                       A  large fraction of the stubs are filled in now.
 		ParallelImp.h
 		LPRPort.java simular to RXTXPort.java + stubs.
+	Printer support was working earlier.  Recent kernel changes have 
+	probably broken the printer support.  More comments in ParallelImp.c
 
 CommPortIdentifier support. Needs some code.
 	./configure --enable-RXTXIDENT will create a Makefile that uses it.

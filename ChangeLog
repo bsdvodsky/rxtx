@@ -1,3 +1,7 @@
+1.3-7   Aug 15, 1999  More Threshold and Timeout fixes.  Tried to get Printer
+                      support working with linux-2.2.11.   More work needed 
+                      there.  Comtrol card support by Ken Thompson 
+                      thompson@milestonesolutions.com.
 1.3-6   Aug 3, 1999   Threshold and Timeout typo fixes in SerialImp.c.  
 1.3-5   Jul 26, 1999  Threshold and Timeout implemented on native side.  default
                       on open is to block.  Hope this doesnt fill the mailbox.

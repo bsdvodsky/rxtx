@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
-|   Copyright 1997, 1998, 1999 by Trent Jarvi jarvi@ezlink.com.
+|   Copyright 1997, 1998, 1999 by Trent Jarvi trentjarvi@yahoo.com
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Library General Public
@@ -29,7 +29,7 @@
 #include <sys/param.h>
 #include <sys/time.h>
 #ifdef HAVE_TERMIOS_H
-#include <termios.h>
+#	include <termios.h>
 #endif
 #ifdef HAVE_SYS_FCNTL_H
 #   include <sys/fcntl.h>
@@ -453,7 +453,7 @@ RXTXPort.NativegetReceiveTimeout
    perform:    get termios.c_cc[VTIME] 
    return:     VTIME 
 ----------------------------------------------------------*/ 
-JNIEXPORT int JNICALL Java_gnu_io_RXTXPort_NativegetReceiveTimeout(
+JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_NativegetReceiveTimeout(
 	JNIEnv *env, 
 	jobject jobj
 	)
@@ -487,75 +487,6 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_NativeisReceiveTimeoutEnabled(
 	return(ttyset.c_cc[ VTIME ] > 0 ? JNI_TRUE:JNI_FALSE);
 fail:
 	throw_java_exception( env, IO_EXCEPTION, "isReceiveTimeoutEnabled", strerror( errno ) );
-	return JNI_FALSE;
-}
-
-/*----------------------------------------------------------
-RXTXPort.enableReceiveThreshold
-
-   accept:  vmin termios.c_cc[VMIN]
-   perform: change termios.c_cc[VMIN] to vim    
-   return:  void    
-----------------------------------------------------------*/ 
-JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_enableReceiveThreshold( 
-	JNIEnv *env, 
-	jobject jobj, 
-	jint vmin 
-	) 
-{
-	int fd = get_java_fd( env, jobj );
-	struct termios ttyset;
-
-	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
-	ttyset.c_cc[ VMIN ] = vmin;
-	if( tcsetattr( fd, TCSAFLUSH, &ttyset ) < 0 ) goto fail;
-	return;
-fail:
-	throw_java_exception( env, IO_EXCEPTION, "enableReceiveThreshold", strerror( errno ) );
-	return;
-}
-
-/*----------------------------------------------------------
-RXTXPort.getReceiveThreshold
-
-   accept:     none 
-   perform:    get termios.c_cc[MIN] 
-   return:     VMIN 
-----------------------------------------------------------*/ 
-JNIEXPORT int JNICALL Java_gnu_io_RXTXPort_getReceiveThreshold(
-	JNIEnv *env, 
-	jobject jobj
-	)
-{
-	int fd = get_java_fd( env, jobj );
-	struct termios ttyset;
-
-	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
-	return(ttyset.c_cc[ VMIN ]);
-fail:
-	throw_java_exception( env, IO_EXCEPTION, "getReceiveThreshold", strerror( errno ) );
-	return -1;
-}
-
-/*----------------------------------------------------------
-RXTXPort.isReceiveThresholdEnabled
-
-   accept:     none 
-   perform:    determine if VMIN is none 0 
-   return:     JNI_TRUE if VMIN > 0 else JNI_FALSE 
-----------------------------------------------------------*/ 
-JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isReceiveThresholdEnabled(
-	JNIEnv *env, 
-	jobject jobj
-	)
-{
-	int fd = get_java_fd( env, jobj );
-	struct termios ttyset;
-
-	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
-	return(ttyset.c_cc[ VMIN ] > 0 ? JNI_TRUE:JNI_FALSE);
-fail:
-	throw_java_exception( env, IO_EXCEPTION, "isReceiveThresholdEnabled", strerror( errno ) );
 	return JNI_FALSE;
 }
 

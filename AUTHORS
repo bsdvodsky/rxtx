@@ -1,6 +1,9 @@
 This package is not the result of one persons time.  Recognition is given
 to the following people for their assistance.
 
+Ken Thompson <thompson@milestonesolutions.com>  Comtrol RocketPort serial boards
+   support.
+
 Holger Lehmann <holle@almaden.ibm.com> Printer support fixes
 
 Neil Darlow <neil@darlow.co.uk>

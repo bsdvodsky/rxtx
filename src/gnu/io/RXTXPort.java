@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
-|   Copyright 1997, 1998, 1999 by Trent Jarvi jarvi@ezlink.com.
+|   Copyright 1997, 1998, 1999 by Trent Jarvi trentjarvi@yahoo.com.
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Library General Public
@@ -111,7 +111,7 @@ final class RXTXPort extends SerialPort {
 
 	/*
 	linux/drivers/char/n_hdlc.c? FIXME
-		jarvi@ezlink.com
+		trentjarvi@yahoo.com
 	*/
 	/** Receive framing control 
 	*/
@@ -153,17 +153,26 @@ final class RXTXPort extends SerialPort {
 	}
 
 	/** Receive threshold control */
-	public native void enableReceiveThreshold( int t );
+	
+	private int threshold = 1;
+	
+	public void enableReceiveThreshold( int t ){
+		threshold=t;
+	}
 	public void disableReceiveThreshold() { 
 		enableReceiveThreshold(0);
 	}
-	public native int getReceiveThreshold();
-	public native boolean isReceiveThresholdEnabled();
+	public int getReceiveThreshold(){
+		return threshold;
+	}
+	public boolean isReceiveThresholdEnabled(){
+		return(threshold>0);
+	}
 
 	/** Input/output buffers */
 	/** FIXME I think this refers to 
 		FOPEN(3)/SETBUF(3)/FREAD(3)/FCLOSE(3) 
-		jarvi@ezlink.com
+		trentjarvi@yahoo.com
 	*/
 	public void setInputBufferSize( int size ) {
 		System.out.println("setInputBufferSize is not implemented");
@@ -326,10 +335,23 @@ final class RXTXPort extends SerialPort {
 			return readByte();
 		}
 		public int read( byte b[] ) throws IOException {
-			return readArray( b, 0, b.length );
+			if(threshold>0){
+				return readArray( b, 0, (threshold<b.length?threshold:b.length));
+			}
+			else {
+				return readArray( b, 0, b.length );
+			}
 		}
 		public int read( byte b[], int off, int len ) throws IOException {
-			return readArray( b, off, len );
+			/* its not clear that this is right */
+			if(threshold>0){
+				return readArray( b, off, (threshold<len?
+							(threshold<b.length?threshold:b.length):
+							(len<b.length?len:b.length)));
+			}
+			else {
+				return readArray( b, 0, b.length<len?b.length:len );
+			}
 		}
 		public int available() throws IOException {
 			return nativeavailable();

@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
-|   Copyright 1997, 1998, 1999 by Trent Jarvi jarvi@ezlink.com.
+|   Copyright 1997, 1998, 1999 by Trent Jarvi trentjarvi@yahoo.com
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Library General Public
@@ -16,6 +16,21 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
+/* 
+   fear he who enter here.  It appears that things have changed.  An attempt
+   has been made to put things the way the should be.
+
+	basic problem is LP_P* appears to be ifdefed __KERNEL__ in the
+        lp.h header file on linux.  It also looks as if LP_P* should be
+        LP_* for POSOX compliance.  So... Some P's got chopped out.
+        Its not clear what LP_PACK is supposed to become so its commented out
+        below.
+
+        Some errors may have occured during the change.  It compiles and
+        ParallelBlackBox runs.  No further garantees.
+   
+        - Trent Jarvi
+*/
 
 #include "config.h"
 #include "gnu_io_LPRPort.h"
@@ -30,7 +45,7 @@
 #include <sys/param.h>
 #include <sys/time.h>
 #ifdef HAVE_TERMIOS_H
-#include <termios.h>
+#	include <termios.h>
 #endif
 #ifdef HAVE_SYS_FCNTL_H
 #   include <sys/fcntl.h>
@@ -41,16 +56,18 @@
 #ifdef HAVE_SYS_SIGNAL_H
 #   include <sys/signal.h>
 #endif
-
-#ifdef __linux__
-	#include <linux/lp.h>
-#else ifdef __freebsd__
-	#include <machine/lpt.h>
+#if defined(__linux__)
+#	include <linux/lp.h>
+#endif
+#if defined(__FreeBSD__)
+#	include <machine/lpt.h>
 #endif
 
 extern int errno;
 
 #include "ParallelImp.h"
+
+
 
 /*----------------------------------------------------------
 LPRPort.getOutputBufferFree
@@ -105,7 +122,7 @@ LPRPort.isPaperOut
    perform:     check if printer reports paper is out   
    return:      Paper Out: JNI_TRUE  Not Paper Out: JNI_FALSE     
    exceptions:  none
-   comments:    LP_POUTPA    unchanged out-of-paper input, active high
+   comments:    LP_NOPA    unchanged out-of-paper input, active high
 ----------------------------------------------------------*/ 
 JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isPaperOut(JNIEnv *env,
 	jobject jobj){
@@ -114,7 +131,7 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isPaperOut(JNIEnv *env,
 	int fd = get_java_fd( env, jobj );
 
 	ioctl(fd, LPGETSTATUS,&status);
-	return( status & LP_POUTPA ? JNI_TRUE : JNI_FALSE );
+	return( status & LP_NOPA ? JNI_TRUE : JNI_FALSE );
 }
 /*----------------------------------------------------------
 LPRPort.isPrinterBusy
@@ -122,16 +139,17 @@ LPRPort.isPrinterBusy
    perform:     Check to see if the printer is printing.   
    return:      JNI_TRUE if the printer is Busy, JNI_FALSE if its idle   
    exceptions:  none
-   comments:    LP_PBUSY     inverted busy input, active high
+   comments:    LP_BUSY     inverted busy input, active high
 ----------------------------------------------------------*/ 
 JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isPrinterBusy(JNIEnv *env,
 	jobject jobj){
 	int status;
 	int fd = get_java_fd( env, jobj );
 	ioctl(fd, LPGETSTATUS, &status);
-#if defined __linux__
-	return( status & LP_PBUSY ? JNI_TRUE : JNI_FALSE );
-#else if defined __freebsd__
+#if defined(__linux__)
+	return( status & LP_BUSY ? JNI_TRUE : JNI_FALSE );
+#endif
+#if defined(__FreeBSD__)
 	return( status & EBUSY ? JNI_TRUE : JNI_FALSE );
 #endif
 	return(JNI_FALSE);
@@ -142,14 +160,14 @@ LPRPort.isPrinterError
    perform:     check for printer error
    return:      JNI_TRUE if there is an printer error otherwise JNI_FALSE
    exceptions:  none
-   comments:    LP_PERRORP   unchanged error input, active low 
+   comments:    LP_ERR   unchanged error input, active low 
 ----------------------------------------------------------*/ 
 JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isPrinterError(JNIEnv *env,
 	jobject jobj){
 	int status;
 	int fd = get_java_fd( env, jobj );
 	ioctl(fd, LPGETSTATUS, &status);
-	return( status & LP_PERRORP ? JNI_TRUE : JNI_FALSE );
+	return( status & LP_ERR ? JNI_TRUE : JNI_FALSE );
 }
 /*----------------------------------------------------------
 LPRPort.isPrinterSelected
@@ -157,14 +175,14 @@ LPRPort.isPrinterSelected
    perform:     check if printer is selected
    return:      JNI_TRUE if printer is selected other wise JNI_FALSE
    exceptions:  none
-   comments:    LP_PSELECD   unchanged selected input, active high 
+   comments:    LP_SELEC   unchanged selected input, active high 
 ----------------------------------------------------------*/ 
 JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isPrinterSelected(JNIEnv *env,
 	jobject jobj){
 	int status;
 	int fd = get_java_fd( env, jobj );
 	ioctl(fd, LPGETSTATUS, &status);
-	return( status & LP_PSELECD ? JNI_TRUE : JNI_FALSE );
+	return( status & LP_SELEC ? JNI_TRUE : JNI_FALSE );
 }
 /*----------------------------------------------------------
 LPRPort.isPrinterTimedOut
@@ -181,9 +199,10 @@ JNIEXPORT jboolean JNICALL Java_gnu_io_LPRPort_isPrinterTimedOut(JNIEnv *env,
 	int status;
 	int fd = get_java_fd( env, jobj );
 	ioctl(fd, LPGETSTATUS, &status);
-#if defined __linux__
-	return( status & LP_PBUSY ? JNI_TRUE : JNI_FALSE );
-#else if defined __freebsd__
+#if defined(__linux__)
+	return( status & LP_BUSY ? JNI_TRUE : JNI_FALSE );
+#endif
+#if defined(__FreeBSD__)
 	return( status & EBUSY ? JNI_TRUE : JNI_FALSE );
 #endif
 	return( JNI_FALSE );
@@ -519,19 +538,23 @@ JNIEXPORT void JNICALL Java_gnu_io_LPRPort_eventLoop( JNIEnv *env,
                        PAR_EV_ERROR:
 */
 
-#if defined __linux__
-		if (pflags&LP_PBUSY)    /* inverted input, active high */
-#else if defined __freebsd__
+#if defined(__linux__)
+		if (pflags&LP_BUSY)    /* inverted input, active high */
+#endif
+#if defined(__FreeBSD__)
 		if (pflags&EBUSY)    /* inverted input, active high */
 #endif
 			(*env)->CallVoidMethod( env, jobj, method, (jint)PAR_EV_ERROR, JNI_TRUE );
-		if (pflags&LP_PACK)     /* unchanged input, active low */
+/*  FIXME  this has moved into the ifdef __kernel__?  Need to get the
+           posix documentation on this.
+		if (pflags&LP_ACK)   
 			(*env)->CallVoidMethod( env, jobj, method, (jint)PAR_EV_ERROR, JNI_TRUE );
-		if (pflags&LP_POUTPA)   /* unchanged input, active high */
+*/  /* unchanged input, active low */
+		if (pflags&LP_NOPA)   /* unchanged input, active high */
 			(*env)->CallVoidMethod( env, jobj, method, (jint)PAR_EV_ERROR, JNI_TRUE );
-		if (pflags&LP_PSELECD)  /* unchanged input, active high */
+		if (pflags&LP_SELEC)  /* unchanged input, active high */
 			(*env)->CallVoidMethod( env, jobj, method, (jint)PAR_EV_ERROR, JNI_TRUE );
-		if (pflags&LP_PERRORP)  /* unchanged input, active low */
+		if (pflags&LP_ERR)  /* unchanged input, active low */
 			(*env)->CallVoidMethod( env, jobj, method, (jint)PAR_EV_ERROR, JNI_TRUE );
 		interrupted = (*env)->CallStaticBooleanMethod( env, jthread, interrupt );
 	}
