@@ -67,8 +67,8 @@ final class LPRPort extends ParallelPort {
 		lprmode = mode;
 		return(0);
 	}
-	public void restart(){System.out.println("restart() is not implemented"};
-	public void suspend(){System.out.println("suspend() is not implemented"};
+	public void restart(){System.out.println("restart() is not implemented");};
+	public void suspend(){System.out.println("suspend() is not implemented");};
 	
 	public native boolean setLPRMode(int mode) throws UnsupportedCommOperationException;
 	public native boolean isPaperOut();
