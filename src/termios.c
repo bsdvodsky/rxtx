@@ -470,7 +470,7 @@ close()
    comments:    
 ----------------------------------------------------------*/
 
-int close( int fd )
+int serial_close( int fd )
 {
 	/*
 	errno = EBADF;
@@ -1103,7 +1103,10 @@ int serial_write( int fd, char *Str, int length )
 	{
 		YACK();
 	}
-	FlushFileBuffers( index->hComm );
+	if ( FlushFileBuffers( index->hComm ) )
+	{
+		YACK();
+	}
 	/*
 		I'm sure there is a better way to do this but write() will
 		outrace read() without this currently.
@@ -2212,9 +2215,10 @@ static inline void outportb(unsigned char val, unsigned short int port)
 
 /*----------------------- END OF LIBRARY -----------------*/
 
-
+#ifdef asdf
 #define O_RDONLY 00
 #define PORT_SERIAL 1
+#endif
 /*
 	NT Port Enumeration.
 
@@ -2302,6 +2306,7 @@ fail:
 		"nativeSetSerialPortParams", strerror( errno ) );
 }
 #endif
+#ifdef asdf
 int main( int argc, char *argv[] )
 {
 	struct termios ttyset;
@@ -2414,6 +2419,7 @@ END:
 	close(fd[3]);
 	return ret;
 }
+#endif /* asdf */
 #ifdef asdf
 int main( int argc, char *argv[] )
 {

@@ -871,8 +871,8 @@ Documentation is at http://java.sun.com/products/jdk/1.2/docs/api/java/io/InputS
 	*/
 		public int available() throws IOException
 		{
-			if (debug)
-				System.out.print("X");
+			//if (debug)
+			//	System.out.print("X");
 			return nativeavailable();
 		}
 	}
