@@ -208,7 +208,9 @@ int translate_speed( JNIEnv *env, jint speed )
 		case 57600:	return B57600;
 		case 115200:	return B115200;
 		case 230400:	return B230400;
+#ifdef B460800
 		case 460800:	return B460800;
+#endif
 	}
 
 	throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,

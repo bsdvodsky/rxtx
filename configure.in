@@ -32,6 +32,7 @@ AC_PROG_GCC_TRADITIONAL
 AC_SUBST(JAVAINCLUDE)
 AC_SUBST(JAVANATINC)
 AC_SUBST(JCLASSPATH)
+AC_SUBST(JAVA_H_CLASSPATH)
 AC_SUBST(TOP)
 AC_SUBST(JPATH)
 AC_SUBST(TARGETLIB)
@@ -83,12 +84,6 @@ AC_ARG_ENABLE(PRINTER,
 #   fi
    if test "$CC" = "gcc"; then
       CFLAGS="$CFLAGS -D_BSD_SOURCE"
-   else
-      [case "$host_os" in
-         irix*)
-            CFLAGS="$CFLAGS -D_NO_POSIX=1 -D_NO_XOPEN4=1";;
-         *);;
-      esac]
    fi
 
 AC_ARG_ENABLE(NATIVETHREADS,
@@ -130,7 +125,6 @@ if test "$JPATH" = ""; then
       JPATH="`echo $JDK_HOME`"
    fi
 fi
-JCLASSPATH="-classpath \$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:.:$CLASSPATH"
 cat > conftest.java << EOF
 /* this may be usefull for getting around java cobwebs during build */
 public class conftest {
@@ -156,6 +150,13 @@ echo $JAVA_VERSION
 rm -f conftest.java
 rm -f conftest.class
 
+#Did you ever think about installing the jar in the standard extension path for
+#jdk 1.2?  I manually moved comm.jar and jcl.jar to /usr/local/jdk/jre/lib/ext
+#and now I don't need them in my classpath.  I also moved libSerial.so to
+#/usr/local/jdk/jre/lib/i386, which is searched automatically for native libs.
+#This seems to be the 'standard' way of doing things in 1.2.  Do you think it's
+#a good idea?
+
 
 JAVAINCLUDE="\$(JPATH)/include"
 [ case $OS_NAME in 
@@ -163,6 +164,7 @@ Linux)
 	case $JAVA_VERSION in
 	1.2*) 
 		JCLASSPATH="-classpath \$(TOP):\$(TOP)/src:.:$CLASSPATH"
+		JAVA_H_CLASSPATH="-classpath .:`find $JPATH/ -name comm.jar`"
 		RXTX_PATH="\$(prefix)/lib"
 		JCL_PATH="\$(JPATH)/lib"
 		case $OS_NAME in
@@ -171,31 +173,61 @@ Linux)
 			2.2.*)
 				JCL_PATH="jre/lib/ext"
 				JAVANATINC="\$(JPATH)/include/linux"
+				CFLAGS="$CFLAGS -DFULL_EVENT"
 				case $OS_ARCH in
 				i386)
 					RXTX_PATH="\$(JPATH)/jre/lib/i386"
 				;;
 				*)
-					echo "Unrecognized os.arch Please edit Makefile so RXTX_PATH=\$(JPATH)/jre/lib/os.arch"
+					# best we can do without knowing what
+					# java returns
+					RXTX_PATH="\$(JPATH)/jre/lib"
 				;;
 				esac
 			;;
 			esac
 		;;
+		*)
+			JAVANATINC="\$(JPATH)/`cd $JPATH; find ./include -name jni_md.h|sed s#jni_md\\\\.h##|sed s#\\\\.\\\\/##`"
+		;;
 		esac
 	;;
 	1.*) 
-	#	JAVAH_FIX="if [ ! \$(THREADS_FLAG) ] && [ ! -d com ]; then if [ ! -f \$(JPATH)/lib/comm.jar ]; then echo \"Please install comm.jar from CommAPI in \$(JPATH)/java/lib/\"; else \$(JAR) -xf \$(JPATH)/lib/comm.jar;  fi; fi"
-		JAVANATINC="\$(JPATH)/`cd $JPATH; find ./include -name jni_md.h|sed s#jni_md\\\\.h##|sed s#\\\\.\\\\/##`"
+	JCLASSPATH="-classpath \$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:.:$CLASSPATH"
+	JAVA_H_CLASSPATH="\$(JCLASSPATH)"
+		case $OS_NAME in
+		Linux)
+			RXTX_PATH="\$(prefix)/lib/"
+			JAVAH_FIX="if [ ! \$(THREADS_FLAG) ] && [ ! -d com ]; then if [ ! -f \$(JPATH)/lib/comm.jar ]; then echo \"Please install comm.jar from CommAPI in \$(JPATH)/java/lib/\"; else \$(JAR) -xf \$(JPATH)/lib/comm.jar;  fi; fi"
+			JAVANATINC="\$(JPATH)/include/genunix"
+			JCL_PATH="lib"
+			case $OS_VERSION in
+			2.2.*)
+				CFLAGS="$CFLAGS -DFULL_EVENT"
+				JCL_PATH="lib"
+			;;
+			1.*)
+			;;
+			esac
+		;;
+		*)
+			JAVANATINC="\$(JPATH)/`cd $JPATH; find ./include -name jni_md.h|sed s#jni_md\\\\.h##|sed s#\\\\.\\\\/##`"
+		;;
+		esac
 	;;
 	esac 
 ;;
-*BSD*)
-;;
 irix*)
+	JCL_PATH="lib"
 	CFLAGS="$CFLAGS -D_NO_POSIX=1 -D_NO_XOPEN4=1"
+	JAVANATINC="\$(JPATH)/`cd $JPATH; find ./include -name jni_md.h|sed s#jni_md\\\\.h##|sed s#\\\\.\\\\/##`"
+	JCLASSPATH="-classpath \$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:.:$CLASSPATH"
 ;;
 *)
+	JCL_PATH="lib"
+	CFLAGS="$CFLAGS -D_NO_POSIX=1 -D_NO_XOPEN4=1"
+	JAVANATINC="\$(JPATH)/`cd $JPATH; find ./include -name jni_md.h|sed s#jni_md\\\\.h##|sed s#\\\\.\\\\/##`"
+	JCLASSPATH="-classpath \$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:.:$CLASSPATH"
 ;;
 esac ]
 AC_OUTPUT(Makefile)

@@ -81,3 +81,10 @@ Known 'Features'.
    without freaking out that it has a buffer that it needs to
    emptied.
 
+5.  BlackBox has a hard coded limit in BlackBox.java that prevents it from 
+    running if you dont specify a port.  We are considering alternative ways
+    of handling the large number of port names in unix.  The line in question
+    is:
+
+	 portDisp = new SerialPortDisplay[50];
+

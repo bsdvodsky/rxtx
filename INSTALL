@@ -1,17 +1,18 @@
+This is the INSTALL file for RXTX.  
 
-This is the INSTALL file for RXTX.  If while following the instructions you
-find it unclear or incorrect please make a note and email the details to
-jarvi@ezlink.com.  
+If while following the instructions you find it unclear or incorrect please 
+make a note and email the details to jarvi@ezlink.com.  
 
-This is a developers release.  Current focus is on linux-2.2.  Lots of work 
-is required to port this to other OS's.
+This is a developers release.  Current focus is on linux-2.2.  Work 
+is required to port this to other OS's.  There should be few problems
+with linux serial communication at this time.
 
 For the impatient:
 
-   ./configure
-# jdk-1.2 users may do ./configure --libpath=/usr/local/java/jre/lib/i386
-# otherwise set LD_LIBRARY_PATH to the dir the .so's are put in (/usr/local/lib
-# by default)
+   cd rxtx-version
+   mkdir build
+   cd build
+   ../configure  --prefix=/usr
    make
    make install
 
@@ -26,8 +27,25 @@ For the methodical:
     automake-1.4
     libtool-1.2b
     make-3.76.1
-    CommAPI from sun. (unix version not Win32)
     jdk 1.2 or 1.1.7
+	Preferably the native threads version of jdk. 
+    CommAPI from sun. (unix version not Win32)
+	- assuming you have java in /usr/local/java -
+
+	With jdk 1.2 install the files like this.  
+		/usr/local/java/jre/lib/ext/comm.jar
+		/usr/local/java/jre/lib/javax.comm.properties
+	You may want to put some of the demo jars that comm with commapi
+	in the same directory as comm.jar.
+
+	With jdk 1.1.* install the files like this.
+		/usr/local/java/lib/comm.jar
+		/usr/local/java/lib/javax.comm.properties
+	javax.comm.properties contains one line:
+		Driver=gnu.io.RXTXCommDriver
+	jkd 1.1.* does not search for comm.jar in  the above dir.  You will
+	need to point your CLASSPATH to comm.jar before building.  Also, you
+	will want to point your CLASSPATH to jcl.jar after building the package.
 
     RedHat users note that libtool is included in the distribution but not 
     installed by default.  It can be installed by placing disk 1 of the
@@ -47,28 +65,24 @@ For the methodical:
 
 3) CREATING THE MAKEFILE
    
-    from the build directory
-    ../configure
+    from the build directory with java in your PATH
+    ../configure --prefix=/usr
 
     If you would rather use the JDK_HOME environment variable to determine the
     location of the JDK tree use...
 
-    ../configure --enable-JDK_HOME
+    ../configure --enable-JDK_HOME --prefix=/usr
 
     with JDK_HOME set to something like JDK_HOME=/usr/local/jdk.  Configure
     will check for JDK_HOME if PATH fails.
    
     ../configure --help  for other options not documented here.  
-      Especially people interested in things like async communication, 
-      debugging information, ...  configure tries to keep the code simple
-      for initial ports.  
   
-    linux-2.2 glibc users can do 
-	 ../configure --enable-FULL_EVENT
-    and have full functionality of the package.  Event notification is very
-    OS dependent.  Expect it to break on non linux systems at this point.
+    linux-2.2 offers improved event notification over previous linux kernels.
+    rxtx recognizes 2.2 during the configure process and takes advantage of
+    these features. 
 
-    If, for some reason, no makefile is generated please send bug reports to
+    If, for some reason, no Makefile is generated please send bug reports to
     jarvi@ezlink.com.  You may be able to continue by installing the latest
     GNU make package and then running ./autogen.sh; ./configure.
 
@@ -77,8 +91,7 @@ For the methodical:
 
 4) JAVA INCLUDE FILES
 
-    These should all be handled properly except for people using the JDK rpms
-    found in RedHat contrib.  
+    For linux users with current systems you can probably go to the next step.
 
     Check to top of the Makefile to make sure we agree on the location of
     the include files that came with the jdk.  Specifically:
@@ -88,12 +101,12 @@ For the methodical:
     also check the classpath
     CLASSPATH = ...
   
-    if your trying to build rxtx for commapi support you will need to
+    If your trying to build rxtx for commapi support you will need to
     have comm.jar in your classpath.  The Makefile looks in the
     environmental variable COMM_JAR_PATH and adds that to the classpath
-    so you don't have to edit the Makefile.  i
+    so you don't have to edit the Makefile.  
 
-    Linux ppc users:  We have had reports that the jar files need to be unjarred
+    Linux ppc users:  We have had reports that the jar files need to be unjared
     for the build to work.  If you figure out more concerning this, please let
     us know. 
 
@@ -108,40 +121,64 @@ For the methodical:
 5) MAKING THE PACKAGE
 
     # NOTE!!  if you have problems with make grab a copy of gnu make.
-    # ftp://sunsite.unc.edu/makefile-3.76.1.tar.gz
+    # ftp://sunsite.unc.edu/ makefile-3.76.1.tar.gz
     # -r--r--r--   1 root     bin        631458 Sep 19 19:41 make-3.76.1.tar.gz
     # thanks Michael.Forte@Corp.Sun.COM
 
     Try using the makefile. 
+
         make
-	optional: make install  (installs commapi support too)
-	run the BlackBox, SerialDemo or Simple applications that come
-        with the commapi package
+
     if no luck look through Makefile and send back comments please.
 
-6)  Start hacking...
+
+6) Where does everything go?
+
+    make install
+
+    which does the folling.
+
+	- assuming you have java in /usr/local/java -
+
+    jdk-1.2 the files go in
+	/usr/local/java/jre/lib/ext/jcl.jar and
+	/usr/local/java/jre/lib/$(ARCH)/libSerial.so.
+	on all but x86 machines $(ARCH) is void.  Send in what configure
+	reports just before creating the makefile if you would like your
+	ARCH recognized.  The package works fine without using ARCH.
+
+	jdk-1.2 handles CLASSPATH and LD_LIBRARY_PATH... not further changes
+	required.
+	Remember to check /usr/local/java/jre/lib/javax.comm.properties.
+
+    jdk-1.1.* the files go in 
+	/usr/local/java/lib/jcl.jar and
+	/usr/lib/libSerial.so.
+
+	jdk-1.1 users remember to point your CLASSPATH to jcl.jar.  
+	The libSerial.so is placed in /usr/lib so people dont have to
+	change with their LD_LIBRARY_PATH.  This may offend some people.
+	Remember to check /usr/local/java/lib/javax.comm.properties.
+
+7) If you found that the package did not work after all this its probably a
+   bug.  Please follow the procedure in BUGS for reporting problems.  Known
+   bugs are listed at the bottom of that file. 
+
+   Furthmore, information specific to CommAPI problems can be found in 
+   CommAPI.  Examples of bad setups are given.
+
+
+8)  Start hacking...
 
     See TODO for developer ideas.
 
     CVS information is now shipped with the package.  To obtain the latest
     developer version with cvs perform the following.
 
-       1. install cvs
-       2. in the rxtx directory type cvs login.
-          there is no password.  hit return when prompted for one.
-       3. type cvs update.
-       4. if your interested in contributing please email jarvi@ezlink.com
-          to obtain an account with write permission.
+       1.  install cvs
+       2.  in the rxtx directory type cvs login.
+           there is no password.  hit return when prompted for one.
+       3.  type cvs update.
+       4.  if your interested in contributing please email jarvi@ezlink.com
+           to obtain an account with write permission.
        5.  The latest development is held in the rxtx-devel module.
-
-7) Where does everything go?
-
-    > Sorry, but where do I must put the *.h and the "libSerial.so" ? The
-    > "java/include" directory or "java/include/solaris" directory or
-    > somewhere else ?  This is not include in your documentation.
-
-    make install should handle this now.
-
-9) If you found that the package did not work after all this its probably a
-   bug.  Please follow the procedure in BUGS for reporting problems.  Known
-   bugs are listed at the bottom of that file. 
