@@ -200,8 +200,17 @@ Trent
 #	define LOCK uucp_lock
 #	define UNLOCK uucp_unlock
 #elif defined(OLDUUCP)
-#	define LOCK old_uucp_lock
-#	define UNLOCK old_uucp_unlock
+/*
+   We can handle the old style if needed here see __unixware__ above.
+   defaulting to rxtx-1.4-8 behavior for now.
+
+   see also __sco__ in SerialImp.c when changing this for a possible
+   bug
+
+   FIXME
+*/
+#	define LOCK fhs_lock
+#	define UNLOCK fhs_unlock
 #elif defined(FHS)
 #	define LOCK fhs_lock
 #	define UNLOCK fhs_unlock
