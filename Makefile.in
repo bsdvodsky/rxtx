@@ -127,7 +127,7 @@ INCLUDES = -I $(TOP) -I $(TOP)/$(target_alias) -I . -I $(JAVAINCLUDE) -I $(JAVAN
 NSJAVA = 1
 JAVAC = set NS_JAVA="$(NSJAVA)";export NS_JAVA;$(JPATH)/bin/javac $(JCLASSPATH):$(COMM_JAR_PATH):$(JCL_JAR_PATH) -d $(TOP)/ -O 
 JAVAH = set NS_JAVA="$(NSJAVA)";export NS_JAVA;$(JPATH)/bin/javah $(JCLASSPATH) -d $(TOP)/$(target_alias) -jni
-JAVA = set NS_JAVA="$(NSJAVA)";$(JPATH)/bin/java $(JCLASSPATH)
+JAVA = set NS_JAVA="$(NSJAVA)";export NS_JAVA;$(JPATH)/bin/java $(JCLASSPATH)
 JAR = $(JPATH)/bin/jar cf
 JAVADOC = $(JPATH)/bin/javadoc $(JCLASSPATH)
 LIBTOOL = $(SHELL) $(TOP)/libtool
@@ -334,7 +334,7 @@ install-lib:
 	$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) libParallel.la $(libdir);\
 	fi; \
 	)
-	$(INSTALL_PROGRAM) jcl.jar $(JPATH)lib/
+	$(INSTALL_PROGRAM) jcl.jar $(JPATH)/lib/
 run: $(TOP)/test.class all jcl
 	(cd $(TOP)/;chmod 755 *.class;\
 	set THREADS_FLAG="$(THREADS_FLAG)";export THREADS_FLAG;\
