@@ -3,7 +3,11 @@ This is ChangeLog Wed Jun 20 10:47:21 MDT 2001
 rxtx-1.5 and rxtx-1.4 changes are kept in the same file.  skip to the version
 you downloaded.
 
-1.5-4  Jan 26, 2000   Irix build fixes (still needs CFLAGS fixed?)
+1.5-5  Jun 28, 2001   Merged with rxtx-1.4
+		      More work on Mac OS X port
+		      Joseph Goldstone <joseph@lp.com>
+		      minor cleanups
+1.5-4  Jan 26, 2001   Irix build fixes (still needs CFLAGS fixed?)
 		      Michael Delgadillo <delgadil@ymi.com>
 		      Windows build support with lcc
 		      Valentin Pavlov <v_valchev@prosyst.bg>

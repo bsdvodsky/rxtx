@@ -161,7 +161,8 @@ A.  Japanese
 		jdk-1.1:
 
 			make sure /usr/local/java/lib/comm.jar is in your
-			CLASSPATH.
+			CLASSPATH.  If you want to use apps that require
+			comm.jar.
 
 			in bash:
 
