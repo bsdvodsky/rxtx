@@ -98,7 +98,8 @@ A.  Japanese
 		autoconf-2.13
 		automake-1.4
 		libtool-1.3.5
-		gnu make-3.79.1
+		gnu make-3.79.1         On some systems like FreeBSD this is
+					called gmake
 		jdk 1.1 or newer	Preferably the native threads version of
 		                        jdk. 
 		commapi 2.0             the x86 Solaris version
@@ -108,7 +109,7 @@ A.  Japanese
 		$ tar -xzvf rxtx-1.4.tar.gz
 		$ cd rxtx-1.4
 		$ ./configure  (follow the instructions)
-		$ make install
+		$ make install (gmake if your system uses that convention)
 		Read "T.  How can I use Lock Files with rxtx?"
 
 	One catch that has showed up... you cannot have spaces in the path.
