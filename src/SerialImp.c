@@ -3,48 +3,19 @@
 |   Copyright 1997-2002 by Trent Jarvi taj@www.linux.org.uk
 |
 |   This library is free software; you can redistribute it and/or
-|   modify it under the terms of the GNU Lesser General Public
+|   modify it under the terms of the GNU Library General Public
 |   License as published by the Free Software Foundation; either
-|   version 2.1 of the License, or (at your option) any later version.
+|   version 2 of the License, or (at your option) any later version.
 |
 |   This library is distributed in the hope that it will be useful,
 |   but WITHOUT ANY WARRANTY; without even the implied warranty of
 |   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-|   Lesser General Public License for more details.
+|   Library General Public License for more details.
 |
-|   The following has been added to allow RXTX to be distributed with Sun
-|   Microsystem's CommAPI library as suggested by the FSF.
-|
-|   http://www.fsf.org/licenses/gpl-faq.html#LinkingOverControlledInterface
-|
-|   A program that contains no derivative of any portion of RXTX, but
-|   is designed to work with RXTX by being compiled or linked with it,
-|   is considered a "work that uses the Library" subject to the terms and
-|   conditions of the GNU Lesser General Public License.
-|
-|   As a special exception, the copyright holders of RXTX give you
-|   permission to link RXTX with independent modules that communicate with
-|   RXTX solely through the Sun Microsytems CommAPI interface, regardless of
-|   the license terms of these independent modules, and to copy and distribute
-|   the resulting combined work under terms of your choice, provided that
-|   every copy of the combined work is accompanied by a complete copy of
-|   the source code of RXTX (the version of RXTX used to produce the
-|   combined work), being distributed under the terms of the GNU Lesser General
-|   Public License plus this exception.  An independent module is a
-|   module which is not derived from or based on RXTX.
-|
-|   Note that people who make modified versions of RXTX are not obligated
-|   to grant this special exception for their modified versions; it is
-|   their choice whether to do so.  The GNU Lesser General Public License
-|   gives permission to release a modified version without this exception; this
-|   exception also makes it possible to release a modified version which
-|   carries forward this exception.
-|
-|   You should have received a copy of the GNU Lesser General Public
+|   You should have received a copy of the GNU Library General Public
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
-
 #if defined(__MWERKS__) /* dima */
 #include "RXTXPort.h" /* dima */
 #else  /* dima */
@@ -77,9 +48,13 @@
 #		define S_ISCHR(m) (1)
 #	endif /* S_ISCHR(m) */
 #endif /* WIN32 */
+#ifdef HAVE_ASM_TERMBITS_H
+#	include <asm/termbits.h>
+#else
 #ifdef HAVE_TERMIOS_H
 #	include <termios.h>
 #endif /* HAVE_TERMIOS_H */
+#endif /* HAVE_ASM_TERMBITS_H */
 #   include <signal.h>
 #ifdef HAVE_SIGNAL_H
 #   include <signal.h>
@@ -134,13 +109,6 @@
 #include <math.h>
 
 extern int errno;
-#ifdef TRENT_IS_HERE
-#define DEBUG
-#define TRACE
-#define DEBUG_MW
-#define DEBUG_VERBOSE
-#undef TIOCSERGETLSR
-#endif /* TRENT_IS_HERE */
 #include "SerialImp.h"
 
 
@@ -693,19 +661,19 @@ int set_port_params( JNIEnv *env, int fd, int cspeed, int dataBits,
 		return(1);
 	}
 
-	if( !translate_data_bits( env, &(ttyset.c_cflag), dataBits ) )
+	if( translate_data_bits( env, &(ttyset.c_cflag), dataBits ) )
 	{
 		report( "set_port_params: Invalid Data Bits Selected\n" );
 		return(1);
 	}
 
-	if( !translate_stop_bits( env, &(ttyset.c_cflag), stopBits ) )
+	if( translate_stop_bits( env, &(ttyset.c_cflag), stopBits ) )
 	{
 		report( "set_port_params: Invalid Stop Bits Selected\n" );
 		return(1);
 	}
 
-	if( !translate_parity( env, &(ttyset.c_cflag), parity ) )
+	if( translate_parity( env, &(ttyset.c_cflag), parity ) )
 	{
 		report( "set_port_params: Invalid Parity Selected\n" );
 		return(1);
@@ -784,10 +752,10 @@ int set_port_params( JNIEnv *env, int fd, int cspeed, int dataBits,
 
    accept:     speed, data bits, stop bits, parity
    perform:    set the serial port parameters
-   return:     void
+   return:     jboolean 1 on error
    exceptions: UnsupportedCommOperationException
 ----------------------------------------------------------*/
-JNIEXPORT void JNICALL RXTXPort(nativeSetSerialPortParams)(
+JNIEXPORT jboolean JNICALL RXTXPort(nativeSetSerialPortParams)(
 	JNIEnv *env, jobject jobj, jint speed, jint dataBits, jint stopBits,
 	jint parity )
 {
@@ -800,9 +768,13 @@ JNIEXPORT void JNICALL RXTXPort(nativeSetSerialPortParams)(
 	if (cspeed < 0 )
 	{
 		report(" invalid cspeed\n");
+/*
+    For some reason the native exceptions are not being caught.  Moving this
+    to the Java side fixed the issue.  taj.
 		throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,
 			"", "BaudRate could not be set to the specified value" );
-		return;
+*/
+		return(1);
 	}
 
 
@@ -810,13 +782,18 @@ JNIEXPORT void JNICALL RXTXPort(nativeSetSerialPortParams)(
 	{
 		report("set_port_params failed\n");
 		LEAVE( "RXTXPort:nativeSetSerialPortParams" );
+/*
+    For some reason the native exceptions are not being caught.  Moving this
+    to the Java side fixed the issue.  taj.
 		throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,
 			"nativeSetSerialPortParams", strerror( errno ) );
+*/
+		return(1);
 	}
 
 	LEAVE( "RXTXPort:nativeSetSerialPortParams" );
 	report_time_end( );
-	return;
+	return(0);
 }
 
 /*----------------------------------------------------------
@@ -888,10 +865,9 @@ int translate_speed( JNIEnv *env, jint speed )
 /*----------------------------------------------------------
  translate_data_bits
 
-   accept:     gnu.io.SerialPort.DATABITS_* constant
+   accept:     javax.comm.SerialPort.DATABITS_* constant
    perform:    set proper termios c_cflag bits
-   return:     1 if successful
-					0 if an exception is thrown
+   return:     1 on error
    exceptions: UnsupportedCommOperationException
 ----------------------------------------------------------*/
 int translate_data_bits( JNIEnv *env, tcflag_t *cflag, jint dataBits )
@@ -902,31 +878,34 @@ int translate_data_bits( JNIEnv *env, tcflag_t *cflag, jint dataBits )
 	switch( dataBits ) {
 		case JDATABITS_5:
 			(*cflag) = temp | CS5;
-			return 1;
+			return 0;
 		case JDATABITS_6:
 			(*cflag) = temp | CS6;
-			return 1;
+			return 0;
 		case JDATABITS_7:
 			(*cflag) = temp | CS7;
-			return 1;
+			return 0;
 		case JDATABITS_8:
 			(*cflag) = temp | CS8;
-			return 1;
+			return 0;
 	}
 
 	LEAVE( "RXTXPort:translate_date_bits" );
+/*
+    For some reason the native exceptions are not being caught.  Moving this
+    to the Java side fixed the issue.  taj.
 	throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,
 		"", "databit value not supported" );
-	return 0;
+*/
+	return 1;
 }
 
 /*----------------------------------------------------------
  translate_stop_bits
 
-   accept:     gnu.io.SerialPort.STOPBITS_* constant
+   accept:     javax.comm.SerialPort.STOPBITS_* constant
    perform:    set proper termios c_cflag bits
-   return:     1 if successful
-					0 if an exception is thrown
+   return:     1 on error
    exceptions: UnsupportedCommOperationException
    comments:   If you specify 5 data bits and 2 stop bits, the port will
                allegedly use 1.5 stop bits.  Does anyone care?
@@ -938,29 +917,91 @@ int translate_stop_bits( JNIEnv *env, tcflag_t *cflag, jint stopBits )
 		case STOPBITS_1:
 			(*cflag) &= ~CSTOPB;
 			LEAVE( "RXTXPort:translate_stop_bits" );
-			return 1;
+			return 0;
 		/*  ok.. lets try putting it in and see if anyone notices */
 		case STOPBITS_1_5:
-			translate_data_bits( env, cflag, JDATABITS_5 );
+			if ( translate_data_bits( env, cflag, JDATABITS_5 ) )
+				return( 1 );
+			return 0;
 		case STOPBITS_2:
 			(*cflag) |= CSTOPB;
 			LEAVE( "RXTXPort:translate_stop_bits" );
-			return 1;
+			return 0;
 	}
 
 	LEAVE( "RXTXPort:translate_stop_bits" );
+/*
+    For some reason the native exceptions are not being caught.  Moving this
+    to the Java side fixed the issue.  taj.
 	throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,
 		"", "stopbit value not supported" );
-	return 0;
+*/
+	return 1;
+}
+JNIEXPORT jint JNICALL RXTXPort(nativeGetFlowControlMode)(JNIEnv *env, jobject jobj, jint fd)
+{
+	struct termios ttyset;
+	int ret = 0;
+
+	tcgetattr( fd, &ttyset );
+	
+	if( ttyset.c_cflag & HARDWARE_FLOW_CONTROL )
+	{
+		ret |= ( FLOWCONTROL_RTSCTS_IN | FLOWCONTROL_RTSCTS_OUT );
+	}
+	if ( ttyset.c_iflag & IXOFF )
+	{
+		ret |= FLOWCONTROL_XONXOFF_IN;
+	}
+	if ( ttyset.c_iflag & IXON )
+	{
+		ret |= FLOWCONTROL_XONXOFF_OUT;
+	}
+	return( (jint) ret );
+}
+JNIEXPORT jint JNICALL RXTXPort(nativeGetParity)(JNIEnv *env, jobject jobj, jint fd)
+{
+	struct termios ttyset;
+
+	if( tcgetattr( fd, &ttyset ) < 0 )
+	{
+		report("nativeGetParity:  tcgetattr failed\n");
+		return( -1 );
+	}
+#ifdef  CMSPAR 
+	if ( ( ttyset.c_cflag & PARENB ) &&
+		( ttyset.c_cflag & PARODD ) &&
+		( ttyset.c_cflag & CMSPAR ) )
+	{
+		return( JPARITY_MARK );
+	}
+	else if ( ttyset.c_cflag & ( PARENB &&
+		ttyset.c_cflag & CMSPAR ) )
+	{
+		return( JPARITY_SPACE );
+	}
+#endif /* CMSPAR */
+	if ( ttyset.c_cflag & PARENB &&
+		ttyset.c_cflag & PARODD )
+	{
+		return( JPARITY_ODD );
+	}
+	else if ( ttyset.c_cflag & PARENB )
+	{
+		return( JPARITY_EVEN );
+	}
+	else
+	{
+		return( JPARITY_NONE );
+	}
 }
 
 /*----------------------------------------------------------
  translate_parity
 
-   accept:     javx.comm.SerialPort.PARITY_* constant
+   accept:     javax.comm.SerialPort.PARITY_* constant
    perform:    set proper termios c_cflag bits
-   return:     1 if successful
-               0 if an exception is thrown
+   return:     1 on error
    exceptions: UnsupportedCommOperationException
    comments:   The CMSPAR bit should be used for 'mark' and 'space' parity,
                but it's not in glibc's includes.  Oh well, rarely used anyway.
@@ -968,37 +1009,43 @@ int translate_stop_bits( JNIEnv *env, tcflag_t *cflag, jint stopBits )
 int translate_parity( JNIEnv *env, tcflag_t *cflag, jint parity )
 {
 	ENTER( "translate_parity" );
-	(*cflag) &= ~(PARENB | PARODD);
+#ifdef CMSPAR
+	(*cflag) &= ~(PARENB | PARODD | CMSPAR );
+#endif /* CMSPAR */
 	switch( parity ) {
 		case JPARITY_NONE:
 			LEAVE( "translate_parity" );
-			return 1;
+			return 0;
 		case JPARITY_EVEN:
 			(*cflag) |= PARENB;
 			LEAVE( "translate_parity" );
-			return 1;
+			return 0;
 		case JPARITY_ODD:
 			(*cflag) |= PARENB | PARODD;
 			LEAVE( "translate_parity" );
-			return 1;
+			return 0;
 #ifdef CMSPAR
 		case JPARITY_MARK:
 			(*cflag) |= PARENB | PARODD | CMSPAR;
 			LEAVE( "translate_parity" );
-			return 1;
+			return 0;
 		case JPARITY_SPACE:
 			(*cflag) |= PARENB | CMSPAR;
 			LEAVE( "translate_parity" );
-			return 1;
+			return 0;
 #endif /* CMSPAR */
 		default:
 			printf("Parity missed %i\n", (int) parity );
 	}
 
 	LEAVE( "translate_parity" );
+/*
+    For some reason the native exceptions are not being caught.  Moving this
+    to the Java side fixed the issue.  taj.
 	throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,
 		"", "parity value not supported" );
-	return 0;
+*/
+	return 1;
 }
 #if !defined(TIOCSERGETLSR) && !defined(WIN32)
 /*----------------------------------------------------------
@@ -1197,7 +1244,7 @@ JNIEXPORT void JNICALL RXTXPort(writeByte)( JNIEnv *env,
 	do {
 		sprintf( msg, "writeByte %c>>\n", byte );
 		report( msg );
-		result=WRITE (fd, &byte, sizeof(unsigned char));
+		result=WRITE (fd, (void * ) &byte, sizeof(unsigned char));
 	}  while (result < 0 && errno==EINTR);
 /*
 	This makes write for win32, glinux and Sol behave the same
@@ -1268,6 +1315,9 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 #endif /* __sun__ */
 	fd = get_java_var( env, jobj,"fd","I" );
 	body = (*env)->GetByteArrayElements( env, jbarray, 0 );
+	//result=WRITE (fd, body + total + offset, count - total); 
+	//(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
+/* return; OH CRAP */
 
 	report_time_start();
 	ENTER( "writeArray" );
@@ -1278,7 +1328,7 @@ JNIEXPORT void JNICALL RXTXPort(writeArray)( JNIEnv *env,
 	*/
 
 	do {
-		result=WRITE (fd, body + total + offset, count - total); /* dima */
+		result=WRITE (fd, (void * ) ((char *) body + total + offset), count - total); /* dima */
 		if(result >0){
 			total += result;
 		}
@@ -2056,6 +2106,7 @@ JNIEXPORT void JNICALL RXTXPort(nativeStaticSetSerialPortParams) (JNIEnv *env,
 	const char *filename = (*env)->GetStringUTFChars( env, jstr, 0 );
 	int cspeed = translate_speed( env, baudrate );
 
+
 	ENTER( "RXTXPort:nativeStaticSetSerialPortParams" );
 #ifndef WIN32
 	pid = getpid();
@@ -2721,6 +2772,8 @@ int read_byte_array( JNIEnv *env,
 	char msg[80];
 	struct timeval tv, *tvP;
 	fd_set rset;
+	/* TRENT */
+	int count = 0;
 
 	report_time_start();
 	ENTER( "read_byte_array" );
@@ -2729,7 +2782,7 @@ int read_byte_array( JNIEnv *env,
 	left = length;
 	if (timeout >= 0)
 		start = GetTickCount();
-	while( bytes < length )
+	while( bytes < length &&  count++ < 20 );
 	{
 		if (timeout >= 0) {
 			now = GetTickCount();
@@ -2779,7 +2832,8 @@ int read_byte_array( JNIEnv *env,
 		Nicolas <ripley@8d.com>
 		*/
 			else {
-				usleep(10);
+				//usleep(10);
+				usleep(1000);
 			}
 		}
 	}
@@ -2941,6 +2995,7 @@ JNIEXPORT void JNICALL RXTXPort(NativeEnableReceiveTimeoutThreshold)(
 
 	ENTER( "RXTXPort:NativeEnableRecieveTimeoutThreshold" );
 	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
+	/* TESTING ttyset.c_cc[ VMIN ] = threshold; */
 	ttyset.c_cc[ VMIN ] = 0;
 	ttyset.c_cc[ VTIME ] = timeout/100;
 	if( tcsetattr( fd, TCSANOW, &ttyset ) < 0 ) goto fail;
@@ -3244,19 +3299,26 @@ JNIEXPORT void JNICALL RXTXPort(setflowcontrol)( JNIEnv *env,
 	if( tcgetattr( fd, &ttyset ) ) goto fail;
 	
 	if ( flowmode & ( FLOWCONTROL_RTSCTS_IN | FLOWCONTROL_RTSCTS_OUT ) )
+	{
 		ttyset.c_cflag |= HARDWARE_FLOW_CONTROL;
+	}
 	else ttyset.c_cflag &= ~HARDWARE_FLOW_CONTROL;
 
 	ttyset.c_iflag &= ~IXANY;
 
 	if ( flowmode & FLOWCONTROL_XONXOFF_IN )
+	{
 		ttyset.c_iflag |= IXOFF;
+	}
 	else ttyset.c_iflag &= ~IXOFF;
 
 	if ( flowmode & FLOWCONTROL_XONXOFF_OUT )
+	{
+		
 		ttyset.c_iflag |= IXON;
+	}
 	else ttyset.c_iflag &= ~IXON;
-
+/* TRENT */
 	if( tcsetattr( fd, TCSANOW, &ttyset ) ) goto fail;
 	LEAVE( "RXTXPort:setflowcontrol" );
 	return;
@@ -3781,7 +3843,7 @@ RXTXCommDriver.nativeGetVersion
 JNIEXPORT jstring JNICALL RXTXCommDriver(nativeGetVersion) (JNIEnv *env,
 	jclass jclazz )
 {
-	return (*env)->NewStringUTF( env, "RXTX-2.0-5" );
+	return (*env)->NewStringUTF( env, "RXTX-2.1-7pre11d" );
 }
 
 /*----------------------------------------------------------
@@ -3815,14 +3877,17 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 	/* We opened the file in this thread, use this pid to unlock */
 #ifndef WIN32
 	pid = getpid();
+#else
+	char full_windows_name[80];
 #endif /* WIN32 */
 
 	ENTER( "RXTXPort:testRead" );
 #ifdef TRENT_IS_HERE_DEBUGGING_ENUMERATION
 	/* vmware lies about which ports are there causing irq conflicts */
 	/* this is for testing only */
-	if( !strcmp( name, "COM1" ) )
+	if( !strcmp( name, "COM1" ) || !strcmp( name, "COM2") )
 	{
+		printf("%s is good\n",name);
 		sprintf( message, "testRead: %s is good!\n", name );
 		report( message );
 		(*env)->ReleaseStringUTFChars( env, tty_name, name );
@@ -3832,7 +3897,9 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(testRead)(
 	return( JNI_FALSE );
 #endif /* TRENT_IS_HERE_DEBUGGING_ENUMERATION */
 #ifdef WIN32
-	ret = serial_test((char *) name );
+	strcpy( full_windows_name, DEVICEDIR );
+	strcat( full_windows_name, name );
+	ret = serial_test((char *) full_windows_name );
 	(*env)->ReleaseStringUTFChars( env, tty_name, name );
 	return(ret);
 #endif /* WIN32 */
@@ -5419,3 +5486,78 @@ void dump_termios(char *foo,struct termios *ttyset)
 	fprintf(stderr,"\n" );
 #endif /* DEBUG */
 }
+#ifdef asdf
+/*----------------------------------------------------------
+printj
+
+   accept:      like vwprintf()
+   return:      number of jchars written or -1
+   exceptions:  none
+   comments:    prints data using System.out.print()
+----------------------------------------------------------*/
+int printj(JNIEnv *env, wchar_t *fmt, ...)
+{
+	wchar_t buf[1024];
+	int retval;
+	jstring jsBuf;
+	jclass clsSystem, clsOut;
+	jfieldID jfid;
+	jobject objOut;
+	jmethodID midPrint;
+
+	va_list ap;
+	va_start(ap, fmt);
+	retval = _vsnwprintf(buf, 1024, fmt, ap);
+	va_end(ap);
+	buf[1023] = '\0';
+  
+	if((clsSystem = env->FindClass("java/lang/System")) == NULL)
+	{
+		IF_DEBUG
+		(
+			env->ExceptionDescribe();
+		)
+		env->ExceptionClear();
+		return -1;
+	}
+  
+	if( ( jfid = env->GetStaticFieldID(clsSystem,
+		"out", "Ljava/io/PrintStream;" ) ) == NULL )
+	{
+		IF_DEBUG
+		(
+			env->ExceptionDescribe();
+		)
+		env->ExceptionClear();
+		env->DeleteLocalRef(clsSystem);
+		return -1;
+	}
+  
+	objOut = env->GetStaticObjectField(clsSystem, jfid);
+	clsOut = env->GetObjectClass(objOut);
+
+	if( ( midPrint = env->GetMethodID(clsOut, "print",
+		"(Ljava/lang/String;)V" ) ) == NULL )
+	{
+		IF_DEBUG
+		(
+			env->ExceptionDescribe();
+		)
+		env->ExceptionClear();
+		env->DeleteLocalRef(clsOut);
+		env->DeleteLocalRef(clsSystem);
+		return -1;
+	}
+  
+	jsBuf = env->NewString(buf, wcslen(buf));
+
+	env->CallVoidMethod(objOut, midPrint, jsBuf);
+
+ 	env->DeleteLocalRef(jsBuf);
+	env->DeleteLocalRef(clsOut);
+	env->DeleteLocalRef(clsSystem);
+  
+	return retval;
+}
+#endif /* asdf */
+

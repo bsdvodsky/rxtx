@@ -1,5 +1,5 @@
 #ifndef __linux__
-JNIEXPORT jstring JNICALL Java_gnu_io_CommPortIdentifier_native_1psmisc_1report_1owner (JNIEnv *env, jobject obj, jstring arg)
+JNIEXPORT jstring JNICALL Java_javax_comm_CommPortIdentifier_native_1psmisc_1report_1owner (JNIEnv *env, jobject obj, jstring arg)
 {
 	return (*env)->NewStringUTF(env, "Unknown Application");
 }
