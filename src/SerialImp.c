@@ -128,6 +128,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_open(
 	(*env)->ReleaseStringUTFChars( env, jstr, NULL );
 	if( fd < 0 ) goto fail;
 
+	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
 	ttyset.c_iflag = INPCK;
 	ttyset.c_lflag = 0;
 	ttyset.c_oflag = 0;
@@ -141,20 +142,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_open(
 	if( cfsetispeed( &ttyset, B9600 ) < 0 ) goto fail;
 	if( cfsetospeed( &ttyset, B9600 ) < 0 ) goto fail;
 #endif
-/*
-	5751 
-	 200 CREAD
-	 400 PARENB
-	1000 PARODD
-	 100 CSTOPB
-	4000 CLOCAL
-	  40 C7
-	  11 1200 baud
-	---
-	5751
-	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
-	dump_termios("open",*ttyset); 
-*/
+	if( tcsetattr( fd, TCSAFLUSH, &ttyset ) < 0 ) goto fail;
 
 #ifndef WIN32
 	fcntl( fd, F_SETOWN, getpid() );
@@ -1024,6 +1012,21 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 			ret=select( fd + 1, &rfds, NULL, NULL, &tv_sleep );
 		}  while (ret < 0 && errno==EINTR);
 		if( ret < 0 ) break; 
+
+#ifdef NOTIFY_BUFFER_EMPTY
+/* 
+This has not been tested. It may be better in writeByte/array/drain. 
+Its left for those interested in experimenting with it.
+
+Trent
+*/
+		if( ioctl( fd, TIOCSERGETLSR, &change ) ) break;
+		if( change ) {
+			(*env)->CallVoidMethod( env, jobj, method,
+				(jint)SPE_OUTPUT_BUFFER_EMPTY, JNI_TRUE );
+		}
+#endif /* NOTIFY_BUFFER_EMPTY */
+
 #if defined(__linux__)
 	/*	wait for RNG, DSR, CD or CTS  but not DataAvailable*/
 	/*      The drawback here is it never times out so if someone
