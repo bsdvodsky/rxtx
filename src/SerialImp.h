@@ -43,6 +43,12 @@
 #define SPE_FE                   9
 #define SPE_BI                  10
 
+/* java exception class names */
+#define UNSUPPORTED_COMM_OPERATION "javax/comm/UnsupportedCommOperationException"
+#define ARRAY_INDEX_OUT_OF_BOUNDS "java/lang/ArrayIndexOutOfBoundsException"
+#define OUT_OF_MEMORY "java/lang/OutOfMemoryError"
+#define IO_EXCEPTION "java/io/IOException"
+
 /*
 Flow Control defines inspired by reading how mgetty by Gert Doering does it
 */
@@ -80,6 +86,4 @@ int read_byte_array( int fd, unsigned char *buffer, int length, int threshold,
 int get_java_fd( JNIEnv *env, jobject jobj );
 void send_modem_events( JNIEnv *env, jobject jobj, jmethodID method,
    int event, int change, int state );
-void IOException( JNIEnv *Env, char *foo, char *msg );
-void IndexOutOfBoundsException( JNIEnv *Env, char *foo, char *msg );
-void UnsupportedCommOperationException( JNIEnv *env, char *foo, char *msg );
+void throw_java_exception( JNIEnv *env, char *exc, char *foo, char *msg );

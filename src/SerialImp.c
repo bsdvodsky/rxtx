@@ -59,8 +59,8 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_Initialize( JNIEnv *env,
 {
 	/* This bit of code checks to see if there is a signal handler installed
 	   for SIGIO, and installs SIG_IGN if there is not.  This is necessary
-		for the native threads jdk, but we don't want to do it with green
-		threads, because it slows things down.  Go figure. */
+	   for the native threads jdk, but we don't want to do it with green
+	   threads, because it slows things down.  Go figure. */
 	struct sigaction handler;
 	sigaction( SIGIO, NULL, &handler );
 	if( !handler.sa_handler ) signal( SIGIO, SIG_IGN );
@@ -113,7 +113,7 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_open( JNIEnv *env, jobject jobj,
 	return (jint)fd;
 
 fail:
-	IOException( env, "open", strerror( errno ) );
+	throw_java_exception( env, IO_EXCEPTION, "open", strerror( errno ) );
 	return -1;
 }
 
@@ -169,7 +169,8 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_nativeSetSerialPortParams(
 	return;
 
 fail:
-	UnsupportedCommOperationException( env, "nativeSetSerialPortParams", strerror( errno ) );
+	throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,
+		"nativeSetSerialPortParams", strerror( errno ) );
 }
 
 
@@ -208,7 +209,8 @@ int translate_speed( JNIEnv *env, jint speed )
 		case 460800:	return B460800;
 	}
 
-	UnsupportedCommOperationException( env, "translate_speed", "speed" );
+	throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,
+		"translate_speed", "speed" );
 	return 0;
 }
 
@@ -241,7 +243,8 @@ int translate_data_bits( JNIEnv *env, int *cflag, jint dataBits )
 			return 1;
 	}
 
-	UnsupportedCommOperationException( env, "translate_data_bits", "data bits" );
+	throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,
+		"translate_data_bits", "data bits" );
 	return 0;
 }
 
@@ -268,7 +271,8 @@ int translate_stop_bits( JNIEnv *env, int *cflag, jint stopBits )
 			return 1;
 	}
 
-	UnsupportedCommOperationException( env, "translate_stop_bits", "stop bits" );
+	throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,
+		"translate_stop_bits", "stop bits" );
 	return 0;
 }
 
@@ -313,7 +317,8 @@ int translate_parity( JNIEnv *env, int *cflag, jint parity )
 #endif
 	}
 
-	UnsupportedCommOperationException( env, "translate_parity", "parity" );
+	throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,
+		"translate_parity", "parity" );
 	return 0;
 }
 
@@ -338,7 +343,8 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeByte( JNIEnv *env,
 	}  while (result < 0 && errno==EINTR);
 	if(result >= 0)
 		return;
-	IOException( env,"writeByte", strerror( errno ) );
+	throw_java_exception( env, IO_EXCEPTION, "writeByte",
+		strerror( errno ) );
 }
 
 
@@ -366,9 +372,9 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_writeArray( JNIEnv *env,
 	do {
 		result=write (fd, bytes, count);
 	}  while (result < 0 && errno==EINTR);
-	if (result<0)
-		IOException( env, "writeArray", strerror( errno ) );
 	free( bytes );
+	if( result < 0 ) throw_java_exception( env, IO_EXCEPTION,
+		"writeArray", strerror( errno ) );
 }
 
 
@@ -392,8 +398,8 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_drain( JNIEnv *env,
 		result=tcdrain (fd);
 	}  while (result && errno==EINTR);
 
-	if( result )
-		IOException( env, "drain", strerror( errno ) );
+	if( result ) throw_java_exception( env, IO_EXCEPTION, "drain",
+		strerror( errno ) );
 }
 
 
@@ -691,7 +697,8 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_readByte( JNIEnv *env,
 
 	bytes = read_byte_array( fd, buffer, 1, 1, timeout );
 	if( bytes < 0 ) {
-		IOException( env, "readByte", strerror( errno ) );
+		throw_java_exception( env, IO_EXCEPTION, "readByte",
+			strerror( errno ) );
 		return -1;
 	}
 	return (bytes ? (jint)buffer[ 0 ] : -1);
@@ -706,7 +713,8 @@ RXTXPort.readArray
    return:       bytes read on success
                  0 on read timeout
    exceptions:   IOException
-   comments:     throws IOException if asked to read > SSIZE_MAX
+   comments:     throws ArrayIndexOutOfBoundsException if asked to
+                 read more than SSIZE_MAX bytes
 ----------------------------------------------------------*/ 
 JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_readArray( JNIEnv *env,
 	jobject jobj, jbyteArray jbarray, jint offset, jint length )
@@ -723,24 +731,25 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_readArray( JNIEnv *env,
 	jfield = (*env)->GetFieldID( env, jclazz, "timeout", "I" );
 	timeout = (int)( (*env)->GetIntField( env, jobj, jfield ) );
 
+	if( length == 0 ) return 0;
 	if( length > SSIZE_MAX || length < 1 ) {
-		if( length == 0 ) {
-			return 0;
-		}
-		IndexOutOfBoundsException( env,"readArray", "Invalid length" );
+		throw_java_exception( env, ARRAY_INDEX_OUT_OF_BOUNDS,
+			"readArray", "Invalid length" );
 		return -1;
 	}
 
 	buffer = (unsigned char *)malloc( sizeof( unsigned char ) * length );
 	if( buffer == 0 ) {
-		IOException( env,"readArray", "Unable to allocate buffer" );
+		throw_java_exception( env, OUT_OF_MEMORY, "readArray",
+			"Unable to allocate buffer" );
 		return -1;
 	}
 
 	bytes = read_byte_array( fd, buffer, length, threshold, timeout );
 	if( bytes < 0 ) {
 		free( buffer );
-		IOException( env, "readArray", strerror( errno ) );
+		throw_java_exception( env, IO_EXCEPTION, "readArray",
+			strerror( errno ) );
 		return -1;
 	}
 
@@ -793,7 +802,8 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setHWFC( JNIEnv *env,
 	if( tcsetattr( fd, TCSAFLUSH, &ttyset ) ) goto fail;
 	return;
 fail:
-	IOException( env, "setHWFC", strerror( errno ) );
+	throw_java_exception( env, IO_EXCEPTION, "setHWFC",
+		strerror( errno ) );
 }
 
 
@@ -833,7 +843,7 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_eventLoop( JNIEnv *env,
 	FD_ZERO( &rfds );
 	while( !interrupted ) {
 		FD_SET( fd, &rfds );
-		sleep.tv_sec = 1;	/* Check every 1 second, or on receive data */
+		sleep.tv_sec = 1; /* Check every 1 second, or on receive data */
 		sleep.tv_usec = 0;
 		do {
 			ret=select( fd + 1, &rfds, NULL, NULL, &sleep );
@@ -933,67 +943,26 @@ int get_java_fd( JNIEnv *env, jobject jobj )
 
 
 /*----------------------------------------------------------
-IOException
+throw_java_exception
 
    accept:      env (keyhole to java)
+                *exc (exception class name)
                 *foo (function name)
                 *msg (error message)
-   perform:     Throw a java.io.IOException
+   perform:     Throw a new java exception
    return:      none
    exceptions:  haha!
    comments:
 ----------------------------------------------------------*/ 
-void IOException( JNIEnv *env, char *foo, char *msg )
+void throw_java_exception( JNIEnv *env, char *exc, char *foo, char *msg )
 {
 	char buf[ 60 ];
-	jclass clazz = (*env)->FindClass( env, "java/io/IOException" );
-	if( clazz == 0 ) return;
-
+	jclass clazz = (*env)->FindClass( env, exc );
+	if( !clazz ) {
+		(*env)->ExceptionDescribe( env );
+		(*env)->ExceptionClear( env );
+		return;
+	}
 	snprintf( buf, 60, "%s in %s", msg, foo );
 	(*env)->ThrowNew( env, clazz, buf );
 }
-/*----------------------------------------------------------
-IndexOutOfBoundsException
-
-   accept:      env (keyhole to java)
-                *foo (function name)
-                *msg (error message)
-   perform:     Throw a java.lang.IndexOutOfBoundsException
-   return:      none
-   exceptions:  haha!
-   comments:
-----------------------------------------------------------*/ 
-void IndexOutOfBoundsException( JNIEnv *env, char *foo, char *msg )
-{
-	char buf[ 60 ];
-	jclass clazz = (*env)->FindClass( env, "java/lang/IndexOutOfBoundsException" );
-	if( clazz == 0 ) return;
-
-	snprintf( buf, 60, "%s in %s", msg, foo );
-	(*env)->ThrowNew( env, clazz, buf );
-}
-
-
-
-/*----------------------------------------------------------
-UnsupportedCommOperationException
-
-   accept:      env (keyhole to java)
-                *foo (function name)
-                *msg (error message)
-   perform:     Throw a javax.comm.UnsupportedCommOperationException
-   return:      none
-   exceptions:  haha!
-   comments:
-----------------------------------------------------------*/ 
-void UnsupportedCommOperationException( JNIEnv *env, char *foo, char *msg )
-{
-	char buf[ 60 ];
-	jclass clazz = (*env)->FindClass( env,
-		"javax/comm/UnsupportedCommOperationException" );
-	if( clazz == 0 ) return;
-
-	snprintf( buf, 60, "%s in %s", msg, foo );
-	(*env)->ThrowNew( env, clazz, buf );
-}
-
