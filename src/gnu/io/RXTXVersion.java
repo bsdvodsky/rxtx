@@ -1,8 +1,9 @@
 package gnu.io;
 import javax.comm.*;
 
-
-/* extend CommApiVersion so we can add RXTX version information  */
+/**
+A class to keep the current version in
+*/
 
 public class RXTXVersion
 {
@@ -20,14 +21,11 @@ public class RXTXVersion
 	static {
 		Version = "RXTX-1.4-9";
 	}
-/*------------------------------------------------------------------------------
-	getVersion  
-	accept:       -
-	perform:      -
-	return:       Version
-	exceptions:   -
-	comments:     -
-------------------------------------------------------------------------------*/
+	/**
+	*  static method to return the current version of RXTX
+	*  unique to RXTX.
+	*  @returns a string representing the version  "RXTX-1.4-9"
+	*/
 	public static String getVersion()
 	{
 		return(Version);

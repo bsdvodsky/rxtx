@@ -18,20 +18,29 @@
 --------------------------------------------------------------------------*/
 #include "config.h"
 #include "gnu_io_RXTXPort.h"
+#ifndef __LCC__ 
+#   include <unistd.h>
+#else /* windows lcc compiler for fd_set. probably wrong */
+#   include<winsock.h>
+#endif
 #include <time.h>
-#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <limits.h>
+#include <sys/stat.h>
 #ifndef WIN32
 #include <sys/ioctl.h>
 #include <sys/param.h>
 #include <sys/utsname.h>
 #else
 #	include <win32termios.h>
-#endif
+/*  FIXME  returns 0 in all cases on win32
+#define S_ISCHR(m)	(((m)&S_IFMT) == S_IFCHR)
+*/
+#define S_ISCHR(m) (1)
+#endif /* WIN32 */
 #ifdef HAVE_TERMIOS_H
 #	include <termios.h>
 #endif
@@ -42,8 +51,10 @@
 #   include <sys/signal.h>
 #endif
 #include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/time.h>
+#ifdef HAVE_SYS_TIME_H
+#   include <sys/time.h>
+#endif
+#   include <fcntl.h>
 #ifdef HAVE_SYS_FCNTL_H
 #   include <sys/fcntl.h>
 #endif
@@ -109,7 +120,7 @@ JNIEXPORT void JNICALL RXTXPort(Initialize)(
 		report("RXTX WARNING:  cannot get system name\n");
 		return;
 	}
-	if(!strcmp(name.release,UTS_RELEASE))
+	if(strcmp(name.release,UTS_RELEASE)!=0)
 	{
 		fprintf(stderr, LINUX_KERNEL_VERSION_ERROR, UTS_RELEASE,
 			name.release);
@@ -1106,7 +1117,6 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 JNIEXPORT jboolean  JNICALL RXTXCommDriver(isDeviceGood)(JNIEnv *env,
 	jobject jobj, jstring tty_name)
 {
-
 	jboolean result;
 	static struct stat mystat;
 	char teststring[256];
@@ -1120,6 +1130,8 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(isDeviceGood)(JNIEnv *env,
 		sprintf(teststring,"%s%s%i",DEVICEDIR,name, i);
 #endif /* _GNU_SOURCE */
 		stat(teststring,&mystat);
+/* XXX the following hoses freebsd when it tries to open the port later on */
+#ifndef __FreeBSD__
 		if(S_ISCHR(mystat.st_mode)){
 			fd=open(teststring,O_RDONLY|O_NONBLOCK);
 			if (fd>0){
@@ -1127,8 +1139,14 @@ JNIEXPORT jboolean  JNICALL RXTXCommDriver(isDeviceGood)(JNIEnv *env,
 				result=JNI_TRUE;
 				break;
 			}
+			else 
+				result=JNI_FALSE;
 		}
-		result=JNI_FALSE;
+		else
+			result=JNI_FALSE;
+#else
+		result=JNI_TRUE;
+#endif  /* __FreeBSD __ */
 	}
 #if defined(_GNU_SOURCE)
 	snprintf(teststring, 256, "%s%s",DEVICEDIR,name);
@@ -1376,7 +1394,7 @@ void report(char *msg)
    accept:      The name of the device to try to lock
                 termios struct
    perform:     Create a lock file if there is not one already.
-   return:      1 on failure 0 on success
+   return:      0 on failure 1 on success
    exceptions:  none
    comments:    This is for linux and freebsd only currently.  I see SVR4 does
                 this differently and there are other proposed changes to the
@@ -1414,7 +1432,7 @@ int fhs_lock(const char *filename)
 	if (stat(LOCKDIR,&buf)!=0)
 	{
 		report("could not find lock directory.\n");
-		return 1;
+		return 0;
 	}
 
 	/* 

@@ -24,7 +24,6 @@
 #define _WIN32S_H_
 #include <windows.h>
 #include <sys/types.h>
-//#include "jni.h"
 #include <io.h>
 typedef unsigned char   cc_t;
 typedef unsigned int    speed_t;
@@ -32,7 +31,7 @@ typedef unsigned int    tcflag_t;
 
 /* garbage to get compiling */
 #define SSIZE_MAX 0
-#define SIG_IGN 0
+/*#define SIG_IGN 0*/
 #define SIGIO 0
 
 #define NCCS 32
@@ -51,13 +50,17 @@ struct termios
 int serial_open(const char *File, int flags);
 int serial_read(int fd, void *b, int size);
 int serial_write(int fd, char *Str, int length);
-int serial_select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
+/*
+ * lcc winsock.h conflicts
+ */
+#ifndef __LCC__
+int serial_select(int, struct fd_set *, struct fd_set *, struct fd_set *, struct timeval *);
+#define select serial_select
+#endif
 
 #define open serial_open
 #define read serial_read
 #define write serial_write
-#define select serial_select
-#define close serial_close
 
 void usleep(unsigned long usec);
 int fcntl(int fd, int command, int arg);
@@ -285,6 +288,11 @@ void cfmakeraw(struct termios *s_termios);
 /* ioctls */
 #define TIOCMGET	0x5415
 #define TIOCMSET	0x5418
+#define TIOCMWAIT	0x545C
+/* #define TIOCGICOUNT	0x545D */
+#define TIOCSERGETLSR	0x5459
+/*define FIONREAD	0x */
+
 /* modem lines */
 #define TIOCM_LE    0x001
 #define TIOCM_DTR   0x002

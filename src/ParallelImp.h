@@ -38,7 +38,6 @@
 #	endif
 #endif
 
-
 /* javax.comm.ParallelPortEvent constants */
 #define PAR_EV_ERROR	1
 #define PAR_EV_BUFFER	2
@@ -60,4 +59,6 @@ int send_event(JNIEnv *, jobject, jint, int );
 int read_byte_array( int fd, unsigned char *buffer, int length, int threshold,
    int timeout );
 int get_java_var( JNIEnv *, jobject, char *, char * );
+void report(char *);
 void throw_java_exception( JNIEnv *, char *, char *, char * );
+

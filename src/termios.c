@@ -24,7 +24,17 @@
 #include <stdio.h>
 #include <errno.h>
 #include "win32termios.h"
-#include "malloc.h"
+/*
+ * odd malloc.h error with lcc compiler
+ * winsock has FIONREAD with lcc
+ */
+
+#ifdef __LCC__
+#   include <winsock.h>
+#else
+#   include <malloc.h>
+#endif
+
 
 #define SIZE 64	/* number of serial ports */
 int my_errno;
@@ -167,8 +177,11 @@ BOOL FillDCB(DCB *dcb) {
     return ( TRUE ) ;
 } */
 
-int serial_close(int fd) {
-	return CloseHandle(tl[fd]->hComm);
+int close(int fd) {
+	int ret;
+	ret=CloseHandle(tl[fd]->hComm);
+	free(tl[fd]);
+	return(ret);
 }
 
 void cfmakeraw(struct termios *s_termios) {
@@ -208,6 +221,7 @@ int serial_open(const char *filename, int flags) {
 	int fd;
 	COMMPROP cp;
 	DCB	dcb;
+	printf("serial open() %s\n",filename);
 	for (fd = 0; fd<SIZE; fd++) {
 		if (!tl[fd]) continue;
 		if (!strcmp(filename, tl[fd]->filename)) {
@@ -697,8 +711,24 @@ int ioctl(int fd, int request, unsigned int *arg) {
 			TIOCM_ST
 			TIOCM_SR	*/
 			break;
+		case FIONREAD: 
+			/*  number of bytes available for reading */
+			printf("FIXME:  ioctl(FIONREAD) not Implemented in termios.c\n"); 
+			return -1;
+/*
+	On linux this give a struct with all the line info (data available, bytes sent, ...
+		case TIOCGICOUNT: 
+			printf("FIXME:  ioctl(TIOCGICOUNT) not Implemented in termios.c\n"); 
+			return -1;
+*/
+		case TIOCMWAIT: 
+			printf("FIXME:  ioctl(TIOCMWAIT) not Implemented in termios.c\n"); 
+			return -1;
+		case TIOCSERGETLSR: 
+			printf("FIXME:  ioctl(TIOCSERGETLSR) not Implemented in termios.c\n"); 
+			return -1;
 		default:
-			printf("ioctl: unknown request: %#x\n", request);
+			printf("FIXME:  ioctl: unknown request: %#x\n", request);
 			return -1;
 	}
 	return 0;
@@ -708,8 +738,15 @@ int fcntl(int fd, int command, int arg) {
 	fprintf(stderr, "FIXME: fcntl(%d, %#o, %#o)\n", fd, command, arg);
 	return 0;
 }
+
+/*
+ * lcc has a select in winsock.h
+ * trying to use the select() in wsock32.lib
+ */
+#ifndef __LCC__
+
 int  serial_select(int  n,  fd_set  *readfds,  fd_set  *writefds, fd_set *exceptfds, struct timeval *timeout) {
 	return 1;
 	/* FIXME */
 }
-
+#endif
