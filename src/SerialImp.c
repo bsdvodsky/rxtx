@@ -223,9 +223,9 @@ JNIEXPORT void JNICALL RXTXPort(Initialize)(
 		sigset_t block_mask;
 		sigemptyset(&block_mask);
 		new_action.sa_handler = SIG_IGN;
-    #if !defined(__QNX__)
+#ifdef SA_RESTART
 		new_action.sa_flags = SA_RESTART;
-    #endif /* !qnx */
+#endif /* SA_RESTART */
 		new_action.sa_mask = block_mask;
 		sigaction(SIGIO, &new_action, NULL);
 	} 
@@ -859,7 +859,7 @@ int translate_speed( JNIEnv *env, jint speed )
 /*----------------------------------------------------------
  translate_data_bits
 
-   accept:     javax.comm.SerialPort.DATABITS_* constant
+   accept:     gnu.io.SerialPort.DATABITS_* constant
    perform:    set proper termios c_cflag bits
    return:     1 if successful
 					0 if an exception is thrown
@@ -894,7 +894,7 @@ int translate_data_bits( JNIEnv *env, tcflag_t *cflag, jint dataBits )
 /*----------------------------------------------------------
  translate_stop_bits
 
-   accept:     javax.comm.SerialPort.STOPBITS_* constant
+   accept:     gnu.io.SerialPort.STOPBITS_* constant
    perform:    set proper termios c_cflag bits
    return:     1 if successful
 					0 if an exception is thrown
@@ -2653,7 +2653,7 @@ GetTickCount()
 	report_verbose("gettimeofday\n");
 
 #ifdef __QNX__
-  return now.tv_sec * 1000 + now.tv_usec / 1000;
+	return now.tv_sec * 1000 + now.tv_usec / 1000;
 #else
 	return (now.tv_sec * 1000) + ceil(now.tv_usec / 1000);
 #endif /* __QNX__ */
@@ -2687,66 +2687,66 @@ int read_byte_array( JNIEnv *env,
                      int length,
                      int timeout )
 {
-  int ret, left, bytes = 0;
-  long timeLeft, now, start = 0;
-  char msg[80];
-  struct timeval tv, *tvP;
-  fd_set rset;
+	int ret, left, bytes = 0;
+	long timeLeft, now, start = 0;
+	char msg[80];
+	struct timeval tv, *tvP;
+	fd_set rset;
 
-  report_time_start();
-  ENTER( "read_byte_array" );
-  sprintf(msg, "read_byte_array requests %i\n", length);
-  report( msg );
-  left = length;
-  if (timeout >= 0)
-  start = GetTickCount();
-  while( bytes < length )
-  {
-    if (timeout >= 0) {
-      now = GetTickCount();
-      if (now-start >= timeout)
-      return bytes;
-    }
+	report_time_start();
+	ENTER( "read_byte_array" );
+	sprintf(msg, "read_byte_array requests %i\n", length);
+	report( msg );
+	left = length;
+	if (timeout >= 0)
+		start = GetTickCount();
+	while( bytes < length )
+	{
+		if (timeout >= 0) {
+			now = GetTickCount();
+			if ( now-start >= timeout )
+				return bytes;
+		}
 
-    FD_ZERO(&rset);
-    FD_SET(fd, &rset);
+		FD_ZERO(&rset);
+		FD_SET(fd, &rset);
 
-    if (timeout >= 0){
-      timeLeft = timeout - (now - start);
-      tv.tv_sec = timeLeft / 1000;
-      tv.tv_usec = 1000 * ( timeLeft % 1000 );
-      tvP = &tv;
-    }
-    else{
-      tvP = NULL;
-    }
+		if (timeout >= 0){
+			timeLeft = timeout - (now - start);
+			tv.tv_sec = timeLeft / 1000;
+			tv.tv_usec = 1000 * ( timeLeft % 1000 );
+			tvP = &tv;
+		}
+		else{
+			tvP = NULL;
+		}
 
-    ret = select(fd + 1, &rset, NULL, NULL, tvP);
-    if (ret == -1){
-      report( "read_byte_array: select returned -1\n" );
-      LEAVE( "read_byte_array" );
-      return -1;
-    }
-    else if (ret > 0){
-      if ((ret = READ( fd, buffer + bytes, left )) < 0 ){
-        if (errno != EINTR && errno != EAGAIN){
-          report( "read_byte_array: read returned -1\n" );
-          LEAVE( "read_byte_array" );
-          return -1;
-        }
-      }
-      else{
-        bytes += ret;
-        left -= ret;
-      }
-    }
-  }
+		ret = SELECT(fd + 1, &rset, NULL, NULL, tvP);
+		if (ret == -1){
+			report( "read_byte_array: select returned -1\n" );
+			LEAVE( "read_byte_array" );
+			return -1;
+		}
+		else if (ret > 0){
+			if ((ret = READ( fd, buffer + bytes, left )) < 0 ){
+				if (errno != EINTR && errno != EAGAIN){
+					report( "read_byte_array: read returned -1\n" );
+					LEAVE( "read_byte_array" );
+					return -1;
+				}
+			}
+			else{
+				bytes += ret;
+				left -= ret;
+			}
+		}
+	}
 
-  sprintf(msg, "read_byte_array returns %i\n", bytes);
-  report( msg );
-  LEAVE( "read_byte_array" );
-  report_time_end();
-  return bytes;
+	sprintf(msg, "read_byte_array returns %i\n", bytes);
+	report( msg );
+	LEAVE( "read_byte_array" );
+	report_time_end();
+	return bytes;
 }
 
 #ifdef asdf
@@ -2888,8 +2888,8 @@ JNIEXPORT void JNICALL RXTXPort(NativeEnableReceiveTimeoutThreshold)(
 
 	ENTER( "RXTXPort:NativeEnableRecieveTimeoutThreshold" );
 	if( tcgetattr( fd, &ttyset ) < 0 ) goto fail;
-  ttyset.c_cc[ VMIN ] = threshold;
-  /* ttyset.c_cc[ VMIN ] = 0; */
+	/* TESTING ttyset.c_cc[ VMIN ] = threshold; */
+	ttyset.c_cc[ VMIN ] = 0;
 	ttyset.c_cc[ VTIME ] = vtime/100;
 	if( tcsetattr( fd, TCSANOW, &ttyset ) < 0 ) goto fail;
 
@@ -2906,7 +2906,8 @@ fail:
 RXTXPort.readByte
 
    accept:      none
-   perform:     Read a single byte from the port
+   perform:     Read a single byte from the port.  Block unless an exeption
+	        is thrown, or end of stream.
    return:      The byte read
    exceptions:  IOException
 ----------------------------------------------------------*/
@@ -2916,12 +2917,11 @@ JNIEXPORT jint JNICALL RXTXPort(readByte)( JNIEnv *env,
 	int bytes;
 	unsigned char buffer[ 1 ];
 	int fd = get_java_var( env, jobj,"fd","I" );
-	int timeout = get_java_var( env, jobj, "timeout", "I" );
 	char msg[80];
 
 	ENTER( "RXTXPort:readByte" );
 	report_time_start( );
-	bytes = read_byte_array( env, &jobj, fd, buffer, 1, timeout );
+	bytes = read_byte_array( env, &jobj, fd, buffer, 1, -1 );
 	if( bytes < 0 ) {
 		LEAVE( "RXTXPort:readByte" );
 		throw_java_exception( env, IO_EXCEPTION, "readByte",
@@ -2979,7 +2979,7 @@ JNIEXPORT jint JNICALL RXTXPort(readArray)( JNIEnv *env,
 	report( msg );
 	report_time_end( );
 	LEAVE( "RXTXPort:readArray" );
-	return (bytes ? bytes : -1);
+	return (bytes);
 }
 
 /*----------------------------------------------------------
