@@ -40,9 +40,9 @@ not present please install them.
 Here's whats on my system for comparison.  Correct versions are important.
 
    autoconf 2.13
-   automake 1.4
-   libtool 1.2b
-   make 3.76.1
+   automake 1.4a
+   libtool 1.2f
+   make 3.77
 
 Unterminated sed command errors usually result from `find` producing unexpected 
 results.   If you are unsure remove all comm.jar and javax.comm.properties files
