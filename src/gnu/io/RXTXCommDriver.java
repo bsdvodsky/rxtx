@@ -16,11 +16,16 @@
 |   License along with this library; if not, write to the Free
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
+
+/* Martin Pool <mbp@linuxcare.com> added support for explicitly-specified
+ * lists of ports, October 2000. */
+
 package gnu.io;
 
 import java.io.File;
 import java.io.IOException;
 import javax.comm.*;
+import java.util.StringTokenizer;
 
 /**
    This is the JavaComm for Linux driver.
@@ -44,6 +49,8 @@ public class RXTXCommDriver implements CommDriver {
 
 	/** Get the Serial port prefixes for the running OS */
 	private native boolean isDeviceGood(String dev);
+
+
 	private final String[] getPortPrefixes(String AllKnownPorts[]) {
 		int i=0;
 		String PortString[]=new String [256];
@@ -59,6 +66,17 @@ public class RXTXCommDriver implements CommDriver {
 		return PortString2;
 	}
 
+
+   /*
+    * Check whether we can do r/w io on the specified filename.
+    */
+	private boolean isUsable(String portName)
+	{
+		final File port = new File(portName);
+		return port.canRead() && port.canWrite();
+	}
+
+
 	private void RegisterValidPorts(
 		String devs[],
 		String Prefix[],
@@ -68,8 +86,7 @@ public class RXTXCommDriver implements CommDriver {
 			for( int p = 0; p < Prefix.length; p++ ) {
 				if( devs[ i ].startsWith( Prefix[ p ] ) ) {
 					String portName = "/dev/" + devs[ i ];
-					File port = new File( portName );
-					if( port.canRead() && port.canWrite() )
+					if (isUsable(portName))
 						CommPortIdentifier.addPortName(
 							portName,
 							PortType,
@@ -99,12 +116,68 @@ public class RXTXCommDriver implements CommDriver {
 	 * Peter Bennett
 	 * January 02, 2000
 	 * Bencom
+    */
+	public void initialize()
+	{
+	// First try to register ports specified in the properties
+	// file.  If that doesn't exist, then scan for ports.
+		if (!registerSpecifiedPorts())
+			registerScannedPorts();
+   	}
 
+
+	private void addSpecifiedPorts(String names, int type)
+	{
+		final String pathSep = System.getProperty("path.separator", ":");
+		final StringTokenizer tok = new StringTokenizer(names, pathSep);
+
+		while (tok.hasMoreElements())
+		{
+			String portName = tok.nextToken();
+
+			if (isUsable(portName))
+				CommPortIdentifier.addPortName(portName,
+					type, this);
+		}
+	}
+
+
+   /*
+    * Register ports specified by the gnu.io.rxtx.SerialPorts and
+    * gnu.io.rxtx.ParallelPorts system properties.
     */
-    /*
-	See SerialImp.c's *KnownPorts[] when adding ports
+	private boolean registerSpecifiedPorts()
+	{
+		boolean found = false;
+		String val;
+
+		val = System.getProperty("gnu.io.rxtx.SerialPorts");
+		if (val != null)
+		{
+			addSpecifiedPorts(val, CommPortIdentifier.PORT_SERIAL);
+			found = true;
+		}
+
+		val = System.getProperty("gnu.io.rxtx.ParallelPorts");
+		if (val != null)
+		{
+			addSpecifiedPorts(val, CommPortIdentifier.PORT_PARALLEL);
+			found = true;
+		}
+
+		return found;
+	}
+
+
+   /*
+    * Look for all entries in /dev, and if they look like they should
+    * be serial ports on this OS and they can be opened then register
+    * them.
+    *
+    * See SerialImp.c's *KnownPorts[] when adding ports
     */
-	public void initialize() {
+	private void registerScannedPorts()
+	{
 		File dev = new File( "/dev" );
 		String[] devs = dev.list();
 		String[] AllKnownSerialPorts={

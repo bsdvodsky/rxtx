@@ -25,7 +25,7 @@ import javax.comm.*;
 /**
   * ParallelPort
   */
-public  abstract class ParallelPort extends CommPort {
+public  abstract class ParallelPort extends javax.comm.ParallelPort {
 	public static final int  LPT_MODE_ANY   =0;
 	public static final int  LPT_MODE_SPP   =1;
 	public static final int  LPT_MODE_PS2   =2;

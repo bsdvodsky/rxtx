@@ -57,6 +57,7 @@ please make a note and email the details to trentjarvi@yahoo.com.
 	P.  Which Device Should be Used?
 	Q.  It Did Not Work! 
 	R.  Which jdk should be used? 
+	S.  How does rxtx detect ports?  Can I override it?
 
 -------------------------------------------------------------------------------
 1.  INSTALL INSTRUCTIONS IN OTHER LANGUAGES
@@ -543,5 +544,26 @@ reference Could not create the Java virtual machine."
 /usr/local/java/bin/../lib/i686/native_threads/libjava.so: symbol sem_init,
 version GLIBC_2.1 not defined in file libpthread.so.0 with link time reference"
 
-conclusion?  avoid Sun's native threads unless you can figure out whats going
+Conclusion?  Avoid Sun's native threads unless you can figure out whats going
 wrong.
+
+S.  How does rxtx detect ports?  Can I override it?
+
+rxtx tries to detect ports on by scanning /dev for files matching any
+of a set of known-good prefixes, such as 'ttyS', 'ttym', and so on.
+Any ones that exist, are supposed to be good for the current operating
+system, and that can be read and written are offered back from
+CommPortIdentifier.getPortIdentifiers(), and only these can be used as
+ports.
+
+If you wish, you can set the system properties gnu.io.rxtx.SerialPorts
+and gnu.io.rxtx.ParallelPorts.  If either of these is set, then no
+scanning will be carried out and only the specified ports will be
+available.  You can use this to make one platform look like another,
+to restrict Java access to ports, or possibly for other reasons.  For
+example
+
+	java -Dgnu.io.rxtx.SerialPorts=/dev/cua/a:/dev/cua/b com.foo.MyApp
+
+will look kind of like Solaris, if you have created the appropriate
+device nodes.

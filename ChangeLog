@@ -1,3 +1,7 @@
+1.4-6  Oct 11, 2000   support for explicitly-specified lists of ports
+                      Martin Pool <mbp@linuxcare.com>
+                      Documentation for explicitly-specified lists of ports
+		      Martin Pool <mbp@linuxcare.com>
 1.4-5  Aug 18, 2000   RXTXPort constructor to set the name to the port being 
 		      opened.  RXTXPort.removeEventListener() fixes/work arounds
 		      all by Chris Hamlett <chris.hamlett@securelogix.com>
