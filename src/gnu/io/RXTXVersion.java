@@ -37,12 +37,12 @@ public class RXTXVersion
 	private static String Version;
 
 	static {
-		Version = "RXTX-2.0-1";
+		Version = "RXTX-2.0-3";
 	}
 	/**
 	*  static method to return the current version of RXTX
 	*  unique to RXTX.
-	*  @returns a string representing the version  "RXTX-2.0-1"
+	*  @returns a string representing the version  "RXTX-1.4-9"
 	*/
 	public static String getVersion()
 	{
