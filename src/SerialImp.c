@@ -2577,6 +2577,30 @@ int check_group_uucp()
 	}
 	return 0;
 }
+/*
+ The following should be able to follow symbolic links.  I think the stat
+ method used below will work on more systems.  This was found while looking
+ for information.
+
+ * realpath() doesn't exist on all of the systems my code has to run
+   on (HP-UX 9.x, specifically)
+
+int different_from_LOCKDIR(const char* ld)
+{
+	char real_ld[MAXPATHLEN];
+	char real_LOCKDIR[MAXPATHLEN];
+	if (strncmp(ld, LOCKDIR, strlen(ld)) == 0)
+		return 0;
+	if (realpath(ld, real_ld) == NULL)
+		return 1;
+	if (realpath(LOCKDIR, real_LOCKDIR) == NULL)
+		return 1;
+	if (strncmp(real_ld, real_LOCKDIR, strlen(real_ld)) == 0)
+		return 0;
+	else
+		return 1;
+}
+*/
 
 /*----------------------------------------------------------
  is_device_locked
@@ -2617,6 +2641,13 @@ int is_device_locked( const char *filename )
 			strncmp( lockdirs[i], LOCKDIR, strlen( lockdirs[i] ) )
 		)
 		{
+			/*
+				Here is the check for symbolic links
+				see also:
+
+				 different_from_LOCKDIR()
+			*/
+
 			if ( ( buf2.st_dev != buf.st_dev ) ||
 				( buf2.st_ino != buf.st_ino ) )
 			{
