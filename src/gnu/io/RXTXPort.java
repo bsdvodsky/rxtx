@@ -26,7 +26,7 @@ import javax.comm.*;
 /**
   * RXTXPort
   */
-class RXTXPort extends SerialPort {
+final class RXTXPort extends SerialPort {
 
 	static 
 	{

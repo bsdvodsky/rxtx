@@ -1,4 +1,7 @@
 /*-------------------------------------------------------------------------
+|   Win32 support By Wayne Roberts wroberts1@home.com
+|   Copyright 1999 by the Free Software Foundation. 
+|
 |   rxtx is a native interface to serial ports in java.
 |   Copyright 1997-1999 by Trent Jarvi trentjarvi@yahoo.com.
 |
@@ -21,7 +24,7 @@
 --------------------------------------------------------------------------*/
 #include <windows.h>
 #include <stdio.h>
-#include "win32s.h"
+#include "termios.h"
 #include "malloc.h"
 
 #define READ_SIZE 2048
