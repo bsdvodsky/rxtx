@@ -152,7 +152,7 @@ if [ test `find $JPATH/include -name jni_md.h|wc -l` != "1" ]; then
 	echo If there are more than one option available the first was selected.  1>&2
 	echo 1>&2
 	echo Press enter to continue.
-	read
+	read REPLY
 fi
 	
 
@@ -195,7 +195,7 @@ rm -f conftest.class
 #a good idea?
 fix_parameters()
 {
-	if [ ! grep  "Driver=gnu.io.RXTXCommDriver" $1 &> /dev/null ]; then 
+	if [ ! grep -q "Driver=gnu.io.RXTXCommDriver" $1 ]; then 
 		echo "------------------------------------------------------" 1>&2
 		echo "RxTx requires the following information in" 1>&2
 		echo " $1:" 1>&2
@@ -223,17 +223,17 @@ check_prefix()
 		echo "          the linkers path this will cause problems later on." 1>&2
 		echo 1>&2
 		echo "          Press enter to continue."
-		read 
+		read  REPLY
 	fi
 }
 check_kernel_headers()
 {
-	if ! grep -q `uname -r` /usr/include/linux/version.h;then 
+	if [ ! grep -q `uname -r` /usr/include/linux/version.h ];then 
 		echo 1>&2
 		echo "       WARNING:  Kernel include files do not match the current kernel" 1>&2
 		echo 1>&2
 		echo "                 Press enter to continue." 
-		read
+		read REPLY
 	fi 1>&2
 }
 fix_comm_jar()
@@ -268,7 +268,7 @@ fix_comm_jar()
 				echo "get the solaris-x86 CommAPI if your target is unix."  1>&2
 				echo  1>&2
 				echo "Press enter to continue."
-				read
+				read REPLY
 			fi 
 			echo -n "Is it ok to copy $FILE to $1?[[y/n]] "
 			read REPLY
