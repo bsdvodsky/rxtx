@@ -682,7 +682,24 @@ final class RXTXPort extends SerialPort
 		SPEventListener = null;
 		Runtime.getRuntime().gc();
 	}
+	/**
+	 *	Give the native code a chance to start listening to the hardware
+	 *	or should we say give the native code control of the issue.
+	 *
+	 *	This is important for applications that flicker the Monitor
+	 *	thread while keeping the port open.
+	 *	In worst case test cases this loops once or twice every time.
+	 */
 
+	private void waitForTheNativeCodeSilly()
+	{
+		while( MonitorThreadLock )
+		{
+			try {
+				Thread.sleep(1);
+			} catch( Exception e ) {}
+		}
+	}
 	/**
 	*  @param enable
 	*/
@@ -690,13 +707,8 @@ final class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnDataAvailable()");
-		while( MonitorThreadLock )
-		{
-			try {
-				System.out.println("Got it!\n");
-				Thread.sleep(10);
-			} catch( Exception e ) {}
-		}
+		
+		waitForTheNativeCodeSilly();
 		monThread.Data = enable;
 	}
 
@@ -707,13 +719,7 @@ final class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnOutputEmpty()");
-		while( MonitorThreadLock )
-		{
-			try {
-				System.out.println("Got it!\n");
-				Thread.sleep(10);
-			} catch( Exception e ) {}
-		}
+		waitForTheNativeCodeSilly();
 		monThread.Output = enable;
 	}
 
@@ -724,13 +730,7 @@ final class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnCTS()");
-		while( MonitorThreadLock )
-		{
-			try {
-				System.out.println("Got it!\n");
-				Thread.sleep(10);
-			} catch( Exception e ) {}
-		}
+		waitForTheNativeCodeSilly();
 		monThread.CTS = enable;
 	}
 	/**
@@ -740,13 +740,7 @@ final class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnDSR()");
-		while( MonitorThreadLock )
-		{
-			try {
-				System.out.println("Got it!\n");
-				Thread.sleep(10);
-			} catch( Exception e ) {}
-		}
+		waitForTheNativeCodeSilly();
 		monThread.DSR = enable;
 	}
 	/**
@@ -756,13 +750,7 @@ final class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnRingIndicator()");
-		while( MonitorThreadLock )
-		{
-			try {
-				System.out.println("Got it!\n");
-				Thread.sleep(10);
-			} catch( Exception e ) {}
-		}
+		waitForTheNativeCodeSilly();
 		monThread.RI = enable;
 	}
 	/**
@@ -772,12 +760,7 @@ final class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnCarrierDetect()");
-		while( MonitorThreadLock )
-		{
-			try {
-				System.out.println("Got it!\n");
-			} catch( Exception e ) {}
-		}
+		waitForTheNativeCodeSilly();
 		monThread.CD = enable;
 	}
 	/**
@@ -787,12 +770,7 @@ final class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnOverrunError()");
-		while( MonitorThreadLock )
-		{
-			try {
-				System.out.println("Got it!\n");
-			} catch( Exception e ) {}
-		}
+		waitForTheNativeCodeSilly();
 		monThread.OE = enable;
 	}
 	/**
@@ -802,12 +780,7 @@ final class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnParityError()");
-		while( MonitorThreadLock )
-		{
-			try {
-				System.out.println("Got it!\n");
-			} catch( Exception e ) {}
-		}
+		waitForTheNativeCodeSilly();
 		monThread.PE = enable;
 	}
 	/**
@@ -817,12 +790,7 @@ final class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnFramingError()");
-		while( MonitorThreadLock )
-		{
-			try {
-				System.out.println("Got it!\n");
-			} catch( Exception e ) {}
-		}
+		waitForTheNativeCodeSilly();
 		monThread.FE = enable;
 	}
 	/**
@@ -832,12 +800,7 @@ final class RXTXPort extends SerialPort
 	{
 		if (debug)
 			System.out.println("RXTXPort:notifyOnBreakInterrupt()");
-		while( MonitorThreadLock )
-		{
-			try {
-				System.out.println("Got it!\n");
-			} catch( Exception e ) {}
-		}
+		waitForTheNativeCodeSilly();
 		monThread.BI = enable;
 	}
 

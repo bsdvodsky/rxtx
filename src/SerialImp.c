@@ -1868,6 +1868,7 @@ JNIEXPORT void JNICALL RXTXPort(eventLoop)( JNIEnv *env, jobject jobj )
 
 	ENTER( "RXTXPort:eventLoop" );
 	if ( !initialise_event_info_struct( &eis ) ) goto end;
+	/* nothing goes between this call and select */
 	unlock_monitor_thread( &eis );
 	do{
 		do {
