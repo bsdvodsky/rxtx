@@ -649,3 +649,29 @@ void UnsupportedCommOperationException( JNIEnv *env, char *msg )
 	if( clazz == 0 ) return;
 	(*env)->ThrowNew( env, clazz, msg );
 }
+JNIEXPORT void JNICALL Java_gnu_io_LPRPort_setInputBufferSize(JNIEnv *env, jobject jobj,  jint size )
+{
+#ifdef DEBUG
+	printf("setInputBufferSize is not implemented\n");
+#endif
+}
+JNIEXPORT jint JNICALL Java_gnu_io_LPRPort_getInputBufferSize(JNIEnv *env, jobject jobj)
+{
+#ifdef DEBUG
+	printf("getInputBufferSize is not implemented\n");
+#endif
+	return(1);
+}
+JNIEXPORT void JNICALL Java_gnu_io_LPRPort_setOutputBufferSize(JNIEnv *env, jobject jobj, jint size )
+{
+#ifdef DEBUG
+	printf("setOutputBufferSize is not implemented\n");
+#endif
+}
+JNIEXPORT jint JNICALL Java_gnu_io_LPRPort_getOutputBufferSize(JNIEnv *env, jobject jobj)
+{
+#ifdef DEBUG
+	printf("getOutputBufferSize is not implemented\n");
+#endif
+	return(1);
+}

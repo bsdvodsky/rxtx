@@ -130,15 +130,15 @@ final class LPRPort extends ParallelPort {
 	public int getReceiveThreshold() { return threshold; }
 	public boolean isReceiveThresholdEnabled() { return threshold > 1; };
 
-	/** Input/output buffers */
-	public void setInputBufferSize( int size ) {}
-	public int getInputBufferSize() {
-		return 1;
-	}
-	public void setOutputBufferSize( int size ) {}
-	public int getOutputBufferSize() {
-		return 1;
-	}
+	/** 
+		Input/output buffers
+		These are native stubs...
+	*/
+
+	public native void setInputBufferSize( int size );
+	public native int getInputBufferSize(); 
+	public native void setOutputBufferSize( int size );
+	public native int getOutputBufferSize();
 
 	public native int getOutputBufferFree();
 	/** Write to the port */
