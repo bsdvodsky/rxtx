@@ -49,6 +49,10 @@ AC_SUBST(JAVA_LIBRARY_PATH)
 AC_SUBST(JAVA_CLASS_PATH)
 AC_SUBST(JAVA_CLASS_VERSION)
 AC_SUBST(JAVAH_FIX)
+AC_SUBST(JCL_PATH)
+AC_SUBST(RXTX_PATH)
+JCL_PATH=lib
+TOP="`pwd`"
 if test "$CC" = "gcc"; then
         CFLAGS="$CFLAGS"
 fi
@@ -60,8 +64,6 @@ fi
 	CFLAGS="$CFLAGS -ansi -D_POSIX_SOURCE";;
 	*);;
 esac]
-TOP="`pwd`"
-#	IDENTIFIERS="TEST"
 AC_ARG_ENABLE(RXTXIDENT,
    [  --enable-RXTXIDENT      RXTXIDENT support (experimental) [default=no]], echo $enable_RXTXIDENT, enable_RXTXIDENT="no")
    if test x$enable_RXTXIDENT = xyes; then  
@@ -88,6 +90,7 @@ AC_ARG_ENABLE(PRINTER,
          *);;
       esac]
    fi
+
 AC_ARG_ENABLE(NATIVETHREADS,
    [  --enable-NATIVETHREADS  Use jdk native-threads [default=no]], echo $enable_NATIVETHREADS, enable_NATIVETHREADS="no")
    if test x$enable_NATIVETHREADS = xyes; then 
@@ -111,7 +114,6 @@ AC_ARG_ENABLE(JDK_HOME,
       fi
    fi
    )
-
 AC_ARG_ENABLE(DEBUG,
    [  --enable-DEBUG          Print debugging info from SerialImp.c],
    if test x$enable_DEBUG = xyes; then 
@@ -128,8 +130,6 @@ if test "$JPATH" = ""; then
       JPATH="`echo $JDK_HOME`"
    fi
 fi
-JAVANATINC="\$(JPATH)/`cd $JPATH; find ./include -name jni_md.h|sed s#jni_md\\\\.h##|sed s#\\\\.\\\\/##`"
-JAVAINCLUDE="\$(JPATH)/include"
 JCLASSPATH="-classpath \$(TOP):\$(TOP)/src:\$(JPATH)/lib/classes.zip:\$(JPATH)/lib/comm.jar:\$(JPATH)/lib/jcl.jar:.:$CLASSPATH"
 cat > conftest.java << EOF
 /* this may be usefull for getting around java cobwebs during build */
@@ -146,13 +146,67 @@ echo $OS_NAME
 echo -n checking os.arch   " "
 OS_ARCH=`$JPATH/bin/java conftest "os.arch"`
 echo $OS_ARCH
+echo -n checking os.version   " "
+OS_VERSION=`java conftest "os.version"`
+echo $OS_VERSION
 echo -n checking java.version   " "
 JAVA_VERSION=`$JPATH/bin/java conftest "java.version"`
 echo $JAVA_VERSION
 
-#echo -n checking os.version   " "
-#OS_VERSION=`java conftest "os.version"`
-#echo $OS_VERSION
+rm -f conftest.java
+rm -f conftest.class
+
+
+JAVAINCLUDE="\$(JPATH)/include"
+[ case $OS_NAME in 
+Linux)
+	case $JAVA_VERSION in
+	1.2*) 
+		JCLASSPATH="-classpath \$(TOP):\$(TOP)/src:.:$CLASSPATH"
+		RXTX_PATH="\$(prefix)/lib"
+		JCL_PATH="\$(JPATH)/lib"
+		case $OS_NAME in
+		Linux)
+			case $OS_VERSION in
+			2.2.*)
+				JCL_PATH="jre/lib/ext"
+				JAVANATINC="\$(JPATH)/include/linux"
+				case $OS_ARCH in
+				i386)
+					RXTX_PATH="\$(JPATH)/jre/lib/i386"
+				;;
+				*)
+					echo "Unrecognized os.arch Please edit Makefile so RXTX_PATH=\$(JPATH)/jre/lib/os.arch"
+				;;
+				esac
+			;;
+			esac
+		;;
+		esac
+	;;
+	1.*) 
+	#	JAVAH_FIX="if [ ! \$(THREADS_FLAG) ] && [ ! -d com ]; then if [ ! -f \$(JPATH)/lib/comm.jar ]; then echo \"Please install comm.jar from CommAPI in \$(JPATH)/java/lib/\"; else \$(JAR) -xf \$(JPATH)/lib/comm.jar;  fi; fi"
+		JAVANATINC="\$(JPATH)/`cd $JPATH; find ./include -name jni_md.h|sed s#jni_md\\\\.h##|sed s#\\\\.\\\\/##`"
+	;;
+	esac 
+;;
+*BSD*)
+;;
+irix*)
+	CFLAGS="$CFLAGS -D_NO_POSIX=1 -D_NO_XOPEN4=1"
+;;
+*)
+;;
+esac ]
+AC_OUTPUT(Makefile)
+
+
+
+################################  END ########################################
+
+
+
+# Toys.  Gota lovem.
 #echo -n checking java.home   " "
 #JAVA_HOME=`java conftest "java.home"`
 #echo $JAVA_HOME
@@ -165,20 +219,3 @@ echo $JAVA_VERSION
 #echo -n checking java.class.version   " "
 #JAVA_CLASS_VERSION=`java conftest "java.class.version"`
 #echo $JAVA_CLASS_VERSION
-
-rm -f conftest.java
-rm -f conftest.class
-[ case $OS_NAME in 
-Linux) 
-	case $OS_ARCH in 
-	x86) 
-		case $JAVA_VERSION in 
-		1.1.6|1.1.7)
-			JAVAH_FIX="if [ ! \$(THREADS_FLAG) ] && [ ! -d com ]; then if [ ! -f \$(JPATH)/lib/comm.jar ]; then echo \"Please install comm.jar from CommAPI in \$(JPATH)/java/lib/\"; else \$(JAR) -xf \$(JPATH)/lib/comm.jar;  fi; fi;"
-		;; 
-		esac 
-	;; 
-	esac 
-;; 
-esac ]
-AC_OUTPUT(Makefile)

@@ -47,7 +47,7 @@ Here's whats on my system for comparison.  Correct versions are important.
 
 mail any bugs to jarvi@ezlink.com.  
 
-Known Bugs.
+Known 'Features'.
 
 
 1.  There is no parallel support in rxtx.  Good project for a interested 
@@ -57,4 +57,27 @@ Known Bugs.
 2.  This release has only been tested on linux.
 
 3.  The library does not handle SIGINT and clean up.
+
+4.  Flow control with small FIFO's on the other side.   See the setserial 
+    manpage for how to change the uart setting mentioned.
+
+   Chris Kakris writes:
+
+   I don't know if you would call it a bug or not.  I believe
+   (talking to a hardware engineer here) that today all modern
+   devices like modems and printers have large buffers.  When the
+   device requests hardware flow control it may actually take a
+   while for the server to stop sending data but that's ok
+   because the device has enough of a buffer to accept the
+   incoming data.  I guess this happens because the server has
+   been filling its own buffer and must empty it.  In our
+   situation we can't afford to do that - the server must stop
+   immediately.
+
+   I am guessing that this may be a kernel buffering issue.
+   When we set the UART to a 16550 type then I suspect
+   that the kernel doesn't create a buffer at all so when it does
+   see the flow control (raised or lowered) it is able to comply
+   without freaking out that it has a buffer that it needs to
+   emptied.
 

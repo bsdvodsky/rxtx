@@ -20,6 +20,7 @@
 AUTOMAKE_OPTIONS = foreign
 TOP=@TOP@
 JPATH=@JPATH@
+JCL_PATH=@JCL_PATH@
 INCLUDES= -I $(TOP) -I $(TOP)/$(target_alias) -I . -I $(JAVAINCLUDE) -I $(JAVANATINC)
 export NSJAVA=1
 export THREADS_FLAG=@THREAD_FLAG@
@@ -44,13 +45,13 @@ install: all jcl install-lib
 install-lib:
 	( cd $(TOP)/$(target_alias) ; \
 	if [ -f libSerial.la ];then \
-	$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) libSerial.la $(libdir);\
+	$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) libSerial.la $(RXTX_PATH);\
 	fi; \
 	if [ -f libParallel.la ];then \
-	$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) libParallel.la $(libdir);\
+	$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) libParallel.la $(RXTX_PATH);\
 	fi; \
 	)
-	$(INSTALL_PROGRAM) jcl.jar $(JPATH)/lib/
+	$(INSTALL_PROGRAM) jcl.jar $(JPATH)/$(JCL_PATH)/
 run: $(TOP)/test.class all jcl
 	(cd $(TOP)/;chmod 755 *.class;\
 	LD_LIBRARY_PATH="$(target_alias)";\
@@ -81,7 +82,7 @@ $(TOP)/gnu/io/RXTXCommDriver.class $(TOP)/gnu/io/RXTXPort.class \
 
 $(TOP)/$(target_alias)/libParallel.la: $(TOP)/$(target_alias)/ParallelImp.lo
 	( cd $(TOP)/$(target_alias); \
-	$(LINK) -o libParallel.la -rpath $(libdir) $(<F); \
+	$(LINK) -o libParallel.la -rpath $(RXTX_PATH) $(<F); \
 	for I in .libs/*.so*;do cp $$I . ;done;)
 
 $(TOP)/$(target_alias)/ParallelImp.lo: $(srcdir)/src/ParallelImp.c \
@@ -92,7 +93,7 @@ $(TOP)/$(target_alias)/ParallelImp.lo: $(srcdir)/src/ParallelImp.c \
 
 $(TOP)/$(target_alias)/libSerial.la: $(TOP)/$(target_alias)/SerialImp.lo
 	( cd $(TOP)/$(target_alias); \
-	$(LINK) -o libSerial.la -rpath $(libdir) $(<F); \
+	$(LINK) -o libSerial.la -rpath $(RXTX_PATH) $(<F); \
 	for I in .libs/*.so*;do cp $$I . ;done;)
 
 $(TOP)/$(target_alias)/SerialImp.lo: $(srcdir)/src/SerialImp.c \

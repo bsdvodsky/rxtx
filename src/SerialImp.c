@@ -452,9 +452,9 @@ RXTXPort.isCD
                 false if TIOCM_CD is not set
    exceptions:  none
    comments:    CD stands for Carrier Detect
-
-"*pp* well, it works, there might ofcourse be a bug, but making DCD permanently
-+on fixed it for me so I don't care"
+                The following comment has been made...
+                "well, it works, there might ofcourse be a bug, but making DCD 
+                permanently on fixed it for me so I don't care"
 
 ----------------------------------------------------------*/
 JNIEXPORT jboolean JNICALL Java_gnu_io_RXTXPort_isCD( JNIEnv *env,
@@ -791,10 +791,17 @@ JNIEXPORT jint JNICALL Java_gnu_io_RXTXPort_nativeavailable( JNIEnv *env,
 /*----------------------------------------------------------
 RXTXPort.setflowcontrol
 
-   accept:      state (JNI_FALSE 0, JNI_TRUE 1)
-   perform:     set hardware flow control to state
+   accept:      flowmode 
+	FLOWCONTROL_NONE        none
+	FLOWCONTROL_RTSCTS_IN   hardware flow control
+	FLOWCONTROL_RTSCTS_OUT         ""
+	FLOWCONTROL_XONXOFF_IN  input software flow control
+	FLOWCONTROL_XONXOFF_OUT output software flow control
+   perform:     set flow control to flowmode
    return:      none
    exceptions:  IOException
+   comments:  there is no differentiation between input and output hardware
+              flow control
 ----------------------------------------------------------*/
 JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setflowcontrol( JNIEnv *env,
 	jobject jobj, jint flowmode )

@@ -1,6 +1,9 @@
 This package is not the result of one persons time.  Recognition is given
 to the following people for their assistance.
 
+Neil Darlow <neil@darlow.co.uk>
+   Flow Control Modifications/Implementation.
+
 Will Kassebaum <wrk@kassebaum.net>
    Work on rxtx.spec
 

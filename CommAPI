@@ -26,3 +26,60 @@ To use this version you must use javacomm20 or higher. I used "javacomm20-x86.ta
 
 Good Luck
 David J Atkinson
+
+-------------------------------
+
+Here are some examples of breaking RXTX.  Perhaps they will help
+people.
+
+for jdk-1.2 heres some example bad setups.  1.1.7 is essentially identical
+except for the library issues 1.2 creates (see .../java/jre/lib/i386
+below).
+
+mv /usr/local/java/jre/lib/i386/libSerial* /usr/local/lib
+Exception in thread "main" java.lang.UnsatisfiedLinkError: no Serial in
+java.library.path
+        at java.lang.ClassLoader.loadLibrary(Compiled Code)
+        at java.lang.Runtime.loadLibrary0(Compiled Code)
+        at java.lang.System.loadLibrary(Compiled Code)
+        at gnu.io.NativePort.<clinit>(NativePort.java:32)
+        at gnu.io.RXTXPort.<init>(Compiled Code)
+        at gnu.io.RXTXCommDriver.getCommPort(Compiled Code)
+        at javax.comm.CommPortIdentifier.open(Compiled Code)
+        at SerialPortDisplay.openBBPort(Compiled Code)
+        at SerialPortDisplay.<init>(Compiled Code)
+        at BlackBox.addPort(Compiled Code)
+        at BlackBox.main(Compiled Code)
+
+ok... lets fix it.
+mv /usr/local/lib/libSerial.* /usr/local/java/jre/lib/i386/
+
+lets break the proerties files
+vi /usr/local/java/lib/javax.comm.properties
+>place intention typo in the file<
+Caught java.lang.ClassNotFoundException: gnu.io.rXTXCommDriver while
+loading driver gnu.io.rXTXCommDriver
+No serial ports found!
+note------------------^
+vi /usr/local/java/lib/javax.comm.properties
+>fix typo<
+
+here's a working CLASSPATH lets mess it up.
+CLASSPATH=/usr/local/java/lib/jcl.jar:/usr/local/java/lib/comm.jar:.:/usr/local/java/lib/classes.zip
+
+lets not include comm.jar
+export
+CLASSPATH=/usr/local/java/lib/jcl.jar:.:/usr/local/java/lib/classes.zip
+[root@trent BlackBox]# java BlackBoxException in thread "main"
+java.lang.NoClassDefFoundError: javax/comm/CommPort
+
+lets not include jcl.jar
+export
+CLASSPATH=/usr/local/java/lib/comm.jar:.:/usr/local/java/lib/classes.zip
+Caught java.lang.ClassNotFoundException: gnu.io.RXTXCommDriver while
+loading driver gnu.io.RXTXCommDriver
+No serial ports found!
+
+
+Hope that helps.
+

@@ -72,8 +72,6 @@ For the methodical:
     jarvi@ezlink.com.  You may be able to continue by installing the latest
     GNU make package and then running ./autogen.sh; ./configure.
 
-    for cross-compiling see the file CROSSCOMPILE
-
     Win32 users:   The rxtx package has dropped win32 support.  Email 
                   jarvi@ezlink.com if you have an interest in developing it.
 
@@ -93,11 +91,15 @@ For the methodical:
     if your trying to build rxtx for commapi support you will need to
     have comm.jar in your classpath.  The Makefile looks in the
     environmental variable COMM_JAR_PATH and adds that to the classpath
-    so you don't have to edit the Makefile.
+    so you don't have to edit the Makefile.  i
+
+    Linux ppc users:  We have had reports that the jar files need to be unjarred
+    for the build to work.  If you figure out more concerning this, please let
+    us know. 
 
   example:  #set COMM_JAR_PATH=/usr/local/java/lib/comm.jar;export COMM_JAR_PATH
 
-    I realize that automake can make life hard.  You edit the Makefile and
+    We realize that automake can make life hard.  You edit the Makefile and
     automake regenerates it...  if the above paths (especially JAVANATINC)
     are pointing to the wrong place and you don't know how to work with the
     make files you may want to just add a symlink.

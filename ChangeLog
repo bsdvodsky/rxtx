@@ -1,3 +1,4 @@
+1.3-2   Apr 19, 1999  Flow Control corrections/implementation Neil Darlow
 1.3-2   Mar 27, 1999  When throwing exceptions, include the method name in the 
                       message string.  Douglas Lau
                       fixes for close() drop DSR and DTR call super.close()

@@ -1,5 +1,8 @@
 This is a devel release.  Little or know effort has been put into porting.
-the reduce code footprint should make porting easier though.
+the reduce code footprint should make porting easier though.  An effort has been
+made to point out areas of concern to people porting by #if defined (__linux__)
+in SerialImp.c/h.   RXTXCommDriver.java also contains port names which vary by
+OS.
 
 If you want to port rxtx to a new unix platform do the following.
 *IMPORTANT* you will probably need gnu make.
