@@ -546,6 +546,29 @@ JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setRTS( JNIEnv *env,
 	ioctl( fd, TIOCMSET, &result );
 	return;
 }
+/*----------------------------------------------------------
+RXTXPort.setDSR
+
+   accept:      state  flag to set/unset.
+   perform:     depends on the state flag
+                if true TIOCM_DSR is set
+                if false TIOCM_DSR is unset
+   return:      none
+   exceptions:  none
+   comments:    tcsetattr with c_cflag CRTS_IFLOW
+----------------------------------------------------------*/
+JNIEXPORT void JNICALL Java_gnu_io_RXTXPort_setDSR( JNIEnv *env,
+	jobject jobj, jboolean state ) 
+{
+	unsigned int result = 0;
+	int fd = get_java_fd( env, jobj );
+
+	ioctl( fd, TIOCMGET, &result );
+	if( state == JNI_TRUE ) result |= TIOCM_DSR;
+	else result &= ~TIOCM_DSR;
+	ioctl( fd, TIOCMSET, &result );
+	return;
+}
 
 
 /*----------------------------------------------------------

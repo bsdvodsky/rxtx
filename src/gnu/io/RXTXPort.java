@@ -162,6 +162,7 @@ final class RXTXPort extends SerialPort {
    public native boolean isDTR();
 	public native void setDTR( boolean state );
 	public native void setRTS( boolean state );
+	public native void setDSR( boolean state );
 	public native boolean isCTS();
 	public native boolean isDSR();
 	public native boolean isCD();
