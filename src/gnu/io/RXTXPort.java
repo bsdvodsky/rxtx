@@ -140,7 +140,7 @@ final public class RXTXPort extends SerialPort
 	    between threads so write threads can send output buffer empty
 	    from a pthread if need be.
 	*/
-  int eis = 0;
+  long eis = 0;
 	/** pid for lock files */
   int pid = 0;
 
