@@ -1122,16 +1122,16 @@ int ioctl(int fd, int request, ...) {
 	switch(request) {
 		case TCSBRK:
 			arg = va_arg( ap, int * );
-			return -ENOIOCTLCMD;;
+			goto fail;
 		case TCSBRKP:
 			arg = va_arg( ap, int * );
-			return -ENOIOCTLCMD;;
+			goto fail;
 		case TIOCGSOFTCAR:
 			arg = va_arg( ap, int * );
-			return -ENOIOCTLCMD;;
+			goto fail;
 		case TIOCSSOFTCAR:
 			arg = va_arg( ap, int * );
-			return -ENOIOCTLCMD;;
+			goto fail;
 		case TIOCMGET:
 			arg = va_arg( ap, int * );
 			GetCommModemStatus(tl[fd]->hComm, &dwStatus);
@@ -1157,10 +1157,10 @@ int ioctl(int fd, int request, ...) {
 		/* TIOCMIS, TIOCMBIC and TIOCMSET all do the same thing... */
 		case TIOCMBIS:
 			arg = va_arg( ap, int * );
-			return -ENOIOCTLCMD;;
+			goto fail;
 		case TIOCMBIC:
 			arg = va_arg( ap, int * );
-			return -ENOIOCTLCMD;;
+			goto fail;
 		case TIOCMSET:
 			arg = va_arg(ap, int *);
 			EscapeCommFunction(tl[fd]->hComm,
@@ -1171,34 +1171,34 @@ int ioctl(int fd, int request, ...) {
 		/* get the serial struct info from the underlying API */
 		case TIOCGSERIAL:
 			sstruct = va_arg(ap, struct serial_struct * );
-			return -ENOIOCTLCMD;;
+			goto fail;
 		/* set the serial struct info from the underlying API */
 		case TIOCSSERIAL:
 			arg = va_arg( ap, int * );
-			return -ENOIOCTLCMD;;
+			goto fail;
 		case TIOCSERCONFIG:
 		case TIOCSERGETLSR:
 			arg = va_arg( ap, int * );
-			return -ENOIOCTLCMD;;
+			goto fail;
 		case TIOCSERGSTRUCT:
 			astruct = va_arg(ap, struct async_struct *);
-			return -ENOIOCTLCMD;;
+			goto fail;
 		case TIOCSERGETMULTI:
 			mstruct = va_arg(ap, struct serial_multiport_struct *);
-			return -ENOIOCTLCMD;;
+			goto fail;
 		case TIOCSERSETMULTI:
 			mstruct = va_arg(ap, struct serial_multiport_struct *);
-			return -ENOIOCTLCMD;;
+			goto fail;
 		case TIOCMIWAIT:
 			arg = va_arg(ap, int *);
-			return -ENOIOCTLCMD;;
+			goto fail;
 		/*
 			On linux this fills a struct with all the line info
 			(data available, bytes sent, ...
 		*/
 		case TIOCGICOUNT:
 			sistruct= va_arg(ap, struct  serial_icounter_struct *);
-			return -ENOIOCTLCMD;;
+			goto fail;
 		/* abolete ioctls */
 		case TIOCSERGWILD:
 		case TIOCSERSWILD:
@@ -1208,23 +1208,29 @@ int ioctl(int fd, int request, ...) {
 		case FIONREAD: 
 			arg = va_arg(ap, int *);
 			ret = ClearCommError(tl[fd]->hComm, &ErrCode, &Stat);
-			if ( ret == 0 ) return -1;
+			if ( ret == 0 )
+			{
+				/* FIXME ? */
+				set_errno( EBADFD );
+				return -1;
+			}
 			*arg = (int) Stat.cbInQue;
-			/* FIXME ? */
-			set_errno( EBADFD );
 			break;
 
 		/* pending bytes to be sent */
 		case TIOCOUTQ:
 			arg = va_arg(ap, int *);
-			return -ENOIOCTLCMD;;
+			goto fail;
 		default:
 			printf("FIXME:  ioctl: unknown request: %#x\n",
 				request);
-			return -ENOIOCTLCMD;;
+			goto fail;
 	}
 	va_end(ap);
 	return 0;
+fail:
+	fprintf( stderr, "IOCTL( %i ) not implemented\n", request );
+	return -ENOIOCTLCMD;
 }
 
 /*----------------------------------------------------------
