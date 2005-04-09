@@ -143,6 +143,7 @@ struct preopened *preopened_port = NULL;
  * It will eventually be removed.
  * */
 #define RXTXPort(foo) Java_gnu_io_RXTXPort_ ## foo
+#define RXTXVersion(foo) Java_gnu_io_RXTXVersion_ ## foo
 #define RXTXCommDriver(foo) Java_gnu_io_RXTXCommDriver_ ## foo
 
 #if defined(__sun__) || defined(__hpux__)
@@ -4305,7 +4306,7 @@ end:
 }
 
 /*----------------------------------------------------------
-RXTXCommDriver.nativeGetVersion
+RXTXVersion.nativeGetVersion
 
    accept:      none
    perform:     return the current version 
@@ -4314,9 +4315,9 @@ RXTXCommDriver.nativeGetVersion
    comments:    This is used to avoid mixing versions of the .jar and
 		native library.
 		First introduced in rxtx-1.5-9
-		
+                Moved from RXTXCommDriver to RXTXVersion in rxtx-2.1-7
 ----------------------------------------------------------*/
-JNIEXPORT jstring JNICALL RXTXCommDriver (nativeGetVersion) (JNIEnv * env,
+JNIEXPORT jstring JNICALL RXTXVersion (nativeGetVersion) (JNIEnv * env,
 							     jclass jclazz)
 {
   return (*env)->NewStringUTF (env, "RXTX-2.0-7pre2");
