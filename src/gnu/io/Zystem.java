@@ -1,6 +1,6 @@
-/*-------------------------------------------------------------------------
-|   rxtx is a native interface to serial ports in java.
-|   Copyright 1997-2003 by Trent Jarvi taj@www.linux.org.uk.
+/*------------------------------------------------------------------------
+|   Zystem is a native interface for message reporting in java.
+|   Copyright 2002 by Trent Jarvi taj@www.linux.org.uk.
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Lesser General Public
@@ -50,40 +50,40 @@ import java.io.RandomAccessFile;
 
 public class Zystem
 {
-  public static final int SILENT_MODE = 0;
-  public static final int FILE_MODE = 1;
-  public static final int NET_MODE = 2;
-  public static final int MEX_MODE = 3;
-  public static final int PRINT_MODE = 4;
-  public static final int J2EE_MSG_MODE = 5;
-  public static final int J2SE_LOG_MODE = 6;
+	public static final int SILENT_MODE	= 0;
+	public static final int FILE_MODE	= 1;
+	public static final int NET_MODE	= 2;
+	public static final int MEX_MODE	= 3;
+	public static final int PRINT_MODE	= 4;
+	public static final int J2EE_MSG_MODE   = 5;
+ 	public static final int J2SE_LOG_MODE = 6;
 
-  static int mode;
+	static int mode;
 
-  static
-  {
-    /* 
-       The rxtxZystem library uses Python code and is not
-       included with RXTX.  A seperate library will be released
-       to avoid potential license conflicts.
+	static
+	{
+		/* 
+		The rxtxZystem library uses Python code and is not
+		included with RXTX.  A seperate library will be released
+		to avoid potential license conflicts.
 
-       Trent Jarvi taj@www.linux.org.uk
-     */
+		Trent Jarvi taj@www.linux.org.uk
+		*/
 
-    //System.loadLibrary( "rxtxZystem" );
-    mode = SILENT_MODE;
-  }
+		//System.loadLibrary( "rxtxZystem" );
+		mode = SILENT_MODE;
+	}
 
-  private static String target;
+	private static String target;
 
-  public Zystem (int m) throws UnSupportedLoggerException
-  {
-    mode = m;
-    startLogger ("asdf");
-  }
+	public Zystem( int m ) throws UnSupportedLoggerException
+	{
+		mode = m;
+		startLogger( "asdf" );
+	}
     /**
      * Constructor.
-     * Mode is taken from the java system property "gnu.io.log.mode". The available values are :<ul>
+     * Mode is taken from the java system property "javax.comm.log.mode". The available values are :<ul>
      * <li> SILENT_MODE No logging
      * <li> FILE_MODE log to file
      * <li> NET_MODE
@@ -95,7 +95,7 @@ public class Zystem
      */
   public Zystem () throws UnSupportedLoggerException
   {
-    String s = System.getProperty ("gnu.io.log.mode");
+    String s = System.getProperty ("javax.comm.log.mode");
     if (s != null)
       {
 	if ("SILENT_MODE".equals (s))
@@ -145,185 +145,185 @@ public class Zystem
     startLogger ("asdf");
   }
 
-  public void startLogger () throws UnSupportedLoggerException
-  {
-    if (mode == SILENT_MODE || mode == PRINT_MODE)
-      {
-	//nativeNetInit( );
-	return;
-      }
-    throw new UnSupportedLoggerException ("Target Not Allowed");
-  }
 
-  /*  accept the host or file to log to. */
+	public void startLogger( ) throws UnSupportedLoggerException
+	{
+		if ( mode == SILENT_MODE || mode == PRINT_MODE )
+		{
+			//nativeNetInit( );
+			return;
+		}
+		throw new UnSupportedLoggerException( "Target Not Allowed" );
+	}
 
-  public void startLogger (String t) throws UnSupportedLoggerException
-  {
-    target = t;
-    /*
-       if ( mode == NET_MODE )
-       {
-       nativeNetInit( );
-       }
-       if ( nativeInit( ) )
-       {
-       throw new UnSupportedLoggerException(
-       "Port initializion failed" );
-       }
-     */
-    return;
-  }
+	/*  accept the host or file to log to. */
 
-  public void finalize ()
-  {
-    /*
-       if ( mode == NET_MODE )
-       {
-       nativeNetFinalize( );
-       }
-       nativeFinalize();
-     */
-    mode = SILENT_MODE;
-    target = null;
-  }
+	public void startLogger( String t ) throws UnSupportedLoggerException
+	{
+		target = t;
+	/*
+		if ( mode == NET_MODE )
+		{
+			nativeNetInit( );
+		}
+		if ( nativeInit( ) )
+		{
+			throw new UnSupportedLoggerException(
+				"Port initializion failed" );
+		}
+	*/
+		return;
+	}
 
-  public void filewrite (String s)
-  {
-    try
-    {
-      RandomAccessFile w = new RandomAccessFile (target, "rw");;
-      w.seek (w.length ());
-      w.writeBytes (s);
-      w.close ();
-    } catch (Exception e)
-    {
-      System.out.println ("Debug output file write failed");
-    }
-  }
+	public void finalize()
+	{
+	/*
+		if ( mode == NET_MODE )
+		{
+			nativeNetFinalize( );
+		}
+		nativeFinalize();
+	*/
+		mode = SILENT_MODE;
+		target = null;
+	}
 
-  public boolean report (String s)
-  {
-    if (mode == NET_MODE)
-      {
-	//      return( nativeNetReportln( s ) );
-      }
-    else if (mode == PRINT_MODE)
-      {
-	System.out.println (s);
-	return (true);
-      }
-    else if (mode == MEX_MODE)
-      {
-	//      return( nativeMexReport( s ) );
-      }
-    else if (mode == SILENT_MODE)
-      {
-	return (true);
-      }
-    else if (mode == FILE_MODE)
-      {
-	filewrite (s);
-      }
-    else if (mode == J2EE_MSG_MODE)
-      {
-	return (false);
-      }
-    else if (mode == J2SE_LOG_MODE)
-      {
-	java.util.logging.Logger.getLogger ("gnu.io").fine (s);
-	return (true);
-      }
-    return (false);
-  }
+	public void filewrite( String s )
+	{
+		try {
+			RandomAccessFile w =
+				new RandomAccessFile( target, "rw" );;
+			w.seek( w.length() );
+			w.writeBytes( s );
+			w.close();
+		} catch ( Exception e ) {
+			System.out.println("Debug output file write failed");
+		}
+	}
 
-  public boolean reportln ()
-  {
-    boolean b;
-    if (mode == NET_MODE)
-      {
-	//      b= nativeNetReportln( "\n" );
-	//      return(b);
-      }
-    else if (mode == PRINT_MODE)
-      {
-	System.out.println ();
-	return (true);
-      }
-    else if (mode == MEX_MODE)
-      {
-	//      b = nativeMexReportln( "\n" );
-	//      return(b);
-      }
-    else if (mode == SILENT_MODE)
-      {
-	return (true);
-      }
-    else if (mode == FILE_MODE)
-      {
-	filewrite ("\n");
-      }
-    else if (mode == J2EE_MSG_MODE)
-      {
-	return (false);
-      }
-    return (false);
-  }
+	public boolean report( String s)
+	{
+		if ( mode == NET_MODE )
+		{
+		//	return( nativeNetReportln( s ) );
+		}
+		else if ( mode == PRINT_MODE )
+		{
+			System.out.println( s );
+			return( true );
+		}
+		else if ( mode == MEX_MODE )
+		{
+		//	return( nativeMexReport( s ) );
+		}
+		else if ( mode == SILENT_MODE )
+		{
+			return( true );
+		}
+		else if ( mode == FILE_MODE )
+		{
+			filewrite( s );
+		}
+		else if ( mode == J2EE_MSG_MODE )
+		{
+			return( false );
+		}
+		else if (mode == J2SE_LOG_MODE)
+		{
+			java.util.logging.Logger.getLogger ("javax.comm").fine (s);
+			return (true);
+		}
+		return( false );
+	}
 
-  public boolean reportln (String s)
-  {
-    boolean b;
-    if (mode == NET_MODE)
-      {
-	//      b= nativeNetReportln( s + "\n" );
-	//      return(b);
-      }
-    else if (mode == PRINT_MODE)
-      {
-	System.out.println (s);
-	return (true);
-      }
-    else if (mode == MEX_MODE)
-      {
-	//      b = nativeMexReportln( s + "\n" );
-	//      return(b);
-      }
-    else if (mode == SILENT_MODE)
-      {
-	return (true);
-      }
-    else if (mode == FILE_MODE)
-      {
-	filewrite (s + "\n");
-      }
-    else if (mode == J2EE_MSG_MODE)
-      {
-	return (false);
-      }
-    else if (mode == J2SE_LOG_MODE)
-      {
-	return (true);
-      }
-    return (false);
-  }
+	public boolean reportln( )
+	{
+		boolean b;
+		if ( mode == NET_MODE )
+		{
+		//	b= nativeNetReportln( "\n" );
+		//	return(b);
+		}
+		else if ( mode == PRINT_MODE )
+		{
+			System.out.println( );
+			return( true );
+		}
+		else if ( mode == MEX_MODE )
+		{
+		//	b = nativeMexReportln( "\n" );
+		//	return(b);
+		}
+		else if ( mode == SILENT_MODE )
+		{
+			return( true );
+		}
+		else if ( mode == FILE_MODE )
+		{
+			filewrite( "\n" );
+		}
+		else if ( mode == J2EE_MSG_MODE )
+		{
+			return( false );
+		}
+		return( false );
+	}
+
+	public boolean reportln( String s)
+	{
+		boolean b;
+		if ( mode == NET_MODE )
+		{
+		//	b= nativeNetReportln( s + "\n" );
+		//	return(b);
+		}
+		else if ( mode == PRINT_MODE )
+		{
+			System.out.println( s );
+			return( true );
+		}
+		else if ( mode == MEX_MODE )
+		{
+		//	b = nativeMexReportln( s + "\n" );
+		//	return(b);
+		}
+		else if ( mode == SILENT_MODE )
+		{
+			return( true );
+		}
+		else if ( mode == FILE_MODE )
+		{
+			filewrite( s + "\n" );
+		}
+		else if ( mode == J2EE_MSG_MODE )
+		{
+			return( false );
+		}
+		else if (mode == J2SE_LOG_MODE)
+		{
+			return (true);
+		}
+		return( false );
+	}
 
 /*
 	private native boolean nativeInit( );
 	private native void nativeFinalize();
 */
 
-  /* open and close the socket */
+	/* open and close the socket */
 /*
 	private native boolean nativeNetInit( );
 	private native void nativeNetFinalize();
 */
 
-  /* dumping to a remote machine */
+	/* dumping to a remote machine */
 /*
 	public native boolean nativeNetReport( String s );
 	public native boolean nativeNetReportln( String s );
 */
 
-  /*  specific to Matlab */
+	/*  specific to Matlab */
 /*
 	public native boolean nativeMexReport( String s );
 	public native boolean nativeMexReportln( String s );

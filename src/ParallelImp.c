@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
 |   rxtx is a native interface to serial ports in java.
-|   Copyright 1997-2003 by Trent Jarvi taj@www.linux.org.uk.
+|   Copyright 1997-2004 by Trent Jarvi taj@www.linux.org.uk
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Lesser General Public
@@ -56,10 +56,12 @@
         - Trent Jarvi
 */
 
-#if defined(__MWERKS__)		/* dima */
+#if defined(__MWERKS__)/* dima */
 #include "LPRPort.h"
 #else /* dima */
-#include "config.h"
+#ifndef WIN32
+#	include "config.h"
+#endif
 /* work around for libc5 */
 /*#include <typedefs_md.h>*/
 #include "gnu_io_LPRPort.h"
@@ -74,7 +76,7 @@
 #	include <sys/param.h>
 #else
 #	include <errno.h>
-#	include <win32termios.h>
+#	include "win32termios.h"
 #endif
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -108,7 +110,7 @@ extern int errno;
 
 #include "ParallelImp.h"
 
-#define LPRPort(foo) Java_javax_comm_LPRPort_ ## foo
+#define LPRPort(foo) Java_gnu_io_LPRPort_ ## foo
 /* #define DEBUG */
 
 /*----------------------------------------------------------
@@ -119,15 +121,14 @@ LPRPort.getOutputBufferFree
    exceptions: none
    comments:  have not seen how to do this in the kernel yet.
 ----------------------------------------------------------*/
-JNIEXPORT jint JNICALL LPRPort (getOutputBufferFree) (JNIEnv * env,
-						      jclass jclazz)
+JNIEXPORT jint JNICALL LPRPort(getOutputBufferFree)(JNIEnv *env,
+	jclass jclazz)
 {
-  printf ("getOutputBufferFree is not implemented yet\n");
+	printf("getOutputBufferFree is not implemented yet\n");
 
-  return (0);
+	return(0);
 
 }
-
 /*----------------------------------------------------------
 LPRPort.setLPRMode
    accept:     mode
@@ -143,25 +144,26 @@ LPRPort.setLPRMode
    exceptions: UnsupportedCommOperationException
    comments:
 ----------------------------------------------------------*/
-JNIEXPORT jboolean JNICALL LPRPort (setLPRMode) (JNIEnv * env,
-						 jclass jclazz, jint mode)
+JNIEXPORT jboolean JNICALL LPRPort(setLPRMode)(JNIEnv *env,
+	jclass jclazz, jint mode)
 {
-  switch (mode)
-    {
-    case LPT_MODE_ANY:
-      break;
-    case LPT_MODE_SPP:
-    case LPT_MODE_PS2:
-    case LPT_MODE_EPP:
-    case LPT_MODE_ECP:
-    case LPT_MODE_NIBBLE:
-    default:
-      throw_java_exception (env, UNSUPPORTED_COMM_OPERATION,
-			    "nativeSetSerialPortParams",
-			    "setLPRMode was unable to proced the requested \
-				mode");
-    }
-  return (JNI_TRUE);
+	switch(mode)
+	{
+		case LPT_MODE_ANY:
+			break;
+		case LPT_MODE_SPP:
+		case LPT_MODE_PS2:
+		case LPT_MODE_EPP:
+		case LPT_MODE_ECP:
+		case LPT_MODE_NIBBLE:
+		default:
+			throw_java_exception( env, UNSUPPORTED_COMM_OPERATION,
+				"nativeSetSerialPortParams",
+				"setLPRMode was unable to proced the requested \
+				mode"
+			);
+	}
+	return(JNI_TRUE);
 }
 
 #if defined (WIN32)
@@ -183,28 +185,21 @@ JNIEXPORT jboolean JNICALL LPRPort (setLPRMode) (JNIEnv * env,
 #define PARALLEL_BUSY            0x40
 #define PARALLEL_SELECTED        0x80
 
-int
-getWin32ParallelStatusFlags (int fd)
-{
-  int status = 0;
-  DWORD count;
-  if (!DeviceIoControl
-      ((HANDLE) fd, IOCTL_PAR_QUERY_INFORMATION, NULL, 0, &status,
-       sizeof (status), &count, 0) && count == 1)
-    {
-      YACK ();
-      return 0;
-    }
+int getWin32ParallelStatusFlags(int fd){
+	int status = 0;
+	DWORD count;
+	if(!DeviceIoControl( (HANDLE)fd, IOCTL_PAR_QUERY_INFORMATION, NULL,0, &status, sizeof(status), &count, 0) && count == 1){
+		YACK();
+		return 0;
+	}
 #ifdef DEBUG
-  printf ("getWin32ParallelStatusFlags: %d\n", status);
+	printf("getWin32ParallelStatusFlags: %d\n", status );
 #endif
-  return status;
+	return status;
 }
 
-jboolean
-getWin32ParallelStatus (int fd, int flag)
-{
-  return ((getWin32ParallelStatusFlags (fd) & flag) ? JNI_TRUE : JNI_FALSE);
+jboolean getWin32ParallelStatus(int fd, int flag){
+	return( (getWin32ParallelStatusFlags(fd) & flag) ? JNI_TRUE : JNI_FALSE);
 }
 #endif
 
@@ -216,23 +211,23 @@ LPRPort.isPaperOut
    exceptions:  none
    comments:    LP_NOPA    unchanged out-of-paper input, active high
 ----------------------------------------------------------*/
-JNIEXPORT jboolean JNICALL LPRPort (isPaperOut) (JNIEnv * env, jobject jobj)
+JNIEXPORT jboolean JNICALL LPRPort(isPaperOut)(JNIEnv *env,
+	jobject jobj)
 {
 
-  int fd = get_java_var (env, jobj, "fd", "I");
+	int fd = get_java_var( env, jobj,"fd","I" );
 #if defined (__linux__)
-  int status;
-  ioctl (fd, LPGETSTATUS, &status);
-  return (status & LP_NOPA ? JNI_TRUE : JNI_FALSE);
+	int status;
+	ioctl(fd, LPGETSTATUS,&status);
+	return( status & LP_NOPA ? JNI_TRUE : JNI_FALSE );
 #elif defined (WIN32)
-  return getWin32ParallelStatus (fd, PARALLEL_PAPER_EMPTY);
+	return getWin32ParallelStatus( fd, PARALLEL_PAPER_EMPTY); 
 #else
 /*  FIXME??  */
-  printf ("ParallelImp.c LPGETSTATUS not defined\n");
-  return (JNI_TRUE);
+	printf("ParallelImp.c LPGETSTATUS not defined\n");
+	return(JNI_TRUE);
 #endif
 }
-
 /*----------------------------------------------------------
 LPRPort.isPrinterBusy
    accept:      none
@@ -241,28 +236,27 @@ LPRPort.isPrinterBusy
    exceptions:  none
    comments:    LP_BUSY     inverted busy input, active high
 ----------------------------------------------------------*/
-JNIEXPORT jboolean JNICALL LPRPort (isPrinterBusy) (JNIEnv * env,
-						    jobject jobj)
+JNIEXPORT jboolean JNICALL LPRPort(isPrinterBusy)(JNIEnv *env,
+	jobject jobj)
 {
-  int fd = get_java_var (env, jobj, "fd", "I");
+	int fd = get_java_var( env, jobj,"fd","I" );
+	int status;
 #if defined (__linux__)
-  int status;
-  ioctl (fd, LPGETSTATUS, &status);
+	ioctl(fd, LPGETSTATUS, &status);
 #elif defined (WIN32)
-  return getWin32ParallelStatus (fd, PARALLEL_BUSY);
+	return getWin32ParallelStatus( fd, PARALLEL_BUSY); 
 #else
 /*  FIXME??  */
-  printf ("ParallelImp.c LPGETSTATUS not defined\n");
+	printf("ParallelImp.c LPGETSTATUS not defined\n");
 #endif
 #if defined(__linux__)
-  return (status & LP_BUSY ? JNI_TRUE : JNI_FALSE);
+	return( status & LP_BUSY ? JNI_TRUE : JNI_FALSE );
 #endif
 #if defined(__FreeBSD__)
-  return (status & EBUSY ? JNI_TRUE : JNI_FALSE);
+	return( status & EBUSY ? JNI_TRUE : JNI_FALSE );
 #endif
-  return (JNI_FALSE);
+	return(JNI_FALSE);
 }
-
 /*----------------------------------------------------------
 LPRPort.isPrinterError
    accept:      none
@@ -271,26 +265,26 @@ LPRPort.isPrinterError
    exceptions:  none
    comments:    LP_ERR   unchanged error input, active low
 ----------------------------------------------------------*/
-JNIEXPORT jboolean JNICALL LPRPort (isPrinterError) (JNIEnv * env,
-						     jobject jobj)
+JNIEXPORT jboolean JNICALL LPRPort(isPrinterError)(JNIEnv *env,
+	jobject jobj)
 {
-  int fd = get_java_var (env, jobj, "fd", "I");
+	int fd = get_java_var( env, jobj,"fd","I" );
 #if defined (__linux__)
-  int status;
-  ioctl (fd, LPGETSTATUS, &status);
-  return (status & LP_ERR ? JNI_TRUE : JNI_FALSE);
+	int status;
+	ioctl(fd, LPGETSTATUS, &status);
+	return( status & LP_ERR ? JNI_TRUE : JNI_FALSE );
 #elif defined (WIN32)
-  return getWin32ParallelStatus (fd, PARALLEL_PAPER_EMPTY |
-				 PARALLEL_OFF_LINE |
-				 PARALLEL_POWER_OFF |
-				 PARALLEL_NOT_CONNECTED | PARALLEL_BUSY);
+	return getWin32ParallelStatus( fd, PARALLEL_PAPER_EMPTY | 
+									   PARALLEL_OFF_LINE |
+									   PARALLEL_POWER_OFF |
+									   PARALLEL_NOT_CONNECTED |
+									   PARALLEL_BUSY); 
 #else
 /*  FIXME??  */
-  printf ("ParallelImp.c LPGETSTATUS not defined\n");
-  return (JNI_FALSE);
+	printf("ParallelImp.c LPGETSTATUS not defined\n");
+	return(JNI_FALSE);
 #endif
 }
-
 /*----------------------------------------------------------
 LPRPort.isPrinterSelected
    accept:      none
@@ -299,23 +293,22 @@ LPRPort.isPrinterSelected
    exceptions:  none
    comments:    LP_SELEC   unchanged selected input, active high
 ----------------------------------------------------------*/
-JNIEXPORT jboolean JNICALL LPRPort (isPrinterSelected) (JNIEnv * env,
-							jobject jobj)
+JNIEXPORT jboolean JNICALL LPRPort(isPrinterSelected)(JNIEnv *env,
+	jobject jobj)
 {
-  int fd = get_java_var (env, jobj, "fd", "I");
+	int fd = get_java_var( env, jobj,"fd","I" );
 #if defined (__linux__)
-  int status;
-  ioctl (fd, LPGETSTATUS, &status);
-  return (status & LP_SELEC ? JNI_TRUE : JNI_FALSE);
+	int status;
+	ioctl(fd, LPGETSTATUS, &status);
+	return( status & LP_SELEC ? JNI_TRUE : JNI_FALSE );
 #elif defined (WIN32)
-  return getWin32ParallelStatus (fd, PARALLEL_SELECTED);
+	return getWin32ParallelStatus( fd, PARALLEL_SELECTED); 
 #else
 /*  FIXME??  */
-  printf ("ParallelImp.c LPGETSTATUS not defined\n");
-  return (JNI_FALSE);
+	printf("ParallelImp.c LPGETSTATUS not defined\n");
+	return(JNI_FALSE);
 #endif
 }
-
 /*----------------------------------------------------------
 LPRPort.isPrinterTimedOut
    accept:       none
@@ -326,22 +319,22 @@ LPRPort.isPrinterTimedOut
    comments:     Is this documented right in the javadocs?
 	         not sure this is correct FIXME
 ----------------------------------------------------------*/
-JNIEXPORT jboolean JNICALL LPRPort (isPrinterTimedOut) (JNIEnv * env,
-							jobject jobj)
+JNIEXPORT jboolean JNICALL LPRPort(isPrinterTimedOut)(JNIEnv *env,
+	jobject jobj)
 {
 #if defined(__linux__)
-  int fd = get_java_var (env, jobj, "fd", "I");
-  int status;
-  ioctl (fd, LPGETSTATUS, &status);
-  return (status & LP_BUSY ? JNI_TRUE : JNI_FALSE);
+	int fd = get_java_var( env, jobj,"fd","I" );
+	int status;
+	ioctl(fd, LPGETSTATUS, &status);
+	return( status & LP_BUSY ? JNI_TRUE : JNI_FALSE );
 #endif
 #if defined(__FreeBSD__)
-  printf ("ParallelImp.c LPGETSTATUS not defined\n");
-  /*
-     return( status & EBUSY ? JNI_TRUE : JNI_FALSE );
-   */
+	printf("ParallelImp.c LPGETSTATUS not defined\n");
+	/*
+	return( status & EBUSY ? JNI_TRUE : JNI_FALSE );
+	*/
 #endif
-  return (JNI_FALSE);
+	return( JNI_FALSE );
 }
 
 
@@ -353,17 +346,17 @@ LPRPort.Initialize
    return:      none
    comments:    lots of reading to do here. FIXME
 ----------------------------------------------------------*/
-JNIEXPORT void JNICALL LPRPort (Initialize) (JNIEnv * env, jclass jclazz)
+JNIEXPORT void JNICALL LPRPort(Initialize)( JNIEnv *env,
+	jclass jclazz )
 {
-  /* This bit of code checks to see if there is a signal handler installed
-     for SIGIO, and installs SIG_IGN if there is not.  This is necessary
-     for the native threads jdk, but we don't want to do it with green
-     threads, because it slows things down.  Go figure. */
+	/* This bit of code checks to see if there is a signal handler installed
+	   for SIGIO, and installs SIG_IGN if there is not.  This is necessary
+		for the native threads jdk, but we don't want to do it with green
+		threads, because it slows things down.  Go figure. */
 #if !defined(WIN32)
-  struct sigaction handler;
-  sigaction (SIGIO, NULL, &handler);
-  if (!handler.sa_handler)
-    signal (SIGIO, SIG_IGN);
+	struct sigaction handler;
+	sigaction( SIGIO, NULL, &handler );
+	if( !handler.sa_handler ) signal( SIGIO, SIG_IGN );
 #endif /* !WIN32 */
 }
 
@@ -380,25 +373,23 @@ LPRPort.open
                 device file or bios has the device disabled.
 		FIXME  Lock Files?
 ----------------------------------------------------------*/
-JNIEXPORT jint JNICALL LPRPort (open) (JNIEnv * env, jobject jobj,
-				       jstring jstr)
+JNIEXPORT jint JNICALL LPRPort(open)( JNIEnv *env, jobject jobj,
+	jstring jstr )
 {
-  /*struct termios ttyset; */
-  const char *filename = (*env)->GetStringUTFChars (env, jstr, 0);
+	/*struct termios ttyset;*/
+	const char *filename = (*env)->GetStringUTFChars( env, jstr, 0 );
 #ifdef WIN32
-  int fd = (int) CreateFile (filename, GENERIC_READ | GENERIC_WRITE, 0, 0,
-			     OPEN_EXISTING, 0, 0);
+	int fd = (int)CreateFile( filename, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, 0, 0 );
 #else
-  int fd = open (filename, O_RDWR | O_NONBLOCK);
+	int fd = open( filename, O_RDWR | O_NONBLOCK );
 #endif
-  (*env)->ReleaseStringUTFChars (env, jstr, NULL);
-  if (fd < 0)
-    goto fail;
-  return (jint) fd;
+	(*env)->ReleaseStringUTFChars( env, jstr, NULL );
+	if( fd < 0 ) goto fail;
+	return (jint)fd;
 
 fail:
-  throw_java_exception_system_msg (env, PORT_IN_USE_EXCEPTION, "open");
-  return -1;
+	throw_java_exception_system_msg( env, PORT_IN_USE_EXCEPTION, "open" );
+	return -1;
 }
 
 
@@ -410,16 +401,17 @@ LPRPort.nativeClose
    return:      none
    exceptions:  none
 ----------------------------------------------------------*/
-JNIEXPORT void JNICALL LPRPort (nativeClose) (JNIEnv * env, jobject jobj)
+JNIEXPORT void JNICALL LPRPort(nativeClose)( JNIEnv *env,
+	jobject jobj )
 {
-  int fd = get_java_var (env, jobj, "fd", "I");
+	int fd = get_java_var( env, jobj,"fd","I" );
 
 #ifdef WIN32
-  CloseHandle ((HANDLE) fd);
+	CloseHandle( (HANDLE)fd );
 #else
-  close (fd);
+	close( fd );
 #endif
-  return;
+	return;
 }
 
 /*----------------------------------------------------------
@@ -430,22 +422,19 @@ LPRPort.writeByte
    return:      none
    exceptions:  IOException
 ----------------------------------------------------------*/
-JNIEXPORT void JNICALL LPRPort (writeByte) (JNIEnv * env,
-					    jobject jobj, jint ji)
+JNIEXPORT void JNICALL LPRPort(writeByte)( JNIEnv *env,
+	jobject jobj, jint ji )
 {
-  unsigned char byte = (unsigned char) ji;
-  int fd = get_java_var (env, jobj, "fd", "I");
+	unsigned char byte = (unsigned char)ji;
+	int fd = get_java_var( env, jobj,"fd","I" );
 
 #ifdef WIN32
-  DWORD countWritten;		/* Fixme, should be a loop until all is written */
-  if (WriteFile
-      ((HANDLE) fd, &byte, sizeof (unsigned char), &countWritten, NULL) < 0)
-    return;
+	DWORD countWritten; /* Fixme, should be a loop until all is written */
+	if( WriteFile( (HANDLE)fd, &byte, sizeof( unsigned char ), &countWritten, NULL ) < 0 ) return;
 #else
-  if (write (fd, &byte, sizeof (unsigned char)) >= 0)
-    return;
+	if( write( fd, &byte, sizeof( unsigned char ) ) >= 0 ) return;
 #endif
-  throw_java_exception_system_msg (env, IO_EXCEPTION, "writeByte");
+	throw_java_exception_system_msg( env, IO_EXCEPTION, "writeByte" );
 }
 
 
@@ -459,58 +448,52 @@ LPRPort.writeArray
    return:      none
    exceptions:  IOException
 ----------------------------------------------------------*/
-JNIEXPORT void JNICALL LPRPort (writeArray) (JNIEnv * env,
-					     jobject jobj, jbyteArray jbarray,
-					     jint offset, jint count)
+JNIEXPORT void JNICALL LPRPort(writeArray)( JNIEnv *env,
+	jobject jobj, jbyteArray jbarray, jint offset, jint count )
 {
 #ifdef WIN32
-  DWORD countWritten;		/* Fixme, should be a loop until all is written */
-  COMMTIMEOUTS timeouts;
-  int errorCount = 0;
+	DWORD countWritten; /* Fixme, should be a loop until all is written */
+	COMMTIMEOUTS timeouts;
+	int errorCount = 0;
 #endif
-  int fd = get_java_var (env, jobj, "fd", "I");
-  jbyte *body = (*env)->GetByteArrayElements (env, jbarray, 0);
-  unsigned char *bytes = (unsigned char *) malloc (count);
-  int i;
-  for (i = 0; i < count; i++)
-    bytes[i] = body[i + offset];
-  (*env)->ReleaseByteArrayElements (env, jbarray, body, 0);
+	int fd = get_java_var( env, jobj,"fd","I" );
+	jbyte *body = (*env)->GetByteArrayElements( env, jbarray, 0 );
+	unsigned char *bytes = (unsigned char *)malloc( count );
+	int i;
+	for( i = 0; i < count; i++ ) bytes[ i ] = body[ i + offset ];
+	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
 #ifdef WIN32
-  /*
-     we set a timeout because all calls are sequentiell (also with asynchron)
-     this means that the default timeout of unlimited
-     blocks all calls (also close and status request) if the device is down
-   */
-  GetCommTimeouts ((HANDLE) fd, &timeouts);
-  timeouts.WriteTotalTimeoutMultiplier = 0;
-  timeouts.WriteTotalTimeoutConstant = 2000;	/*  2000 is the min value for the default Windows NT and Windows 2000 driver */
-  SetCommTimeouts ((HANDLE) fd, &timeouts);
-  while (count > 0)
-    {
-      if (!WriteFile ((HANDLE) fd, bytes, count, &countWritten, NULL)
-	  && countWritten == 0)
-	{
-	  /*
-	     this are 20 * 2 seconds, in this time a printer (or other parallel device)
-	     should solv all problems like buffer full, etc
-	   */
-	  if (errorCount++ < 20)
-	    {
-	      Sleep (20);	/* make a small pause to execute all other requests in all other threads */
-	      continue;
-	    }
-	  throw_java_exception_system_msg (env, IO_EXCEPTION, "writeArray");
-	  break;
+	/*
+	we set a timeout because all calls are sequentiell (also with asynchron)
+	 this means that the default timeout of unlimited
+	blocks all calls (also close and status request) if the device is down
+	*/
+	GetCommTimeouts( (HANDLE)fd, &timeouts );
+	timeouts.WriteTotalTimeoutMultiplier = 0;
+	timeouts.WriteTotalTimeoutConstant = 2000; /*  2000 is the min value for the default Windows NT and Windows 2000 driver */
+	SetCommTimeouts( (HANDLE)fd, &timeouts );
+	while( count > 0 ){
+		if(!WriteFile( (HANDLE)fd, bytes, count, &countWritten, NULL ) && countWritten == 0){
+			/*
+			this are 20 * 2 seconds, in this time a printer (or other parallel device)
+			should solv all problems like buffer full, etc
+			*/
+			if(errorCount++ < 20){
+				Sleep( 20 ); /* make a small pause to execute all other requests in all other threads */
+				continue;
+			}
+			throw_java_exception_system_msg( env, IO_EXCEPTION, "writeArray" );
+			break;
+		}
+		errorCount = 0;
+		bytes += countWritten;
+		count -= countWritten;
 	}
-      errorCount = 0;
-      bytes += countWritten;
-      count -= countWritten;
-    }
 #else
-  if (write (fd, bytes, count) < 0)
-    throw_java_exception_system_msg (env, IO_EXCEPTION, "writeArray");
+	if( write( fd, bytes, count ) < 0 )
+		throw_java_exception_system_msg( env, IO_EXCEPTION, "writeArray" );
 #endif
-  free (bytes);
+	free( bytes );
 }
 
 
@@ -530,56 +513,47 @@ read_byte_array
    comments:    According to the Communications API spec, a receive threshold
                 of 1 is the same as having the threshold disabled.
 ----------------------------------------------------------*/
-int
-read_byte_array (int fd, unsigned char *buffer, int length, int threshold,
-		 int timeout)
+int read_byte_array( int fd, unsigned char *buffer, int length, int threshold,
+	int timeout )
 {
-  int ret, left, bytes = 0;
-  fd_set rfds;
-  struct timeval sleep;
+	int ret, left, bytes = 0;
+	fd_set rfds;
+	struct timeval sleep;
 
-  FD_ZERO (&rfds);
-  FD_SET (fd, &rfds);
-  sleep.tv_sec = timeout / 1000;
-  sleep.tv_usec = 1000 * (timeout % 1000);
-  left = length;
+	FD_ZERO( &rfds );
+	FD_SET( fd, &rfds );
+	sleep.tv_sec = timeout / 1000;
+	sleep.tv_usec = 1000 * ( timeout % 1000 );
+	left = length;
 
-  while (bytes < length && bytes < threshold)
-    {
-      if (timeout > 0)
+	while( bytes < length && bytes < threshold )
 	{
-	  /* FIXME: In Linux, select updates the timeout automatically, so
-	     other OSes will need to update it manually if they want to have
-	     the same behavior.  For those OSes, timeouts will occur after no
-	     data AT ALL is received for the timeout duration.  No big deal. */
-	  do
-	    {
-	      ret = select (fd + 1, &rfds, NULL, NULL, &sleep);
-	    }
-	  while (ret < 0 && errno == EINTR);
-	  if (ret == 0)
-	    break;
-	  if (ret < 0)
-	    return -1;
-	}
+		if( timeout > 0 )
+		{
+         /* FIXME: In Linux, select updates the timeout automatically, so
+            other OSes will need to update it manually if they want to have
+            the same behavior.  For those OSes, timeouts will occur after no
+            data AT ALL is received for the timeout duration.  No big deal. */
+			do {
+				ret=select( fd + 1, &rfds, NULL, NULL, &sleep );
+			} while(ret < 0 && errno ==EINTR);
+			if( ret == 0 ) break;
+			if( ret < 0 ) return -1;
+		}
 #if defined(WIN32)
-      if (!ReadFile
-	  ((HANDLE) fd, buffer + bytes, left, (DWORD *) & ret, NULL))
-	{
-	  YACK ();
-	  ret = -1;
-	}
+		if(!ReadFile( (HANDLE)fd, buffer + bytes, left, (DWORD *)&ret, NULL )){
+			YACK();
+			ret = -1;
+		}
 #else
-      ret = read (fd, buffer + bytes, left);
+		ret = read( fd, buffer + bytes, left );
 #endif
-      if (ret == 0)
-	break;
-      if (ret < 0)
-	return -1;
-      bytes += ret;
-      left -= ret;
-    }
-  return bytes;
+		if( ret == 0 ) break;
+		if( ret < 0 ) return -1;
+		bytes += ret;
+		left -= ret;
+	}
+	return bytes;
 }
 
 
@@ -591,22 +565,23 @@ LPRPort.readByte
    return:      The byte read
    exceptions:  IOException
 ----------------------------------------------------------*/
-JNIEXPORT jint JNICALL LPRPort (readByte) (JNIEnv * env, jobject jobj)
+JNIEXPORT jint JNICALL LPRPort(readByte)( JNIEnv *env,
+	jobject jobj )
 {
-  int bytes, fd, timeout;
-  unsigned char buffer[1];
+	int bytes, fd, timeout;
+	unsigned char buffer[ 1 ];
 
-  fd = get_java_var (env, jobj, "fd", "I");
-  timeout = get_java_var (env, jobj, "timeout", "I");
+	fd = get_java_var( env, jobj,"fd","I" );
+	timeout = get_java_var( env, jobj, "timeout","I");
 
-  bytes = read_byte_array (fd, buffer, 1, 1, timeout);
-  if (bytes < 0)
-    {
-      throw_java_exception_system_msg (env, IO_EXCEPTION, "readByte");
+	bytes = read_byte_array( fd, buffer, 1, 1, timeout );
+	if( bytes < 0 )
+	{
+		throw_java_exception_system_msg( env, IO_EXCEPTION, "readByte" );
 
-      return -1;
-    }
-  return (bytes ? (jint) buffer[0] : -1);
+		return -1;
+	}
+	return (bytes ? (jint)buffer[ 0 ] : -1);
 }
 
 
@@ -620,47 +595,46 @@ LPRPort.readArray
    exceptions:   IOException
    comments:     throws IOException if asked to read > SSIZE_MAX
 ----------------------------------------------------------*/
-JNIEXPORT jint JNICALL LPRPort (readArray) (JNIEnv * env,
-					    jobject jobj, jbyteArray jbarray,
-					    jint offset, jint length)
+JNIEXPORT jint JNICALL LPRPort(readArray)( JNIEnv *env,
+	jobject jobj, jbyteArray jbarray, jint offset, jint length )
 {
-  int bytes, i, fd, threshold, timeout;
-  jbyte *body;
-  unsigned char *buffer;
-  fd = get_java_var (env, jobj, "fd", "I");
-  threshold = get_java_var (env, jobj, "threshold", "I");
-  timeout = get_java_var (env, jobj, "threshold", "I");
+	int bytes, i, fd, threshold, timeout;
+	jbyte *body;
+	unsigned char *buffer;
+	fd = get_java_var( env, jobj,"fd","I" );
+	threshold = get_java_var( env, jobj,"threshold","I" );
+	timeout = get_java_var( env, jobj,"threshold","I" );
 
-  if (length < 1 || length > SSIZE_MAX)
-    {
-      throw_java_exception (env, IO_EXCEPTION, "readArray", "Invalid length");
-      return -1;
-    }
+	if( (size_t) length < 1 || (size_t) length > SSIZE_MAX )
+	{
+		throw_java_exception( env, IO_EXCEPTION, "readArray",
+			"Invalid length" );
+		return -1;
+	}
 
-  buffer = (unsigned char *) malloc (sizeof (unsigned char) * length);
-  if (buffer == 0)
-    {
-      throw_java_exception (env, IO_EXCEPTION, "readArray",
-			    "Unable to allocate buffer");
+	buffer = (unsigned char *)malloc( sizeof( unsigned char ) * length );
+	if( buffer == 0 )
+	{
+		throw_java_exception( env, IO_EXCEPTION, "readArray",
+			"Unable to allocate buffer" );
 
-      return -1;
-    }
+		return -1;
+	}
 
-  bytes = read_byte_array (fd, buffer, length, threshold, timeout);
-  if (bytes < 0)
-    {
-      free (buffer);
-      throw_java_exception_system_msg (env, IO_EXCEPTION, "readArray");
+	bytes = read_byte_array( fd, buffer, length, threshold, timeout );
+	if( bytes < 0 )
+	{
+		free( buffer );
+		throw_java_exception_system_msg( env, IO_EXCEPTION, "readArray" );
 
-      return -1;
-    }
+		return -1;
+	}
 
-  body = (*env)->GetByteArrayElements (env, jbarray, 0);
-  for (i = 0; i < bytes; i++)
-    body[i + offset] = buffer[i];
-  (*env)->ReleaseByteArrayElements (env, jbarray, body, 0);
-  free (buffer);
-  return (bytes ? bytes : -1);
+	body = (*env)->GetByteArrayElements( env, jbarray, 0 );
+	for( i = 0; i < bytes; i++ ) body[ i + offset ] = buffer[ i ];
+	(*env)->ReleaseByteArrayElements( env, jbarray, body, 0 );
+	free( buffer );
+	return (bytes ? bytes : -1);
 }
 
 
@@ -673,10 +647,11 @@ LPRPort.nativeavailable
                 -1 on error
    exceptions:  none
 ----------------------------------------------------------*/
-JNIEXPORT jint JNICALL LPRPort (nativeavailable) (JNIEnv * env, jobject jobj)
+JNIEXPORT jint JNICALL LPRPort(nativeavailable)( JNIEnv *env,
+	jobject jobj )
 {
-  int fd = get_java_var (env, jobj, "fd", "I");
-  int result;
+	int fd = get_java_var( env, jobj,"fd","I" );
+	int result;
 /*
 	char message[80];
 
@@ -689,36 +664,35 @@ JNIEXPORT jint JNICALL LPRPort (nativeavailable) (JNIEnv * env, jobject jobj)
 
     This turns out to be true on Solaris also.  taj.
 */
-#ifdef FIORDCHK			/* __unixware__ __sun__ probably others */
-  result = ioctl (fd, FIORDCHK, 0);
+#ifdef FIORDCHK  /* __unixware__ __sun__ probably others */
+	result = ioctl(fd, FIORDCHK, 0);
 #else
-  if (ioctl (fd, FIONREAD, &result) < 0)
-    {
-      goto fail;
-    }
+	if( ioctl( fd, FIONREAD, &result ) < 0 )
+	{
+		goto fail;
+	}
 #endif /* FIORDCHK */
-  if (result == -1)
-    {
-      goto fail;
-    }
-  if (result)
-    {
+	if (result == -1) {
+		goto fail;
+	}
+	if( result )
+	{
 /*		sprintf(message, "    nativeavailable: FIORDCHK result %d, \
 				errno %d\n", result , result == -1 ? errno : 0);
 		report( message );
 */
-    }
+	}
 /*
 	LEAVE( "LPRPort:nativeavailable" );
 */
-  return (jint) result;
+	return (jint)result;
 fail:
 /*
 	report("LPRPort:nativeavailable:  ioctl() failed\n");
 	LEAVE( "LPRPort:nativeavailable" );
 */
-  throw_java_exception_system_msg (env, IO_EXCEPTION, "nativeavailable");
-  return (jint) result;
+	throw_java_exception_system_msg( env, IO_EXCEPTION, "nativeavailable" );
+	return (jint)result;
 }
 
 
@@ -730,11 +704,11 @@ LPRPort.setHWFC
    return:      none
    exceptions:  IOException
 ----------------------------------------------------------*/
-JNIEXPORT void JNICALL LPRPort (setHWFC) (JNIEnv * env,
-					  jobject jobj, jboolean state)
+JNIEXPORT void JNICALL LPRPort(setHWFC)( JNIEnv *env,
+	jobject jobj, jboolean state )
 {
-  /* int fd = get_java_var( env, jobj,"fd","I" ); */
-  return;
+	/* int fd = get_java_var( env, jobj,"fd","I" ); */
+	return;
 }
 
 /*----------------------------------------------------------
@@ -756,45 +730,43 @@ struct lp_stats
 };
 
 ----------------------------------------------------------*/
-JNIEXPORT void JNICALL LPRPort (eventLoop) (JNIEnv * env, jobject jobj)
+JNIEXPORT void JNICALL LPRPort(eventLoop)( JNIEnv *env,
+	jobject jobj )
 {
-  int fd, ret;
-  unsigned int pflags;
-  fd_set rfds;
-  struct timeval sleep;
-  jboolean interrupted = 0;
+	int fd, ret;
+	unsigned int pflags = 0;
+	fd_set rfds;
+	struct timeval sleep;
+	jboolean interrupted = 0;
 
-  fd = get_java_var (env, jobj, "fd", "I");
+	fd = get_java_var( env, jobj,"fd","I" );
 
-  interrupted = is_interrupted (env, jobj);
+	interrupted = is_interrupted(env, jobj);
 
-  FD_ZERO (&rfds);
-  while (!interrupted)
-    {
-      FD_SET (fd, &rfds);
-      /* Check every 1 second, or on receive data */
-      sleep.tv_sec = 1;
-      sleep.tv_usec = 0;
-      do
+	FD_ZERO( &rfds );
+	while( !interrupted )
 	{
-	  ret = select (fd + 1, &rfds, NULL, NULL, &sleep);
-	}
-      while (ret < 0 && errno == EINTR);
-      if (ret < 0)
-	break;
-      interrupted = is_interrupted (env, jobj);
-      if (interrupted)
-	{
-	  return;
-	}
+		FD_SET( fd, &rfds );
+		/* Check every 1 second, or on receive data */
+		sleep.tv_sec = 1;	
+		sleep.tv_usec = 0;
+		do {
+			ret = select( fd + 1, &rfds, NULL, NULL, &sleep );
+		}
+		while (ret < 0 && errno == EINTR);
+		if( ret < 0 ) break;
+		interrupted = is_interrupted(env, jobj);
+		if(interrupted) {
+			return;
+		}
 
 #if defined(LPGETSTATUS)
-      ioctl (fd, LPGETSTATUS, &pflags);
+		ioctl( fd, LPGETSTATUS, &pflags );
 #elif defined(WIN32)
-      pflags = getWin32ParallelStatusFlags (fd);
+		pflags = getWin32ParallelStatusFlags(fd);
 #else
-      /*  FIXME??  */
-      printf ("ParallelImp.c LPGETSTATUS is undefined!\n");
+	/*  FIXME??  */
+	printf("ParallelImp.c LPGETSTATUS is undefined!\n");
 #endif
 
 /*
@@ -803,14 +775,14 @@ JNIEXPORT void JNICALL LPRPort (eventLoop) (JNIEnv * env, jobject jobj)
 */
 
 #if defined(PARALLEL_BUSY)
-      if (pflags & PARALLEL_BUSY)
-	send_event (env, jobj, PAR_EV_ERROR, JNI_TRUE);
+		if (pflags & PARALLEL_BUSY)
+			send_event( env, jobj, PAR_EV_ERROR, JNI_TRUE );
 #elif defined(LP_BUSY)
-      if (pflags & LP_BUSY)	/* inverted input, active high */
-	send_event (env, jobj, PAR_EV_ERROR, JNI_TRUE);
+		if (pflags&LP_BUSY)    /* inverted input, active high */
+			send_event( env, jobj, PAR_EV_ERROR, JNI_TRUE );
 #elif defined(EBUSY)
-      if (pflags & EBUSY)	/* inverted input, active high */
-	send_event (env, jobj, PAR_EV_ERROR, JNI_TRUE);
+		if (pflags&EBUSY)    /* inverted input, active high */
+			send_event( env, jobj, PAR_EV_ERROR, JNI_TRUE );
 #endif /* EBUSY LP_BUSY */
 /*  FIXME  this has moved into the ifdef __kernel__?  Need to get the
            posix documentation on this.
@@ -820,58 +792,51 @@ JNIEXPORT void JNICALL LPRPort (eventLoop) (JNIEnv * env, jobject jobj)
 
 
 #if defined (__linux__)
-      /* unchanged input, active low */
-      if (pflags & LP_NOPA)	/* unchanged input, active high */
-	send_event (env, jobj, PAR_EV_ERROR, 1);
-      if (pflags & LP_SELEC)	/* unchanged input, active high */
-	send_event (env, jobj, PAR_EV_ERROR, 1);
-      if (pflags & LP_ERR)	/* unchanged input, active low */
-	send_event (env, jobj, PAR_EV_ERROR, 1);
-#elif defined ( WIN32 )
-      if (LPRPort (isPaperOut) (env, jobj))
-	send_event (env, jobj, PAR_EV_ERROR, 1);
-      if (LPRPort (isPrinterSelected) (env, jobj))
-	send_event (env, jobj, PAR_EV_ERROR, 1);
-      if (LPRPort (isPrinterError) (env, jobj))
-	send_event (env, jobj, PAR_EV_ERROR, 1);
+		/* unchanged input, active low */
+		if (pflags&LP_NOPA)   /* unchanged input, active high */
+			send_event( env, jobj, PAR_EV_ERROR, 1 );
+		if (pflags&LP_SELEC)  /* unchanged input, active high */
+			send_event( env, jobj, PAR_EV_ERROR, 1 );
+		if (pflags&LP_ERR)  /* unchanged input, active low */
+			send_event( env, jobj, PAR_EV_ERROR, 1 );
 #else
-      /*  FIXME??  */
-      printf ("ParallelImp.c LPGETSTATUS is undefined!\n");
+	/*  FIXME??  */
+	printf("ParallelImp.c LPGETSTATUS is undefined!\n");
 #endif
-      usleep (1000);
-    }
-  return;
+		usleep(1000);
+	}
+	return;
 }
 
-JNIEXPORT void JNICALL LPRPort (setInputBufferSize) (JNIEnv * env,
-						     jobject jobj, jint size)
+JNIEXPORT void JNICALL LPRPort(setInputBufferSize)(JNIEnv *env,
+	jobject jobj, jint size )
 {
 #ifdef DEBUG
-  printf ("setInputBufferSize is not implemented\n");
+	printf("setInputBufferSize is not implemented\n");
 #endif
 }
-JNIEXPORT jint JNICALL LPRPort (getInputBufferSize) (JNIEnv * env,
-						     jobject jobj)
+JNIEXPORT jint JNICALL LPRPort(getInputBufferSize)(JNIEnv *env,
+	jobject jobj)
 {
 #ifdef DEBUG
-  printf ("getInputBufferSize is not implemented\n");
+	printf("getInputBufferSize is not implemented\n");
 #endif
-  return (1);
+	return(1);
 }
-JNIEXPORT void JNICALL LPRPort (setOutputBufferSize) (JNIEnv * env,
-						      jobject jobj, jint size)
+JNIEXPORT void JNICALL LPRPort(setOutputBufferSize)(JNIEnv *env,
+	jobject jobj, jint size )
 {
 #ifdef DEBUG
-  printf ("setOutputBufferSize is not implemented\n");
+	printf("setOutputBufferSize is not implemented\n");
 #endif
 }
-JNIEXPORT jint JNICALL LPRPort (getOutputBufferSize) (JNIEnv * env,
-						      jobject jobj)
+JNIEXPORT jint JNICALL LPRPort(getOutputBufferSize)(JNIEnv *env,
+	jobject jobj)
 {
 #ifdef DEBUG
-  printf ("getOutputBufferSize is not implemented\n");
+	printf("getOutputBufferSize is not implemented\n");
 #endif
-  return (1);
+	return(1);
 }
 
 /*----------------------------------------------------------
@@ -886,51 +851,50 @@ throw_java_exception
    exceptions:  haha!
    comments:
 ----------------------------------------------------------*/
-void
-throw_java_exception (JNIEnv * env, char *exc, char *foo, char *msg)
+void throw_java_exception( JNIEnv *env, char *exc, char *foo, char *msg )
 {
 #define MSG_SIZE 128
-  char buf[128];
-  jclass clazz = (*env)->FindClass (env, exc);
-  if (!clazz)
-    {
-      (*env)->ExceptionDescribe (env);
-      (*env)->ExceptionClear (env);
-      return;
-    }
-  /* reduce the message size if it to large for the message buffer */
-  if (MSG_SIZE < (strlen (msg) + strlen (foo) + 5))
-    {
-      msg[MSG_SIZE - strlen (foo) - 5] = 0;
-    }
+	char buf[ 128 ];
+	jclass clazz = (*env)->FindClass( env, exc );
+	if( !clazz )
+	{
+		(*env)->ExceptionDescribe( env );
+		(*env)->ExceptionClear( env );
+		return;
+	}
+	/* reduce the message size if it to large for the message buffer */
+	if(MSG_SIZE < (strlen( msg ) + strlen(foo) + 5)){
+		msg[ MSG_SIZE - strlen(foo) - 5] = 0;
+	}
 #if defined(_GNU_SOURCE)
-  snprintf (buf, 60, "%s in %s", msg, foo);
+	snprintf( buf, 60, "%s in %s", msg, foo );
 #else
-  sprintf (buf, "%s in %s", msg, foo);
+	sprintf( buf,"%s in %s", msg, foo );
 #endif /* _GNU_SOURCE */
-  (*env)->ThrowNew (env, clazz, buf);
+	(*env)->ThrowNew( env, clazz, buf );
 /* ct7 * Added DeleteLocalRef */
-  (*env)->DeleteLocalRef (env, clazz);
+	(*env)->DeleteLocalRef( env, clazz );
 }
 
-void
-throw_java_exception_system_msg (JNIEnv * env, char *exc, char *foo)
+void throw_java_exception_system_msg( JNIEnv *env, char *exc, char *foo )
 {
 #ifdef WIN32
-  char *allocTextBuf;
-  FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER |
-		 FORMAT_MESSAGE_FROM_SYSTEM,
-		 NULL,
-		 GetLastError (),
-		 MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
-		 (LPSTR) & allocTextBuf, 16, NULL);
-  throw_java_exception (env, exc, foo, allocTextBuf);
-  LocalFree (allocTextBuf);
+	char *allocTextBuf;
+	FormatMessage (
+		FORMAT_MESSAGE_ALLOCATE_BUFFER |
+		FORMAT_MESSAGE_FROM_SYSTEM,
+		NULL,
+		GetLastError(),
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(LPSTR)&allocTextBuf,
+		16,
+		NULL );
+	throw_java_exception( env, exc, foo, allocTextBuf );
+	LocalFree(allocTextBuf);
 #else
-  throw_java_exception (env, exc, foo, strerror (errno));
+	throw_java_exception( env, exc, foo, strerror( errno ) );
 #endif
 }
-
 /*----------------------------------------------------------
  report_error
 
@@ -940,13 +904,12 @@ throw_java_exception_system_msg (JNIEnv * env, char *exc, char *foo)
    exceptions:  none
    comments:
 ----------------------------------------------------------*/
-void
-report_error (char *msg)
+void report_error(char *msg)
 {
 #ifndef DEBUG_MW
-  fprintf (stderr, msg);
+	fprintf(stderr, msg);
 #else
-  mexWarnMsgTxt (msg);
+	mexWarnMsgTxt( msg );
 #endif /* DEBUG_MW */
 }
 
@@ -959,11 +922,10 @@ report_error (char *msg)
    exceptions:  none
    comments:
 ----------------------------------------------------------*/
-void
-report (char *msg)
+void report(char *msg)
 {
 #ifdef DEBUG
-  fprintf (stderr, msg);
+        fprintf(stderr, msg);
 #endif /* DEBUG */
 }
 
@@ -976,38 +938,33 @@ report (char *msg)
    exceptions:  none
    comments:
 ----------------------------------------------------------*/
-jboolean
-is_interrupted (JNIEnv * env, jobject jobj)
+jboolean is_interrupted(JNIEnv *env, jobject jobj)
 {
-  jmethodID foo;
-  jclass jclazz;
-  int result;
+	jmethodID foo;
+	jclass jclazz;
+	int result;
 
-  (*env)->ExceptionClear (env);
+	(*env)->ExceptionClear(env);
 
-  jclazz = (*env)->GetObjectClass (env, jobj);
-  if (jclazz == NULL)
-    return JNI_TRUE;
+	jclazz = (*env)->GetObjectClass( env, jobj );
+	if(jclazz == NULL) return JNI_TRUE;
 
-  foo = (*env)->GetMethodID (env, jclazz, "checkMonitorThread", "()Z");
-  if (foo == NULL)
-    return JNI_TRUE;
+	foo = (*env)->GetMethodID( env, jclazz, "checkMonitorThread", "()Z");
+	if(foo == NULL) return JNI_TRUE;
 
-  result = (*env)->CallBooleanMethod (env, jobj, foo);
+	result = (*env)->CallBooleanMethod( env, jobj, foo );
 
 #ifdef DEBUG
-  if ((*env)->ExceptionOccurred (env))
-    {
-      report ("an error occured calling sendEvent()\n");
-      (*env)->ExceptionDescribe (env);
-      (*env)->ExceptionClear (env);
-    }
+	if((*env)->ExceptionOccurred(env)) {
+		report ("an error occured calling sendEvent()\n");
+		(*env)->ExceptionDescribe(env);
+		(*env)->ExceptionClear(env);
+	}
 #endif /* DEBUG */
-  (*env)->DeleteLocalRef (env, jclazz);
+	(*env)->DeleteLocalRef( env, jclazz );
 
-  return (result);
+	return(result);
 }
-
 /*----------------------------------------------------------
  send_event
 
@@ -1017,34 +974,30 @@ is_interrupted (JNIEnv * env, jobject jobj)
    exceptions:  none
    comments:
 ----------------------------------------------------------*/
-int
-send_event (JNIEnv * env, jobject jobj, jint type, int flag)
+int send_event(JNIEnv *env, jobject jobj, jint type, int flag)
 {
-  int result;
-  jmethodID foo;
-  jclass jclazz = (*env)->GetObjectClass (env, jobj);
+	int result;
+	jmethodID foo;
+	jclass jclazz = (*env)->GetObjectClass( env, jobj );
 
-  if (jclazz == NULL)
-    return JNI_TRUE;
-  foo = (*env)->GetMethodID (env, jclazz, "sendEvent", "(IZ)Z");
+	if(jclazz == NULL) return JNI_TRUE;
+	foo = (*env)->GetMethodID( env, jclazz, "sendEvent", "(IZ)Z" );
 
-  (*env)->ExceptionClear (env);
+	(*env)->ExceptionClear(env);
 
-  result = (*env)->CallBooleanMethod (env, jobj, foo, type,
-				      flag > 0 ? JNI_TRUE : JNI_FALSE);
+	result = (*env)->CallBooleanMethod( env, jobj, foo, type, 
+		flag > 0 ? JNI_TRUE : JNI_FALSE );
 
 #ifdef DEBUG
-  if ((*env)->ExceptionOccurred (env))
-    {
-      report ("an error occured calling sendEvent()\n");
-      (*env)->ExceptionDescribe (env);
-      (*env)->ExceptionClear (env);
-    }
+	if((*env)->ExceptionOccurred(env)) {
+		report ("an error occured calling sendEvent()\n");
+		(*env)->ExceptionDescribe(env);
+		(*env)->ExceptionClear(env);
+	}
 #endif /* DEBUG */
-  (*env)->DeleteLocalRef (env, jclazz);
-  return (result);
+	(*env)->DeleteLocalRef( env, jclazz );
+	return(result);
 }
-
 /*----------------------------------------------------------
 get_java_var
 
@@ -1055,20 +1008,19 @@ get_java_var
    exceptions:  none
    comments:
 ----------------------------------------------------------*/
-int
-get_java_var (JNIEnv * env, jobject jobj, char *id, char *type)
+int get_java_var( JNIEnv *env, jobject jobj, char *id, char *type )
 {
-  int result = 0;
-  jclass jclazz = (*env)->GetObjectClass (env, jobj);
-  jfieldID jfd = (*env)->GetFieldID (env, jclazz, id, type);
-  if (!jfd)
-    {
-      (*env)->ExceptionDescribe (env);
-      (*env)->ExceptionClear (env);
-      return result;
-    }
-  result = (int) ((*env)->GetIntField (env, jobj, jfd));
+	int result = 0;
+	jclass jclazz = (*env)->GetObjectClass( env, jobj );
+	jfieldID jfd = (*env)->GetFieldID( env, jclazz, id, type );
+	if( !jfd )
+	{
+		(*env)->ExceptionDescribe( env );
+		(*env)->ExceptionClear( env );
+		return result;
+	}
+	result = (int)( (*env)->GetIntField( env, jobj, jfd ) );
 /* ct7 & gel * Added DeleteLocalRef */
-  (*env)->DeleteLocalRef (env, jclazz);
-  return result;
+	(*env)->DeleteLocalRef( env, jclazz );
+	return result;
 }

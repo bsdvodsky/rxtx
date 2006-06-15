@@ -1,6 +1,6 @@
-/*-------------------------------------------------------------------------
-|   rxtx is a native interface to serial ports in java.
-|   Copyright 1997-2003 by Trent Jarvi taj@www.linux.org.uk.
+/*--------------------------------------------------------------------------
+|   Zystem is a native interface for message reporting in java.
+|   Copyright 1997-2004 by Trent Jarvi taj@www.linux.org.uk.
 |
 |   This library is free software; you can redistribute it and/or
 |   modify it under the terms of the GNU Lesser General Public
@@ -45,6 +45,7 @@
 |   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 --------------------------------------------------------------------------*/
 package gnu.io;
+import javax.comm.*;
 import java.util.*;
 
 /**
@@ -60,17 +61,17 @@ public class UnSupportedLoggerException extends Exception
 * create an instances with no message about why the Exception was thrown.
 * @since JDK1.0
 */
-  public UnSupportedLoggerException ()
-  {
-    super ();
-  }
+	public UnSupportedLoggerException()
+	{
+		super();
+	}
 /**
 * create an instance with a message about why the Exception was thrown.
 * @param str	A detailed message explaining the reason for the Exception.
 * @since JDK1.0
 */
-  public UnSupportedLoggerException (String str)
-  {
-    super (str);
-  }
+	public UnSupportedLoggerException( String str )
+	{
+		super( str );
+	}
 }
