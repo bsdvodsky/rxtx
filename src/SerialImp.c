@@ -684,6 +684,24 @@ JNIEXPORT jint JNICALL RXTXPort(open)(
 		fd=OPEN (filename, O_RDWR | O_NOCTTY | O_NONBLOCK );
 	}  while (fd < 0 && errno==EINTR);
 
+#ifdef OPEN_EXCL
+       // Note that open() follows POSIX semantics: multiple open() calls to 
+       // the same file will succeed unless the TIOCEXCL ioctl is issued.
+       // This will prevent additional opens except by root-owned processes.
+       // See tty(4) ("man 4 tty") and ioctl(2) ("man 2 ioctl") for details.
+ 
+       if (fd >= 0 && (ioctl(fd, TIOCEXCL) == -1))
+       {
+               sprintf( message, "open: exclusive access denied for %s\n",
+                       filename );
+               report( message );
+               report_error( message );
+
+               close(fd);
+               goto fail;
+       }
+#endif /* OPEN_EXCL */
+
 	if( configure_port( fd ) ) goto fail;
 	(*env)->ReleaseStringUTFChars( env, jstr, filename );
 	sprintf( message, "open: fd returned is %i\n", fd );
@@ -742,8 +760,19 @@ JNIEXPORT void JNICALL RXTXPort(nativeClose)( JNIEnv *env,
 	ENTER( "RXTXPort:nativeClose" );
 	if (fd > 0)
 	{
-		do {
+		report("nativeClose: discarding remaining datai (tcflush)\n");
+		/* discard any incoming+outgoing data not yet read/sent */
+		tcflush(fd, TCIOFLUSH);
+//		/* send a break with default time to the other side */
+//		/* attention this tries to drain all data first */
+//		tcsendbreak(fd, 0);
+ 		do {
+			report("nativeClose:  calling close\n");
 			result=CLOSE (fd);
+			report("###JOE returned from close\n");
+if (result < 0 && errno == EINTR) {
+report("###JOE returned from close because of EINTR\n");
+}
 		}  while ( result < 0 && errno == EINTR );
 		UNLOCK( filename, pid );
 	}
@@ -1222,11 +1251,19 @@ void *drain_loop( void *arg )
 	for(i=0;;i++)
 	{
 		report_verbose("drain_loop:  looping\n");
+		if( eis->eventloop_interrupted )
+		{
+			goto end;
+		}
 #if defined(__sun__)
 	/* FIXME: No time to test on all OS's for production */
-		usleep(5000);
+		if (usleep(5000)) {
+			report("drain_loop:  received EINTR");
+		}
 #else
-		usleep(1000000);
+		if (usleep(1000000)) {
+			report("drain_loop:  received EINTR");
+		}
 #endif /* __sun__ */
 		/*
 		system_wait();
@@ -1255,10 +1292,14 @@ void *drain_loop( void *arg )
 				report_verbose("drain_loop:  writing not set\n");
 			}
 		}
-		else
+		else if (errno != EINTR)
 		{
 			report("drain_loop:  tcdrain bad fd\n");
 			goto end;
+		}
+		else
+		{
+			report("drain_loop:  received EINTR in tcdrain\n");
 		}
 	}
 end:
@@ -1302,9 +1343,9 @@ void finalize_threads( struct event_info_struct *eis )
 #if !defined(TIOCSERGETLSR) && !defined( WIN32 )
 static void warn_sig_abort( int signo )
 {
+	/*
 	char msg[80];
 	sprintf( msg, "RXTX Recieved Signal %i\n", signo );
-	/*
 	report_error( msg );
 	*/
 }
@@ -1318,6 +1359,9 @@ init_threads( )
    return:      none
    exceptions:  none
    comments:	
+   this function is called from the event_loop or in other words
+   from the monitor thread. On systems !WIN32 and without TIOCSERGETLSR
+   it will create a new thread looping a call to tcdrain.
 ----------------------------------------------------------*/
 int init_threads( struct event_info_struct *eis )
 {
@@ -1329,15 +1373,19 @@ int init_threads( struct event_info_struct *eis )
 
 	report_time_start( );
 	report("init_threads:  start\n");
+	/* ignore child thread status changes */
 	sigemptyset(&newmask);
 	sigaddset(&newmask, SIGCHLD);
+
+	/* install our own signal hander */
 	newaction.sa_handler = warn_sig_abort;
 	sigemptyset( &newaction.sa_mask );
 #ifdef SA_INTERRUPT
 	newaction.sa_flags = SA_INTERRUPT;
 #endif /* SA_INTERRUPT */
 #ifdef SA_RESTART
-	newaction.sa_flags = SA_RESTART;
+	/* JOE: do not demand restart! we are handling EINTR */
+/*	newaction.sa_flags = SA_RESTART;*/
 #endif /* SA_RESTART */
 
 	sigaction(SIGABRT, &newaction, &oldaction);
@@ -1361,6 +1409,7 @@ int init_threads( struct event_info_struct *eis )
 	report("init_threads: creating drain_loop\n");
 	pthread_create( &tid, NULL, drain_loop, (void *) eis );
 	pthread_detach( tid );
+	eis->drain_tid = tid;
 #endif /* TIOCSERGETLSR */
 	report("init_threads: get eis\n");
 	jeis  = (*eis->env)->GetFieldID( eis->env, eis->jclazz, "eis", "J" );
@@ -4777,6 +4826,24 @@ JNIEXPORT void JNICALL RXTXPort(interruptEventLoop)(JNIEnv *env,
 #ifdef WIN32
 	termios_interrupt_event_loop( index->fd, 1 );
 #endif /* WIN32 */
+#if !defined(TIOCSERGETLSR) && !defined(WIN32)
+	/* make sure that the drainloop unblocks from tcdrain */
+	pthread_kill(index->drain_tid, SIGABRT);
+	/* TODO use wait/join/SIGCHLD/?? instead of sleep? */
+	usleep(50 * 1000);
+	/*
+	Under normal conditions, SIGABRT will unblock tcdrain. However
+	a non-responding USB device combined with an unclean driver
+	may still block. This is very ugly because it may block the call
+	to close indefinetly.
+	*/
+	if (index->closing != 1) {
+		/* good bye tcdrain, and thanks for all the fish */
+		report("interruptEventLoop: canceling blocked drain thread\n");
+		pthread_cancel(index->drain_tid);
+		index->closing = 1;
+	}
+#endif
 	report("interruptEventLoop: interrupted\n");
 }
 

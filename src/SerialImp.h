@@ -128,6 +128,7 @@ struct event_info_struct
 #if !defined(TIOCSERGETLSR) && !defined(WIN32)
 	int writing;
 	int output_buffer_empty_flag;
+	pthread_t drain_tid;
 #endif /* !TIOCSERGETLSR !WIN32 */
 #	if defined(TIOCGICOUNT)
 	struct serial_icounter_struct osis;
@@ -163,7 +164,8 @@ struct event_info_struct
 /*#	define LOCKDIR "/var/spool/uucp"*/
 #	define LOCKDIR "/var/lock"
 #	define LOCKFILEPREFIX "LK."
-#	define UUCP
+/*#	define UUCP*/
+#	define OPEN_EXCL
 #endif /* __APPLE__ */
 #if defined(__NetBSD__)
 #	define DEVICEDIR "/dev/"
