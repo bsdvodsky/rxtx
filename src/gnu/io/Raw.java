@@ -63,7 +63,7 @@ import java.lang.Math;
 
 /**
 * @author Trent Jarvi
-* @version $Id: Raw.java,v 1.1.2.16 2008-09-14 22:13:43 jarvi Exp $
+* @version $Id: Raw.java,v 1.1.2.17 2008-09-14 22:29:30 jarvi Exp $
 * @since JDK1.0
 */
 
@@ -473,9 +473,8 @@ final class Raw  extends  RawPort {
 	}
 	public String getVersion()
 	{
-		String Version="$Id: Raw.java,v 1.1.2.16 2008-09-14 22:13:43 jarvi Exp $";
+		String Version="$Id: Raw.java,v 1.1.2.17 2008-09-14 22:29:30 jarvi Exp $";
 		return(Version);
 	}
 }
-
 
