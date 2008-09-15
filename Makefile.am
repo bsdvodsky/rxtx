@@ -34,9 +34,9 @@ LIBTOOL_INST=$(TOP)/libtool --mode=install $(INSTALL_PROGRAM)
 SPATH = $(abs_srcdir)/src
 DEST=$(target_triplet)
 ####################### rules
-CLASSES = $(patsubst $(SPATH)/%.java,$(TOP)/$(CLASSDEST)/%.class,$(wildcard $(SPATH)/*.java))
-javafiles = $(wildcard $(SPATH)/*.java)
-javahfiles = $(patsubst $(SPATH)/%.java,%,$(wildcard $(SPATH)/*.java))
+CLASSES = $(patsubst $(SPATH)/gnu/io/%.java,$(TOP)/$(CLASSDEST)/%.class,$(wildcard $(SPATH)/gnu/io/*.java))
+javafiles = $(wildcard $(SPATH)/gnu/io/*.java)
+javahfiles = $(patsubst $(SPATH)/gnu/io/%.java,%,$(wildcard $(SPATH)/gnu/io/*.java))
 #######################
 CLEANFILES = $(TOP)/*.class $(TOP)/$(CLASSDEST)/*.class $(TOP)/$(JARTARGET)
 
@@ -68,8 +68,8 @@ $(target_triplet)/librxtx%.@LIB_EXTENSION@: $(SPATH)/%Imp.c $(CLASSES) $(SPATH)/
 $(CLASSES): $(javafiles) $(TOP)/Makefile
 	$(JAVAH_FIX)
 	$(JAVAC) $(javafiles)
-	@$(JAVAH) `(for i in $(javahfiles);do \
-		if grep > /dev/null native.*\( $(SPATH)/$$i.java; then \
+	$(JAVAH) `(for i in $(javahfiles);do \
+		if grep > /dev/null native.*\( $(SPATH)/gnu/io/$$i.java; then \
 			echo $(CLASSDIR).$$i; \
 		fi; \
 	done)`
